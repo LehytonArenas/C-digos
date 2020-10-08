@@ -302,26 +302,25 @@ rango5 = list(range(21))
 for n in rango5:
     print(n)
 
-# Punto 4. Pregunta: Pregunta: No entiendo
+# Punto 4. 
 from random import randint
 b = randint(1, 21)
 
 adivinaste = False 
 conteo = 0
 while not adivinaste:
-    numero_usuario = int(input("Introduce el número buscado: "))   
-    if a<b:
-            print("Te quedaste corto, el número correcto era", b, "tus intentos son =", "conteo")
-            adivinaste = False
-            conteo=conteo+1          
-    elif a>b:
-            print("Te pasaste, el número correcto era", b, "tus intentos son =", "conteo")
-            adivinaste = False 
-            conteo=conteo+1 
-    else:   
-            print("Adivinaste!!")
-            adivinaste = True 
-             
+    a = int(input("Introduce el número buscado: "))   
+    if a<b: 
+        conteo+=1 
+        print("Te quedaste corto, el número correcto era", b, "tus intentos son =", conteo)
+                     
+    elif a>b: 
+        conteo+=1  
+        print("Te pasaste, el número correcto era", b, "tus intentos son =", conteo)
+            
+    else:    
+        print("Adivinaste!!") 
+        adivinaste = True 
 
 # Pregunta 5.
 def es_cadena_vacia(cadena):
@@ -378,6 +377,93 @@ TresEstrellas.precio= 40000
 TresEstrellas.print_information(TresEstrellas.nombre,TresEstrellas.ubicacion, TresEstrellas.puntaje, TresEstrellas.precio)
 
 type(TresEstrellas.puntaje)
+type(TresEstrellas.ubicacion)
+
+# Pregunta 7. Según metodo init Sigue sin darme
+class Hostal(): 
+    def _init_(self):
+        self.nombre = str(input("Ingrese el nombre"))
+        self.ubicacion = str(input("Ingrese la ubicación"))
+        self.puntaje = int(input("Ingrese el puntaje"))
+        self.precio = int(input("Ingrese el precio"))
+    def imprimir(self, nombre, ubicacion):
+        if len(nombre)==0:
+            print("Error: Recuerde escribir el nombre del Hotel")
+        elif len(ubicacion)==0:
+            print("Error: Recuerde escribir la ubicación del Hotel") 
+        else:
+            print("nombre:", self.nombre) 
+            print("ubicacion:", self.ubicacion) 
+            print("puntaje:", self.puntaje) 
+            print("precio:", self.precio)
+            
+Hostal1 = Hostal()
+Hostal1.nombre = "Alcatraz"
+Hostal1.ubicacion = "Medellin"
+Hostal1.puntaje = 5
+Hostal1.precio = 50000
+Hostal1.imprimir()
+           
+# Clases y objetos según YackLion
+# Los objetos pueden definirse sencillamente como elementos, cosas, etc.
+# Las clases permiten agrupar objetos: Autos, Hoteles, etc...
+class Auto (): # generamos una clase y sus atributos
+    marca = ""
+    modelo = 2004 # Partamos de una valor 0
+    placa = ""
+
+taxi = Auto()
+print(taxi.modelo)
+
+# Otro ejemplo:
+class Nombre (): # Creamos la clase
+    pass
+Victor = Nombre() # Creamos dos objetos de la clase
+Maria = Nombre()
+Victor.edad = 30 # Creamos atributos en los objetos
+Victor.sexo = "Masculino"
+Victor.pais = "Bolivia"
+Maria.edad = 25 
+Maria.sexo = "Femenino"
+Maria.pais = "Colombia"
+print(Victor.edad) # Aquí podemos visualizar un atributo en un objeto de una clase     
+
+# Clases y métodos según YakcLion
+# Un método permite encontrar algo (o hacer algo) en la clase creada, tener en cuenta la siguiente estructura:
+# Class, es el nombre de la clase
+# def (self), es el nombre del método (como función)
+# self.nombredevariable = algoritmo
+
+class Matematica(): # Definimos la clase
+    def suma(self): # Con def creamos el método, en este caso una suma
+        self.n1 = 2
+        self.n2 = 3
+s = Matematica () #Debo definir el objeto de la clase
+s.suma() # aquí aplico el método
+print(s.n1 + s.n2)
+
+# Clases y método init según YackLion:
+class Ropa(): # definimos la clase
+    def __init__(self): # El init sirve para inicializar la clase definiendo atributos
+        self.marca = "Willow"
+        self.talla = "M"
+        self.color = "Rojo"
+
+Camisa = Ropa() # Defino un objeto en la clase
+print(Camisa.color) # Visualizó un atributo del objeto.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
