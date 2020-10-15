@@ -317,7 +317,7 @@ SalarioMed <- function(Data){
 Salario2017Med <- SalarioMed(Data=ECV2017_v3)
 write_xlsx(Salario2017Med, "Medellín_Salario.xlsx")
 
-# Prueba para hacer gráficos
+# PRUEBA para hacer gráficos
 # Las pruebas están bien. falta agregarlas al documento según corresponda
 data2=NivelEducativo %>% 
   dplyr::filter(.,Comunas=="Comuna10 La Candelaria"|Comunas=="Comuna11 Laureles Estadio")
