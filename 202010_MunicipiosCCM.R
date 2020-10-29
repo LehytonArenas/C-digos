@@ -61,4 +61,4 @@ for (i in Polos) {
   }
 }
 
-
+# falta mejorar el FOR
