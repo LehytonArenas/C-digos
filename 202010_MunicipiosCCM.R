@@ -1,4 +1,4 @@
-# Proyecto: Ctualización modelo economía dinámica departamento de Antioquia
+# Proyecto: Actualización modelo de economía dinámica departamento de Antioquia
 # Cliente: Camara de Comercio de Medellín.
 # Tarea específica: Caracterización de los municipios del departamento.
 # Fuente de Data: ECV Departamental 2019
@@ -45,20 +45,103 @@ graficoprueba2 <- grafico(PoloX="Polo 5 Suroeste",
 graficoprueba3 <- grafico(PoloX="Polo 3 Magdalena Medio y Nordeste",
                           Indicador=Bilinguismo,
                           Indicador_str="Bilinguismo")
-# Hasta ahora vamos bien
 
-# Ahora intentemos crear un For
+# Hasta aquí vamos bien. Sigamos con las pruebas del For.
+
+# Ahora intentemos crear un For para crear tantos gráficos como sean necesarios.
+# Creamos unos vectores iniciales de prueba de Polos e Indicadores
 Polos <- c("Polo 1 Urabá y Occidente", "Polo 2 Bajo Cauca y Norte del Altiplano")
 Indicadores <- c("ICVM","TNM")
 
+# Prueba 1 del FOR:
+# Muy bien, esta es la estructura del FOR que necesito
+for (i in Polos) { 
+  for (j in Indicadores) { 
+    print(c(i,j))
+  }
+}
+
+for (i in Polos) { 
+    print(paste("Grafico_", c(i))) # error corregido
+  }
+
+for (i in Polos) { 
+  for (j in Indicadores) { 
+    print(paste("Grafico_", c(i),c(j))) # error corregido
+  }
+}
+
+
+# Prueba 2 del FOR:
+# Bien, este sería el FOR aplicado a la función del gráfico
 for (i in Polos) { 
   for (j in Indicadores) { 
     tiff(filename = "prueba.tiff", width = 800, height = 600) 
-    graficoprueba <- grafico(PoloX="i",
-                             Indicador=j,
-                             Indicador_str="j")
+    grafico2 <- grafico(PoloX=i,
+                        Indicador=j,
+                        Indicador_str=j)
     dev.off()  
   }
 }
 
-# falta mejorar el FOR
+# Prueba 3 del FOR:
+# Ruta de descarga: /Users/lehyton/Downloads
+for (i in Polos) { 
+  for (j in Indicadores) { 
+    mypath <- file.path("Users","lehyton","Downloads",paste("Grafico_", c(i),c(j), ".jpeg", sep = ""))
+    jpeg(file=mypath, width = 800, height = 600)
+    grafico2 <- grafico(PoloX=i,
+                        Indicador=j,
+                        Indicador_str=j)
+    dev.off()  
+  }
+}
+
+# Prueba 4 del FOR:
+# COn el directorio declarado inicialmente
+# Con este me genera los gráficos, pero los gráficos están mal.
+for (i in Polos) { 
+  for (j in Indicadores) { 
+    tiff(filename = paste("Grafico_", c(i),c(j), ".tiff", sep = ""), 
+         width = 800, height = 600) 
+    grafico2 <- grafico(PoloX=i,
+                        Indicador=j, # Aquí está el problema
+                        Indicador_str=j)
+    dev.off()  
+  }
+}
+
+# Prueba 5 del FOR:
+# COn el directorio declarado inicialmente
+# Con este me genera los gráficos, pero los gráficos están mal.
+ECV2019_Ant <- data.frame(ECV2019_Ant)
+
+for (i in Polos) { 
+  for (j in Indicadores) { 
+    tiff(filename = paste("Grafico_", c(i),c(j), ".tiff", sep = ""), 
+         width = 800, height = 600) 
+    grafico2 <- grafico(PoloX=i,
+                        Indicador=data.frame(ECV2019_Ant[j]), # Aquí está el problema
+                        Indicador_str=j)
+    dev.off()  
+  }
+}
+
+
+# Prueba 6 del FOR:
+# COn el directorio declarado inicialmente
+# Haciento iteraciones por Polo
+# Dejando fijo el indicador. Ejm: ICVM
+# Con este me genera los gráficos, pero los gráficos están mal.
+ECV2019_Ant <- data.frame(ECV2019_Ant)
+
+for (i in Polos) { 
+    tiff(filename = paste("Grafico_",c(i),"ICVM",".tiff",sep = ""), # Cambiar indicador a gusto
+         width = 800, height = 600) 
+    grafico2 <- grafico(PoloX=i,
+                        Indicador=ICVM, # Cambiar indicador a gusto
+                        Indicador_str="ICVM") # Cambiar indicador a gusto
+    dev.off()  
+}
+
+
