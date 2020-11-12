@@ -7,6 +7,7 @@ library(plyr); library(dplyr)
 library(writexl) 
 library(readxl)
 
+#### Data: GEIH ####
 # Data: GEIH. Modulo: Vivienda y Hogares [VyH]
 # Seleccionamos y transformamos las variables :
 # Personas en el hogar: P6008: númerica, se deja tal cual.
@@ -106,6 +107,7 @@ GEIH_Ocu_201701 <- read.csv("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)
 
 
 #### Data: ICC 2018-2019-2020. ####
+# Nota: En aquellos indcadores que se presente doble información debido a cambios en el año base, se dejará el indicador con el año base más reciente
 # 1. Creamos data por indicador.
 # 2. Creamos DF completo.
 
@@ -117,41 +119,44 @@ AutFiscal_2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/
   dplyr::rename(AutonomiaFiscal_2020_base2018="2020")
 
 # Capacidad de recaudo
-CapacidadRecaudo_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-2-2") %>% 
-  dplyr::rename(CapacidadRecaudo_2018_base2017="2018",CapacidadRecaudo_2019_base2017="2019") 
+CapacidadRecaudo_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-2-2") %>% 
+  dplyr::select(., c("Ciudad","2018")) %>% 
+  dplyr::rename(CapacidadRecaudo_2018_base2017="2018") 
 CapacidadRecaudo_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "INS-2-2") %>% 
   dplyr::rename(CapacidadRecaudo_2019_base2018="2019",CapacidadRecaudo_2020_base2018="2020") 
 
 # Homicidios:
-Homicidios_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-1") %>% 
-  dplyr::rename(Homicidios_2018_base2018="2018",Homicidios_2019_base2018="2019")
+Homicidios_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-1") %>% 
+  dplyr::select(., c("Ciudad","2018")) %>%
+  dplyr::rename(Homicidios_2018_base2018="2018")
 Homicidios_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "INS-4-1") %>% 
   dplyr::rename(Homicidios_2019_base2019="2019",Homicidios_2020_base2019="2020")
 
 # Hurtos:
-Hurtos_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2018_ICC.xlsx", sheet = "INS-3-2") %>% 
-  dplyr::rename(Ciudad="Área metropolitana / Ciudad",Hurtos_2018_base2016=Indicador) %>% 
-  dplyr::mutate(Ciudad=ifelse(Ciudad=="Bogotá - Soacha","Bogotá D.C.",Ciudad))
-Hurtos_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-2") %>% 
-  dplyr::rename(Hurtos_2018_base2018="2018", Hurtos_2019_base2018="2019")
+Hurtos_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-2") %>% 
+  dplyr::select(., c("Ciudad","2018")) %>%
+  dplyr::rename(Hurtos_2018_base2018="2018")
 Hurtos_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "INS-4-2") %>% 
   dplyr::rename(Hurtos_2019_base2019="2019", Hurtos_2020_base2019="2020")
 
 # Extorsión:
-Extorsion_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-3") %>% 
-  dplyr::rename(Extorsion_2018_base2018="2018", Extorsion_2019_base2018="2019")
+Extorsion_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-3") %>% 
+  dplyr::select(., c("Ciudad","2018")) %>%
+  dplyr::rename(Extorsion_2018_base2018="2018")
 Extorsion_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "INS-4-3") %>% 
   dplyr::rename(Extorsion_2019_base2019="2019", Extorsion_2020_base2019="2020")
 
 # Eficiencia de la Justicia:
-EficienciaJusticia_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-4") %>% 
-  dplyr::rename(EficJusticia_2018_base2017="2018", EficJusticia_2019_base2017="2019")
+EficienciaJusticia_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-4") %>% 
+  dplyr::select(., c("Ciudad","2018")) %>%
+  dplyr::rename(EficJusticia_2018_base2017="2018")
 EficienciaJusticia_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "INS-4-4") %>% 
   dplyr::rename(EficJusticia_2019_base2019="2019", EficJusticia_2020_base2019="2020")
 
 # Productividad de Jueces:
-ProductividadJueces_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-5") %>% 
-  dplyr::rename(ProducJueces_2018_base2017="2018", ProducJueces_2019_base2017="2019")
+ProductividadJueces_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "INS-4-5") %>% 
+  dplyr::select(., c("Ciudad","2018")) %>%
+  dplyr::rename(ProducJueces_2018_base2017="2018")
 ProductividadJueces_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "INS-4-5") %>% 
   dplyr::rename(ProducJueces_2019_base2019="2019", ProducJueces_2020_base2019="2020")
 
@@ -179,29 +184,30 @@ Desempleo_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Ag
 # Complejidad Productiva:
 ComplejidadProductiva_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "SOF-1-1") %>% 
   dplyr::rename(ComplejidadProductiva_2018="2018", ComplejidadProductiva_2019="2019")
-ComplejidadProductiva_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "SOF-1-1") %>% 
+ComplejidadProductiva_2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "SOF-1-1") %>% 
   dplyr::select(., c("Ciudad","2020")) %>% 
   dplyr::rename(ComplejidadProductiva_2020="2020")
   
 # Diversificación de Canasta Exportadora:
-DiversificacionExportadora_2018y2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "SOF-2-2") %>% 
-  dplyr::rename(DiversifCanasta_2018_base2018="2018", DiversifCanasta_2019_base2018="2019")
+DiversificacionExportadora_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2019_ICC.xlsx", sheet = "SOF-2-2") %>% 
+  dplyr::select(., c("Ciudad","2018")) %>%
+  dplyr::rename(DiversifCanasta_2018_base2018="2018")
 DiversificacionExportadora_2019y2020 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/2020_ICC.xlsx", sheet = "SOF-2-2") %>% 
   dplyr::rename(DiversifCanasta_2019_base2019="2019", DiversifCanasta_2020_base2019="2020")
 
 # Creación del DF: Mediante concatenación de los indicadores previos:
 Anexos_ICC <- join_all(list(AutFiscal_2018y2019,AutFiscal_2020, 
-                            CapacidadRecaudo_2018y2019, CapacidadRecaudo_2019y2020,
-                            Homicidios_2018y2019, Homicidios_2019y2020,
-                            Hurtos_2018, Hurtos_2018y2019, Hurtos_2019y2020,
-                            Extorsion_2018y2019, Extorsion_2019y2020,
-                            EficienciaJusticia_2018y2019, EficienciaJusticia_2019y2020,
-                            ProductividadJueces_2018y2019, ProductividadJueces_2019y2020,
+                            CapacidadRecaudo_2018, CapacidadRecaudo_2019y2020,
+                            Homicidios_2018, Homicidios_2019y2020,
+                            Hurtos_2018, Hurtos_2019y2020,
+                            Extorsion_2018, Extorsion_2019y2020,
+                            EficienciaJusticia_2018, EficienciaJusticia_2019y2020,
+                            ProductividadJueces_2018, ProductividadJueces_2019y2020,
                             FacilidadEmpresa_2018y2019, FacilidadEmpresa_2020,
                             ImpuestosEmpresa_2018y2019, ImpuestosEmpresa_2020,
                             Desempleo_2018, Desempleo_2019y2020,
-                            ComplejidadProductiva_2018y2019, ComplejidadProductiva_2019y2020,
-                            DiversificacionExportadora_2018y2019, DiversificacionExportadora_2019y2020), 
+                            ComplejidadProductiva_2018y2019, ComplejidadProductiva_2020,
+                            DiversificacionExportadora_2018, DiversificacionExportadora_2019y2020), 
                        by=c("Ciudad"),type = "full")
 write_xlsx(Anexos_ICC, "Anexos_ICC_2018-2020.xlsx")
 
