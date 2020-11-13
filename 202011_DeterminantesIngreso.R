@@ -21,7 +21,9 @@ library(readxl)
 
 GEIH_VyH_201701 <- read.csv("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/1_Enero.csv/Area - Vivienda y Hogares.csv",sep = ";", header = TRUE, dec = ",")
 GEIH_VyH_201701_v2 <- GEIH_VyH_201701 %>% 
-  dplyr::select(., c("AREA", "MES", "DIRECTORIO", "SECUENCIA_P","HOGAR", "P6008", "P5090", "P5210S16", "P5210S3","fex_c_2011")) %>% 
+  dplyr::select(., c("AREA", "DIRECTORIO", "HOGAR", 
+                     "P6008", "P5090", "P5210S16", "P5210S3",
+                     "fex_c_2011")) %>% 
   dplyr::rename(.,PersonasHogar=P6008,PosesionVivienda=P5090, PosesionComputador=P5210S16,PosesionInternet=P5210S3) %>% 
   dplyr::mutate(PosesionVivienda=ifelse(PosesionVivienda==1,"Propia Pagada",PosesionVivienda),
                 PosesionVivienda=ifelse(PosesionVivienda==2,"Propia Pagando",PosesionVivienda),
@@ -47,7 +49,9 @@ summary (GEIH_VyH_201701_v2)
 
 GEIH_CGP_201701 <- read.csv("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/1_Enero.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
 GEIH_CGP_201701_v2 <- GEIH_CGP_201701 %>% 
-  dplyr::select(., c("AREA", "MES", "DIRECTORIO", "SECUENCIA_P","ORDEN","HOGAR","P6020","P6040","P6220","ESC","P6050","P6070", "fex_c_2011")) %>% 
+  dplyr::select(., c("AREA", "DIRECTORIO", "ORDEN","HOGAR",
+                     "P6020","P6040","P6220","ESC","P6050","P6070", 
+                     "fex_c_2011")) %>% 
   dplyr::rename(., Sexo=P6020, Edad=P6040, NivelEducativo=P6220, AniosEscolaridad=ESC, ParentescoJefe=P6050, EstadoCivil=P6070) %>% 
   dplyr::mutate(Sexo=ifelse(Sexo==1,"Hombre",Sexo),
                 Sexo=ifelse(Sexo==2,"Mujer",Sexo),
@@ -83,8 +87,10 @@ summary(GEIH_CGP_201701_v2)
 
 GEIH_Ocu_201701 <- read.csv("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/1_Enero.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",")
 GEIH_Ocu_201701_v2 <- GEIH_Ocu_201701 %>% 
-  dplyr::select(., c("AREA", "MES", "DIRECTORIO", "SECUENCIA_P","ORDEN","HOGAR","P6430","RAMA2D","OCI","INGLABO","fex_c_2011")) %>% 
-  dplyr::rename(., PosicionOcupacional=P6430, SectorEconomico=RAMA2D, IngresoLaboral=INGLABO) %>% 
+  dplyr::select(., c("AREA", "DIRECTORIO", "ORDEN","HOGAR",
+                     "P6430","RAMA2D","OCI","INGLABO",
+                     "fex_c_2011")) %>% 
+  dplyr::rename(., PosicionOcupacional=P6430, SectorEconomico=RAMA2D, IngresoLaboral_Mes=INGLABO) %>% 
   dplyr::mutate(PosicionOcupacional=ifelse(PosicionOcupacional==1,"Empleado_Empresa_Particular",PosicionOcupacional),
                 PosicionOcupacional=ifelse(PosicionOcupacional==2,"Empleado_Gobierno",PosicionOcupacional),
                 PosicionOcupacional=ifelse(PosicionOcupacional==3,"Empleado_Domestico",PosicionOcupacional),
@@ -112,7 +118,7 @@ GEIH_Ocu_201701_v2 <- GEIH_Ocu_201701 %>%
                 SectorEconomico=ifelse(SectorEconomico==90|SectorEconomico==91|SectorEconomico==92|SectorEconomico==93,"Servicios Comunitarios Sociales y Personales",SectorEconomico),
                 SectorEconomico=ifelse(SectorEconomico==95,"Hogares Privados con servicio doméstico",SectorEconomico),
                 SectorEconomico=ifelse(SectorEconomico==99,"Organizaciones Extraterritoriales",SectorEconomico),
-                IngresoLaboral=ifelse(IngresoLaboral<1000 |IngresoLaboral==9999,NA,IngresoLaboral))
+                IngresoLaboral_Mes_Mes=ifelse(IngresoLaboral_Mes<1000 |IngresoLaboral_Mes==9999,NA,IngresoLaboral_Mes))
 
 summary(GEIH_Ocu_201701_v2)
 
@@ -124,7 +130,7 @@ summary(GEIH_Ocu_201701_v2)
  
 GEIH_OIng_201701 <- read.csv("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/1_Enero.csv/Area - Otros ingresos.csv",sep = ";", header = TRUE, dec = ",")
 GEIH_OIng_201701_v2 <- GEIH_OIng_201701 %>% 
-  dplyr::select(., c("AREA", "MES", "DIRECTORIO", "SECUENCIA_P","ORDEN","HOGAR",
+  dplyr::select(., c("AREA", "DIRECTORIO", "ORDEN","HOGAR",
                      "P7500S3A1","P7500S2A1","P7500S1A1","P7510S2A1","P7510S6A1","P7510S5A1","P7510S3A1","P7510S1A1","P7510S7A1",
                      "fex_c_2011")) %>% 
   dplyr::rename(.,IngDivorcioMes=P7500S3A1,IngPensionMes=P7500S2A1,IngArriendoMes=P7500S1A1,IngRemExtrAnio=P7510S2A1,IngCesaAnio=P7510S6A1,IngFcieroAnio=P7510S5A1,TransfSubsidios_Anio=P7510S3A1,IngRemIntAnio=P7510S1A1,IngOtrosAnio=P7510S7A1) %>% 
@@ -142,7 +148,7 @@ GEIH_OIng_201701_v2$CapFinanciero_Mes <- rowSums(GEIH_OIng_201701_v2[,c("IngDivo
 GEIH_OIng_201701_v2$CapFinanciero_Anio <- rowSums(GEIH_OIng_201701_v2[,c("IngRemExtrAnio", "IngCesaAnio", "IngFcieroAnio", "IngRemIntAnio", "IngOtrosAnio")], na.rm=TRUE)
 
 GEIH_OIng_201701_v3 <- GEIH_OIng_201701_v2 %>% 
-  dplyr::select(., c("AREA", "MES", "DIRECTORIO", "SECUENCIA_P","ORDEN","HOGAR",
+  dplyr::select(., c("AREA", "DIRECTORIO","ORDEN","HOGAR",
                      "CapFinanciero_Mes","CapFinanciero_Anio","TransfSubsidios_Anio",
                      "fex_c_2011")) %>% 
   dplyr::mutate(CapFinanciero_Mes=ifelse(CapFinanciero_Mes==0,NA,CapFinanciero_Mes),
@@ -150,13 +156,28 @@ GEIH_OIng_201701_v3 <- GEIH_OIng_201701_v2 %>%
 
 summary(GEIH_OIng_201701_v3)                    
 
+# Data: GEIH. Modulo: Fuerza de Trabajo [FT]:
+# Seleccionamos nuestra única variable de interés: FT
+GEIH_FT_201701 <- read.csv("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/1_Enero.csv/Area - Fuerza de trabajo.csv",sep = ";", header = TRUE, dec = ",")
+GEIH_FT_201701_v2 <- GEIH_FT_201701 %>% 
+  dplyr::select(., c("AREA", "DIRECTORIO", "ORDEN","HOGAR",
+                     "FT",
+                     "fex_c_2011"))
+
+# Data: GEIH. Modulo: Descupados [Des]:
+# Seleccionamos nuestra única variable de interés: DSI
+GEIH_Des_201701 <- read.csv("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/1_Enero.csv/Area - Desocupados.csv",sep = ";", header = TRUE, dec = ",")
+GEIH_Des_201701_v2 <- GEIH_Des_201701 %>% 
+  dplyr::select(., c("AREA", "DIRECTORIO", "ORDEN","HOGAR",
+                     "DSI",
+                     "fex_c_2011"))
+
 # Calculos adicionales:
 # Ocupados por Hogar: Un summarize a partir de la data de Ocupados
 OcupadosEnHogar <- GEIH_Ocu_201701_v2 %>% 
   dplyr::group_by(DIRECTORIO, HOGAR) %>%
   dplyr::summarise(
     OcupadosPorHogar = sum(OCI,na.rm = TRUE))
-
 summary(OcupadosEnHogar)
 
 # Niños iguales o menores a 14 años en el hogar: Un summarize a partir de la data de CGP:
@@ -165,8 +186,25 @@ NiniosEnHogar <- GEIH_CGP_201701_v2 %>%
   dplyr::group_by(DIRECTORIO, HOGAR) %>%
   dplyr::summarise(
     NiniosMenores14 = n())
-
 summary(NiniosEnHogar)
+
+# Ingresos en la unidad de gasto:
+# Son los ingresos laborales por hogar:
+# Eliminamos los 0 por NA
+IngresosEnHogar <- GEIH_Ocu_201701_v2 %>% 
+  dplyr::group_by(DIRECTORIO, HOGAR) %>%
+  dplyr::summarise(
+    IngresosPorHogar = sum(IngresoLaboral_Mes,na.rm = TRUE)) %>% 
+  dplyr::mutate(IngresosPorHogar=ifelse(IngresosPorHogar==0,NA,IngresosPorHogar))
+summary(IngresosEnHogar)
+
+# Desempleados en el hogar:
+DesempleadosEnHogar <- GEIH_Des_201701_v2 %>% 
+  dplyr::group_by(DIRECTORIO, HOGAR) %>%
+  dplyr::summarise(
+    DesempleadosPorHogar = sum(DSI,na.rm = TRUE))
+summary(DesempleadosEnHogar)
+
 
 #### Data: ICC 2018-2019-2020. ####
 # Nota: En aquellos indcadores que se presente doble información debido a cambios en el año base, se dejará el indicador con el año base más reciente
