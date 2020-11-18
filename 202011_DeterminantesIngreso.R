@@ -120,6 +120,16 @@ GEIH_Ocu_201701_v2 <- GEIH_Ocu_201701 %>%
                 SectorEconomico=ifelse(SectorEconomico==99,"Organizaciones Extraterritoriales",SectorEconomico),
                 IngresoLaboral_Mes_Mes=ifelse(IngresoLaboral_Mes<1000 |IngresoLaboral_Mes==9999,NA,IngresoLaboral_Mes))
 
+# Creamos las categorías de Generadores de empleo y autoempleados:
+# Definimos el salario
+# Crearemos una variable ficticia que luego modificaremos
+SMMV <- 820857
+SMMV_2 <- SMMV*2.5
+GEIH_Ocu_201701_v2$Generadores_Empleo <- c("G")
+GEIH_Ocu_201701_v2 <- GEIH_Ocu_201701_v2 %>% 
+  dplyr::mutate(Generadores_Empleo=if_else(PosicionOcupacional=="Empleador","Generador de empleo",Generadores_Empleo),
+                Generadores_Empleo=if_else(PosicionOcupacional=="CuentaPropia" & IngresoLaboral_Mes>SMMV_2,"Generador de empleo",Generadores_Empleo),
+                Generadores_Empleo=if_else(PosicionOcupacional=="CuentaPropia" & IngresoLaboral_Mes<=SMMV_2,"Autoempleado",Generadores_Empleo)) 
 summary(GEIH_Ocu_201701_v2)
 
 # Data: GEIH. Modulo: Otros Ingresos [OIng]
@@ -173,14 +183,14 @@ GEIH_Des_201701_v2 <- GEIH_Des_201701 %>%
                      "fex_c_2011"))
 
 # Calculos adicionales:
-# Ocupados por Hogar: Un summarize a partir de la data de Ocupados
+# Ocupados por Hogar: 
 OcupadosEnHogar <- GEIH_Ocu_201701_v2 %>% 
   dplyr::group_by(DIRECTORIO, HOGAR) %>%
   dplyr::summarise(
     OcupadosPorHogar = sum(OCI,na.rm = TRUE))
 summary(OcupadosEnHogar)
 
-# Niños iguales o menores a 14 años en el hogar: Un summarize a partir de la data de CGP:
+# Niños iguales o menores a 14 años en el hogar: 
 NiniosEnHogar <- GEIH_CGP_201701_v2 %>% 
   filter(Edad<=14) %>% 
   dplyr::group_by(DIRECTORIO, HOGAR) %>%
@@ -205,6 +215,29 @@ DesempleadosEnHogar <- GEIH_Des_201701_v2 %>%
     DesempleadosPorHogar = sum(DSI,na.rm = TRUE))
 summary(DesempleadosEnHogar)
 
+# Generadores de empleo en el hogar:
+GeneradoresEnHogar <- GEIH_Ocu_201701_v2 %>% 
+  filter(Generadores_Empleo=="Generador de empleo") %>% 
+  dplyr::group_by(DIRECTORIO, HOGAR) %>%
+  dplyr::summarise(
+    GeneradoresPorHogar = n())
+summary(GeneradoresEnHogar)
+
+# Autoempleados en el hogar:
+AutoempleadosEnHogar <- GEIH_Ocu_201701_v2 %>% 
+  filter(Generadores_Empleo=="Autoempleado") %>% 
+  dplyr::group_by(DIRECTORIO, HOGAR) %>%
+  dplyr::summarise(
+    AutoempleadosPorHogar = n())
+summary(AutoempleadosEnHogar)
+
+# Educación de Jefes en el hogar:
+EducacionJefesEnHogar <- GEIH_CGP_201701_v2 %>% 
+  filter(ParentescoJefe=="Jefe de hogar"|ParentescoJefe=="Conyuge") %>% 
+  dplyr::group_by(DIRECTORIO, HOGAR) %>%
+  dplyr::summarise(
+    EducacionJefes = sum(AniosEscolaridad,na.rm = TRUE))
+summary(EducacionJefesEnHogar)
 
 #### Data: ICC 2018-2019-2020. ####
 # Nota: En aquellos indcadores que se presente doble información debido a cambios en el año base, se dejará el indicador con el año base más reciente
@@ -328,9 +361,11 @@ colnames(GEIH_OIng_201701)
 # Prueba de Importando data de Autonomía Fiscal en 2016
 class(AutFiscal_2016)
 
-# Creando DF solo para menores de 14 años:
-PruebaMenores <- GEIH_CGP_201701_v2 %>% 
-  filter(Edad<=14)
+PruebaEmpleadores <- GEIH_Ocu_201701_v2 %>% 
+  dplyr::filter(PosicionOcupacional=="CuentaPropia")
+
+PruebaGeneradores <- GEIH_Ocu_201701_v2 %>% 
+  filter(Generadores_Empleo=="Generador de empleo")
 
 
 
