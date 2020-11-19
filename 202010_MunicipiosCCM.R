@@ -54,24 +54,8 @@ for (i in Polos) {
 
 
 # Gráficas de 2 variables:
-# Ejm para eje: Cauca e indicadores: LP y LI
-# 1. hacemos filtro
-DosVbles_Cauca <- ECV2019_Ant %>% 
-  dplyr::filter(.,Eje_v2=="Cauca"| Eje_v2=="Antioquia") %>% 
-  dplyr::select(.,"Municipio","LP","LI")
-# 2. Transformamos las data
-Data_long <- DosVbles_Cauca %>% 
-  gather("Indicador", "Valor", -Municipio)
-
-# 3. Hacemos Gráfico
-ggplot(Data_long, aes(x = Valor, y = Municipio, fill = Indicador))+
-  geom_bar(stat="identity",position="dodge")+
-  geom_text(aes(label = Valor),
-            size=3, vjust=0, hjust=0 ,col="black")+
-  ylab("Cauca")
-
-# Creamos una función: por los mismos pasos anteriores:
-#1.
+# Creamos tres funciones en tres pasos:
+#1. Aplicamos filtros por Polo e indicadores
 Data_DosVbles <- function(PoloX,Indicador1,Indicador2){
   DosVbles <- ECV2019_Ant %>% 
     dplyr::filter(.,Eje_v2==PoloX| Eje_v2=="Antioquia") %>% 
@@ -79,13 +63,13 @@ Data_DosVbles <- function(PoloX,Indicador1,Indicador2){
 }
 
                                      
-#2.
+#2. Transformamos la data a tipo Long
 DataTransformada <- function(Data){
   Data_long <- Data %>% 
     gather("Indicador", "Valor", -Municipio) 
 }
 
-
+# 3. Hacemos los gráficos
 #3.A. Aplicando el dodge en la posición de columnas
 Grafico_2vbles <- function(Data_Tr,NombEjeStr){
   grafico2vbles <- ggplot(Data_Tr, aes(x = Valor, y = Municipio, fill = Indicador))+
@@ -108,28 +92,8 @@ Grafico_2vbles_v2 <- function(Data_Tr,NombEjeStr){
   print(grafico2vbles)
 }
 
-# Aplicamos las funciones en dicho orden:
-# Ejm Cauca
-Data_DosVbles_Cauca <- Data_DosVbles(PoloX="Cauca",
-                                     Indicador1=LP,
-                                     Indicador2=LI)
-                                     
-DataTransformada_Cauca <- DataTransformada(Data=Data_DosVbles_Cauca)
 
-Grafico2Vbles_Cauca <- Grafico_2vbles(Data_Tr=DataTransformada_Cauca,
-                                      NombEjeStr="Cauca")
-# Ejm Centro
-Data_DosVbles_Centro <- Data_DosVbles(PoloX="Centro",
-                                     Indicador1=Informalidad,
-                                     Indicador2=EmpleoFormal)
-
-DataTransformada_Centro <- DataTransformada(Data=Data_DosVbles_Centro)
-
-Grafico2Vbles_Cauca <- Grafico_2vbles_v2(Data_Tr=DataTransformada_Centro,
-                                      NombEjeStr="Centro")
-
-
-# Apliquemoslo con una iteración:
+# Apliquemos los  pasos anteriores con una iteración:
 # Haciento iteraciones por Polo
 # Dejando fijo los indicadores. 
 # Aplicación para: Formalidad e informalidad
