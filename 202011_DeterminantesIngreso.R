@@ -118,7 +118,7 @@ GEIH_Ocu_201701_v2 <- GEIH_Ocu_201701 %>%
                 SectorEconomico=ifelse(SectorEconomico==90|SectorEconomico==91|SectorEconomico==92|SectorEconomico==93,"Servicios Comunitarios Sociales y Personales",SectorEconomico),
                 SectorEconomico=ifelse(SectorEconomico==95,"Hogares Privados con servicio doméstico",SectorEconomico),
                 SectorEconomico=ifelse(SectorEconomico==99,"Organizaciones Extraterritoriales",SectorEconomico),
-                IngresoLaboral_Mes_Mes=ifelse(IngresoLaboral_Mes<1000 |IngresoLaboral_Mes==9999,NA,IngresoLaboral_Mes))
+                IngresoLaboral_Mes=ifelse(IngresoLaboral_Mes<1000 | IngresoLaboral_Mes==9999,NA,IngresoLaboral_Mes))
 
 # Creamos las categorías de Generadores de empleo y autoempleados:
 # Definimos el salario
@@ -238,6 +238,24 @@ EducacionJefesEnHogar <- GEIH_CGP_201701_v2 %>%
   dplyr::summarise(
     EducacionJefes = sum(AniosEscolaridad,na.rm = TRUE))
 summary(EducacionJefesEnHogar)
+
+# Concatenando información:
+# Concatenamos por Hogares:
+Hogares <- join_all(list(GEIH_VyH_201701_v2,EducacionJefesEnHogar,NiniosEnHogar,IngresosEnHogar,GeneradoresEnHogar,AutoempleadosEnHogar,OcupadosEnHogar,DesempleadosEnHogar), by=c("DIRECTORIO","HOGAR"),type = "full")
+
+# Concatenamos por individuo:
+Individuos <- join_all(list(GEIH_CGP_201701_v2,GEIH_FT_201701_v2,GEIH_Des_201701_v2,GEIH_Ocu_201701_v2,GEIH_OIng_201701_v3), by=c("DIRECTORIO","HOGAR","ORDEN"),type = "full")
+
+# Concatenamos las dos datas previas, para tener un DF Mensual:
+Data <- join_all(list(Individuos,Hogares), by=c("DIRECTORIO","HOGAR"),type = "full")
+
+
+
+
+
+
+
+
 
 #### Data: ICC 2018-2019-2020. ####
 # Nota: En aquellos indcadores que se presente doble información debido a cambios en el año base, se dejará el indicador con el año base más reciente
