@@ -144,3 +144,14 @@ while (carros<10){ # Aplico el while poniendo la condición
 # Ordenando datos
 prueba <- c(2,4,6,3,1)
 prueba_ordenada <- sort(prueba)
+
+# Pruebas de gráficos
+ggplot(data=dplyr::filter(ECV2019_Ant,Eje_v2=="Cauca" | Eje_v2=="Antioquia"),
+       aes(y=Municipio, x=LP))+
+  geom_bar(stat="identity", position="dodge", fill="dodgerblue2")+
+  ylab("Cauca")+
+  xlab("LP")+
+  geom_text(aes(label = LP),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme (axis.text.x = element_text(size=rel(1.5)),
+         axis.text.y = element_text(size=rel(1.5)))
