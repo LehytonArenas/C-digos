@@ -11,6 +11,7 @@ library(plyr); library(dplyr)
 library(writexl) 
 library(readxl)
 
+# colores de gráficos: dodgerblue2, cyan4
 # Importamos la data
 ECV2019_Ant <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Antioquia CCM/Entregables_Lehyton/3_Caracterización_v3DF.xlsx", sheet = "Indicadores_V2")
 str(ECV2019_Ant)
@@ -25,7 +26,7 @@ ECV2019_Ant <- data.frame(ECV2019_Ant)
 grafico <- function(PoloX, Indicador, Indicador_str){
   grafico1 <- ggplot(data=dplyr::filter(ECV2019_Ant,Eje_v2==PoloX | Eje_v2=="Antioquia"),
                      aes(y=Municipio, x={{Indicador}}))+
-    geom_bar(stat="identity", position="dodge", fill="dodgerblue2")+
+    geom_bar(stat="identity", position="dodge", fill="cyan4")+
     ylab(PoloX)+
     xlab(Indicador_str)+
     geom_text(aes(label = {{Indicador}}),
@@ -42,13 +43,13 @@ Polos <- c("Cauca","Urabá y Occidente", "Centro", "Magdalena Medio", "Suroeste 
 # Se guardarán los archivos en el directorio declarado inicialmente, con formato tiff y dimensiones 800*600
 # Haciento iteraciones por Polo
 # Dejando fijo el indicador. 
-# Aplicación para: Ingresos
+# Aplicación para: SGSS
 for (i in Polos) { 
-    tiff(filename = paste("Grafico_",c(i),"Ingresos",".tiff",sep = ""), # Cambiar indicador a gusto
+    tiff(filename = paste("Grafico_",c(i),"_SGSS_",".tiff",sep = ""), # Cambiar indicador a gusto
          width = 800, height = 600) 
     grafico2 <- grafico(PoloX=i,
-                        Indicador=Ingresos, # Cambiar indicador a gusto
-                        Indicador_str="Ingresos") # Cambiar indicador a gusto
+                        Indicador=SGSS, # Cambiar indicador a gusto
+                        Indicador_str="SGSS") # Cambiar indicador a gusto
     dev.off()  
 }
 
@@ -93,16 +94,16 @@ Grafico_2vbles_v2 <- function(Data_Tr,NombEjeStr){
 }
 
 
-# Apliquemos los  pasos anteriores con una iteración:
+# Apliquemos los  pasos anteriores con una iteración: Graficos tipo 1
 # Haciento iteraciones por Polo
 # Dejando fijo los indicadores. 
-# Aplicación para: Formalidad e informalidad
+# Aplicación para: TNE11_14 y TNE15_16
 for (i in Polos) { 
-  tiff(filename = paste("Grafico_",c(i),"_Informalidad-EmpleoFormal_",".tiff",sep = ""), # Cambiar indicadores a gusto
+  tiff(filename = paste("Grafico_",c(i),"_TNE1114-TNE1516_",".tiff",sep = ""), # Cambiar indicadores a gusto
        width = 800, height = 600) 
   Data_DosVbles_Eje <- Data_DosVbles(PoloX=i,
-                                       Indicador1=Informalidad, # Cambiar indicadores a gusto
-                                       Indicador2=EmpleoFormal) # Cambiar indicadores a gusto
+                                       Indicador1=TNE11_14, # Cambiar indicadores a gusto
+                                       Indicador2=TNE15_16) # Cambiar indicadores a gusto
   
   DataTransformada_Eje <- DataTransformada(Data=Data_DosVbles_Eje)
   
@@ -114,11 +115,11 @@ for (i in Polos) {
 # Aplicamos una iteración para el grafico tipo 2
 # Solo para las vbles de Formalidad e informalidad:
 for (i in Polos) { 
-  tiff(filename = paste("Grafico_",c(i),"_Informalidad-EmpleoFormal_v2_",".tiff",sep = ""), # Cambiar indicadores a gusto
+  tiff(filename = paste("Grafico_",c(i),"_Contributivo-Subsidiado_v2_",".tiff",sep = ""), # Cambiar indicadores a gusto
        width = 800, height = 600) 
   Data_DosVbles_Eje <- Data_DosVbles(PoloX=i,
-                                     Indicador1=Informalidad, # Cambiar indicadores a gusto
-                                     Indicador2=EmpleoFormal) # Cambiar indicadores a gusto
+                                     Indicador1=R.Subsidiado, # Cambiar indicadores a gusto
+                                     Indicador2=R.Contributivo) # Cambiar indicadores a gusto
   
   DataTransformada_Eje <- DataTransformada(Data=Data_DosVbles_Eje)
   
