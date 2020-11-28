@@ -191,13 +191,34 @@ GEIH_Des_201709 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.c
 colnames(GEIH_VyH_201709)
 
 # Octubre:
-GEIH_VyH_201710 <- read.csv("",sep = ",", header = TRUE, dec = ",")
-GEIH_CGP_201710 <- read.csv("",sep = ",", header = TRUE, dec = ",") 
-GEIH_Ocu_201710 <- read.csv("",sep = ",", header = TRUE, dec = ",")
-GEIH_OIng_201710 <- read.csv("",sep = ",", header = TRUE, dec = ",")
-GEIH_FT_201710 <- read.csv("",sep = ",", header = TRUE, dec = ",")
-GEIH_Des_201710 <- read.csv("",sep = ",", header = TRUE, dec = ",")
+# Se leen archivos tipo txt debido a que la data original tenía errores de tipeo
+GEIH_VyH_201710 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/10_Octubre.txt/Area - Vivienda y Hogares.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_CGP_201710 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/10_Octubre.txt/Area - Caracteristicas generales (Personas).txt",header = TRUE, sep = "\t", dec = ".") 
+GEIH_Ocu_201710 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/10_Octubre.txt/Area - Ocupados.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_OIng_201710 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/10_Octubre.txt/Area - Otros ingresos.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_FT_201710 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/10_Octubre.txt/Area - Fuerza de trabajo.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_Des_201710 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/10_Octubre.txt/Area - Desocupados.txt",header = TRUE, sep = "\t", dec = ".")
 colnames(GEIH_VyH_201710)
+
+# Noviembre:
+# Se leen archivos tipo txt debido a que la data original tenía errores de tipeo
+GEIH_VyH_201711 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/11_Noviembre.txt/Area - Vivienda y Hogares.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_CGP_201711 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/11_Noviembre.txt/Area - Caracteristicas generales (Personas).txt",header = TRUE, sep = "\t", dec = ".") 
+GEIH_Ocu_201711 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/11_Noviembre.txt/Area - Ocupados.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_OIng_201711 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/11_Noviembre.txt/Area - Otros ingresos.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_FT_201711 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/11_Noviembre.txt/Area - Fuerza de trabajo.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_Des_201711 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/11_Noviembre.txt/Area - Desocupados.txt",header = TRUE, sep = "\t", dec = ".")
+colnames(GEIH_VyH_201711)
+
+# Diciembre:
+# Se leen archivos tipo txt debido a que la data original tenía errores de tipeo
+GEIH_VyH_201712 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/12_Diciembre.txt/Area - Vivienda y Hogares.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_CGP_201712 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/12_Diciembre.txt/Area - Caracteristicas generales (Personas).txt",header = TRUE, sep = "\t", dec = ".") 
+GEIH_Ocu_201712 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/12_Diciembre.txt/Area - Ocupados.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_OIng_201712 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/12_Diciembre.txt/Area - Otros ingresos.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_FT_201712 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/12_Diciembre.txt/Area - Fuerza de trabajo.txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_Des_201712 <- read.delim("/Users/lehyton/Google Drive (lehyton.arenas@ucn.cl)/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/12_Diciembre.txt/Area - Desocupados.txt",header = TRUE, sep = "\t", dec = ".")
+colnames(GEIH_VyH_201712)
 
 # Creamos una función para concatenar todas las variables a nivel mensual.
 # Los detalles y paso a paso se encuentran en el constructo a continuación:
@@ -439,15 +460,15 @@ Data_Mes <- function(GEIH_VyH,GEIH_CGP,GEIH_Ocu,SMMV,GEIH_OIng,GEIH_FT,GEIH_Des,
 }
 
 # Aplicación de la función
-Data_Septiembre <- Data_Mes(GEIH_VyH=GEIH_VyH_201709,
-                       GEIH_CGP=GEIH_CGP_201709,
-                       GEIH_Ocu=GEIH_Ocu_201709,
+Data_Enero <- Data_Mes(GEIH_VyH=GEIH_VyH_201701,
+                       GEIH_CGP=GEIH_CGP_201701,
+                       GEIH_Ocu=GEIH_Ocu_201701,
                        SMMV=820857, # Este salario ya inluye el subsidio de transporte
-                       GEIH_OIng=GEIH_OIng_201709,
-                       GEIH_FT=GEIH_FT_201709,
-                       GEIH_Des=GEIH_Des_201709,
-                       AnioMes="2017_09",
-                       NombreArchivo="DataMes_201709.xlsx")
+                       GEIH_OIng=GEIH_OIng_201701,
+                       GEIH_FT=GEIH_FT_201701,
+                       GEIH_Des=GEIH_Des_201701,
+                       AnioMes="2017_01",
+                       NombreArchivo="DataMes_201701.xlsx")
 
 # Aplicamos un join para tener la data anual:
 # Importamos la data  creada y creamos el ID
@@ -478,11 +499,18 @@ Agosto <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entreg
 Septiembre <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataMes_201709.xlsx") %>% 
   unite(.,ID,c(2:4),sep="",remove=TRUE,na.rm = FALSE)
 
-summary(Septiembre)
+Octubre <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataMes_201710.xlsx") %>% 
+  unite(.,ID,c(2:4),sep="",remove=TRUE,na.rm = FALSE)
+
+Noviembre <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataMes_201711.xlsx") %>% 
+  unite(.,ID,c(2:4),sep="",remove=TRUE,na.rm = FALSE)
+
+Diciembre <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataMes_201712.xlsx") %>% 
+  unite(.,ID,c(2:4),sep="",remove=TRUE,na.rm = FALSE)
 
 # Aplicamos el Join:
-DataAnio_2017<- join_all(list(Enero,Febrero,Marzo), by=c("ID"),type = "full")
-
+DataAnio_2017<- join_all(list(Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre), by=c("ID"),type = "full")
+summary(DataAnio_2017)
 
 
 
