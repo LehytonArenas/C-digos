@@ -181,7 +181,7 @@ DosVbles <- ECV2019_Ant %>%
 Data_long <- DosVbles %>% 
     gather("Indicador", "Valor", -Municipio) 
 
-# 3A. Grafico dos variables, tipo 3A:
+# 3A. Grafico dos variables, tipo 3A:Con doge
 tiff(filename = "GraficoEjes_TNE1114-TNE1516.tiff", # Cambiar indicador a gusto
      width = 800, height = 600)
 ggplot(Data_long, aes(x = Valor, y = Municipio, fill = Indicador))+
@@ -193,7 +193,7 @@ ggplot(Data_long, aes(x = Valor, y = Municipio, fill = Indicador))+
          axis.text.y = element_text(size=rel(1.5)))
 dev.off() 
 
-# 3B. Grafico dos variables, tipo 3B:
+# 3B. Grafico dos variables, tipo 3B: Sin dodge
 tiff(filename = "GraficoEjes_RContrib-RSubsid.tiff", # Cambiar indicador a gusto
      width = 800, height = 600)
 ggplot(Data_long, aes(x = Valor, y = Municipio, fill = Indicador))+
