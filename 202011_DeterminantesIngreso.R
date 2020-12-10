@@ -508,14 +508,69 @@ Noviembre <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Ent
 Diciembre <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataMes_201712.xlsx") %>% 
   unite(.,ID,c(2:4),sep="",remove=TRUE,na.rm = FALSE)
 
-# Aplicamos el Join:
+# Aplicamos el Join y exportamos la data anual:
 DataAnio_2017<- join_all(list(Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre), by=c("ID"),type = "full")
 summary(DataAnio_2017)
+write_xlsx(DataAnio_2017, "DataAnio_2017.xlsx")
 
+# Aplicamos los pendientes a la data anual
+# Cambiamos los códigos por Areas.
+DataAnio_2017 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataAnio_2017.xlsx")
 
-
-
-
+DataAnio_2017_v2 <- DataAnio_2017 %>% 
+  dplyr::rename(.,Desocupado=DSI, Ocupado=OCI) %>% 
+  dplyr::mutate(AREA=ifelse(AREA==5,"Medellin",AREA),
+                AREA=ifelse(AREA==8,"Barranquilla",AREA),
+                AREA=ifelse(AREA==11,"Bogota DC",AREA),
+                AREA=ifelse(AREA==13,"Cartagena",AREA),
+                AREA=ifelse(AREA==17,"Manizales",AREA),
+                AREA=ifelse(AREA==23,"Monteria",AREA),
+                AREA=ifelse(AREA==50,"Villavicencio",AREA),
+                AREA=ifelse(AREA==52,"Pasto",AREA),
+                AREA=ifelse(AREA==54,"Cucuta",AREA),
+                AREA=ifelse(AREA==66,"Pereira",AREA),
+                AREA=ifelse(AREA==68,"Bucaramanga",AREA),
+                AREA=ifelse(AREA==73,"Ibague",AREA),
+                AREA=ifelse(AREA==76,"Cali",AREA),
+                Desocupado=ifelse(is.na(Desocupado)==TRUE,0,Desocupado),
+                Ocupado=ifelse(is.na(Ocupado)==TRUE,0,Ocupado),
+                Sexo=ifelse(Sexo=="Hombre",1,0),
+                PosesionComputador=ifelse(PosesionComputador=="Si",1,0),
+                PosesionInternet=ifelse(PosesionInternet=="Si",1,0),
+                NivelEducativo=ifelse(NivelEducativo=="Tecnologo" | NivelEducativo=="Universitario" | NivelEducativo=="Postgrado",1,0),
+                NivelEducativo=ifelse(is.na(NivelEducativo)==TRUE,0,NivelEducativo),
+                EstadoCivil=ifelse(EstadoCivil=="Vive en pareja <2 años" | EstadoCivil=="Vive en pareja >=2 años" | EstadoCivil=="Casado(a)",1,0),
+                PosesionVivienda=ifelse(PosesionVivienda=="Propia Pagada" | PosesionVivienda=="Propia Pagando",1,0),
+                Autoempleado=ifelse(Generadores_Empleo=="Autoempleado",1,0),
+                Autoempleado=ifelse(is.na(Generadores_Empleo)==TRUE,0,Autoempleado),
+                GeneradorEmpleo=ifelse(Generadores_Empleo=="Generador de empleo",1,0),
+                PerentescoJefe_Jefe=ifelse(ParentescoJefe=="Jefe de hogar",1,0),
+                PerentescoJefe_Conyuge=ifelse(ParentescoJefe=="Conyuge",1,0),
+                PerentescoJefe_Hijo=ifelse(ParentescoJefe=="Hijo(a)",1,0),
+                PerentescoJefe_Nieto=ifelse(ParentescoJefe=="Nieto(a)",1,0),
+                PerentescoJefe_OtroPariente=ifelse(ParentescoJefe=="Otro pariente",1,0),
+                PerentescoJefe_EmpleadoDomestico=ifelse(ParentescoJefe=="Empleado domestico",1,0),
+                PerentescoJefe_Pensionista=ifelse(ParentescoJefe=="Pensionista",1,0),
+                PerentescoJefe_Trabajador=ifelse(ParentescoJefe=="Trabajador",1,0),
+                PerentescoJefe_OtroNoPariente=ifelse(ParentescoJefe=="Otro no pariente",1,0),
+                Sector_NR=ifelse(SectorEconomico=="No Responde",1,0),
+                Sector_Agricultura=ifelse(SectorEconomico=="Agrícultura Ganadería Caza Y Silvicultura",1,0),
+                Sector_Pesca=ifelse(SectorEconomico=="Pesca",1,0),
+                Sector_Minas=ifelse(SectorEconomico=="Explotación de Minas y Canteras",1,0),
+                Sector_Industria=ifelse(SectorEconomico=="Industrias Manufactureras",1,0),
+                Sector_Electricidad=ifelse(SectorEconomico=="Suministro Electricidad Gas y Agua",1,0),
+                Sector_Comercio=ifelse(SectorEconomico=="Comercio al por Mayor y por Menor",1,0),
+                Sector_Educacion=ifelse(SectorEconomico=="Educación",1,0),
+                Sector_Transporte=ifelse(SectorEconomico=="Transporte Almacenamiento y Comunicaciones",1,0),
+                Sector_Financiero=ifelse(SectorEconomico=="Intermediación Financiera",1,0),
+                Sector_Construccion=ifelse(SectorEconomico=="Construcción",1,0),
+                Sector_Administracion=ifelse(SectorEconomico=="Administración Pública y Defensa",1,0),
+                Sector_Extraterritorial=ifelse(SectorEconomico=="Organizaciones Extraterritoriales",1,0),
+                Sector_Inmobiliario=ifelse(SectorEconomico=="Actividades Inmobiliarias Empresariales y Alquiler",1,0),
+                Sector_Salud=ifelse(SectorEconomico=="Servicios Sociales y de Salud",1,0),
+                Sector_Hotel=ifelse(SectorEconomico=="Hoteles y Restaurantes",1,0),
+                Sector_Comunitario=ifelse(SectorEconomico=="Servicios Comunitarios Sociales y Personales",1,0),
+                Sector_Domestico=ifelse(SectorEconomico=="Hogares Privados con servicio doméstico",1,0))
 
 
 
@@ -523,26 +578,13 @@ summary(DataAnio_2017)
 
 
 ##### Pruebas#####
-summary(GEIH_Ocu_v2$SectorEconomico)
-colnames(GEIH_OIng_201701)
+prueba <- DataAnio_2017 %>% 
+  filter(.,is.na(NivelEducativo)==T) 
 
-# Prueba de Importando data de Autonomía Fiscal en 2016
-class(AutFiscal_2016)
+prueba_2 <- DataAnio_2017_v2 %>% 
+  filter(.,is.na(EstadoCivil)==T) 
 
-PruebaEmpleadores <- GEIH_Ocu_v2 %>% 
-  dplyr::filter(PosicionOcupacional=="CuentaPropia")
-
-PruebaGeneradores <- GEIH_Ocu_v2 %>% 
-  filter(Generadores_Empleo=="Generador de empleo")
-
-# Prueba de la data creada mediante función
-Funcion_No <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataMes_201701.xlsx")
-Funcion_Si <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataMes_201701.xlsx")
-summary(Funcion_No)
-summary(Funcion_Si)
-
-Prueba <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataMes_201703.xlsx")
-# PLT: La función está ok.
+nrow(prueba)==nrow(prueba_2)
 
 
 
