@@ -267,7 +267,7 @@ Data_Mes <- function(GEIH_VyH,GEIH_CGP,GEIH_Ocu,SMMV,GEIH_OIng,GEIH_FT,GEIH_Des,
                   NivelEducativo=ifelse(NivelEducativo==3,"Tecnologo",NivelEducativo),
                   NivelEducativo=ifelse(NivelEducativo==4,"Universitario",NivelEducativo),
                   NivelEducativo=ifelse(NivelEducativo==5,"Postgrado",NivelEducativo),
-                  NivelEducativo=ifelse(NivelEducativo==6,"No sabe",NivelEducativo),
+                  NivelEducativo=ifelse(NivelEducativo==9,"No sabe",NivelEducativo),
                   ParentescoJefe=ifelse(ParentescoJefe==1,"Jefe de hogar",ParentescoJefe),
                   ParentescoJefe=ifelse(ParentescoJefe==2,"Conyuge",ParentescoJefe),
                   ParentescoJefe=ifelse(ParentescoJefe==3,"Hijo(a)",ParentescoJefe),
@@ -510,11 +510,16 @@ Diciembre <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Ent
 
 # Aplicamos el Join y exportamos la data anual:
 DataAnio_2017<- join_all(list(Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre), by=c("ID"),type = "full")
+# Analizamos y exportamos la data anual creada:
+str(DataAnio_2017)
 summary(DataAnio_2017)
+unique(DataAnio_2017$PosesionInternet)
 write_xlsx(DataAnio_2017, "DataAnio_2017.xlsx")
 
 # Aplicamos los pendientes a la data anual
 # Cambiamos los códigos por Areas.
+# Creamos las dummies a usar.
+# Se calculan los pendientes: carga económica y experiencia potencial
 DataAnio_2017 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/DataAnio_2017.xlsx")
 
 DataAnio_2017_v2 <- DataAnio_2017 %>% 
@@ -538,12 +543,12 @@ DataAnio_2017_v2 <- DataAnio_2017 %>%
                 PosesionComputador=ifelse(PosesionComputador=="Si",1,0),
                 PosesionInternet=ifelse(PosesionInternet=="Si",1,0),
                 NivelEducativo=ifelse(NivelEducativo=="Tecnologo" | NivelEducativo=="Universitario" | NivelEducativo=="Postgrado",1,0),
-                NivelEducativo=ifelse(is.na(NivelEducativo)==TRUE,0,NivelEducativo),
                 EstadoCivil=ifelse(EstadoCivil=="Vive en pareja <2 años" | EstadoCivil=="Vive en pareja >=2 años" | EstadoCivil=="Casado(a)",1,0),
                 PosesionVivienda=ifelse(PosesionVivienda=="Propia Pagada" | PosesionVivienda=="Propia Pagando",1,0),
                 Autoempleado=ifelse(Generadores_Empleo=="Autoempleado",1,0),
-                Autoempleado=ifelse(is.na(Generadores_Empleo)==TRUE,0,Autoempleado),
+                Autoempleado=ifelse(is.na(Autoempleado)==TRUE,0,Autoempleado),
                 GeneradorEmpleo=ifelse(Generadores_Empleo=="Generador de empleo",1,0),
+                GeneradorEmpleo=ifelse(is.na(GeneradorEmpleo)==TRUE,0,GeneradorEmpleo),
                 PerentescoJefe_Jefe=ifelse(ParentescoJefe=="Jefe de hogar",1,0),
                 PerentescoJefe_Conyuge=ifelse(ParentescoJefe=="Conyuge",1,0),
                 PerentescoJefe_Hijo=ifelse(ParentescoJefe=="Hijo(a)",1,0),
@@ -570,21 +575,109 @@ DataAnio_2017_v2 <- DataAnio_2017 %>%
                 Sector_Salud=ifelse(SectorEconomico=="Servicios Sociales y de Salud",1,0),
                 Sector_Hotel=ifelse(SectorEconomico=="Hoteles y Restaurantes",1,0),
                 Sector_Comunitario=ifelse(SectorEconomico=="Servicios Comunitarios Sociales y Personales",1,0),
-                Sector_Domestico=ifelse(SectorEconomico=="Hogares Privados con servicio doméstico",1,0))
+                Sector_Domestico=ifelse(SectorEconomico=="Hogares Privados con servicio doméstico",1,0),
+                CargaEconomica=round(PersonasHogar/OcupadosPorHogar,2),
+                CargaEconomica=ifelse(is.infinite(CargaEconomica)==T,NA,CargaEconomica),
+                ExperienciaPotencial=round(Edad-AniosEscolaridad-6,2)) %>% 
+  dplyr::select(.,-c("ParentescoJefe","FT","PosicionOcupacional","SectorEconomico","Generadores_Empleo"))
+colnames(DataAnio_2017_v2)
+str(DataAnio_2017_v2)
 
+#### Concatenando Data de diferentes fuentes ####
+# Importamos Data CCI
+DataCCI <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/Anexos_ICC_2018-2020.xlsx")
 
+# Modificamos data CCI: 
+# Seleccionamos las columnas de interés
+# Cambiamos los códigos de areas para que coincidan con la GEIH
+DataCCI_2018 <- DataCCI %>% 
+  dplyr::select(.,c("Ciudad","AutonomiaFiscal_2018_base2017","CapacidadRecaudo_2018_base2017","Homicidios_2018_base2018",
+                    "Hurtos_2018_base2018","Extorsion_2018_base2018","EficJusticia_2018_base2017","ProducJueces_2018_base2017",
+                    "FacilidadEmpresa_2018","ImpuestosEmpresa_2018","Desempleo_2018","ComplejidadProductiva_2018","DiversifCanasta_2018_base2018")) %>% 
+  dplyr::rename(.,AREA=Ciudad) %>% 
+  dplyr::mutate(AREA=ifelse(AREA=="Medellín AM","Medellin",AREA),
+                AREA=ifelse(AREA=="Barranquilla AM","Barranquilla",AREA),
+                AREA=ifelse(AREA=="Bogotá D.C.","Bogota DC",AREA),
+                AREA=ifelse(AREA=="Cartagena","Cartagena",AREA),
+                AREA=ifelse(AREA=="Manizales AM","Manizales",AREA),
+                AREA=ifelse(AREA=="Montería","Monteria",AREA),
+                AREA=ifelse(AREA=="Villavicencio","Villavicencio",AREA),
+                AREA=ifelse(AREA=="Pasto","Pasto",AREA),
+                AREA=ifelse(AREA=="Cúcuta AM","Cucuta",AREA),
+                AREA=ifelse(AREA=="Pereira AM","Pereira",AREA),
+                AREA=ifelse(AREA=="Bucaramanga AM","Bucaramanga",AREA),
+                AREA=ifelse(AREA=="Ibagué","Ibague",AREA),
+                AREA=ifelse(AREA=="Cali AM","Cali",AREA)) %>% 
+  dplyr::filter(.,AREA=="Medellin"|AREA=="Barranquilla"|AREA=="Bogota DC"|AREA=="Cartagena"|
+                  AREA=="Manizales"|AREA=="Monteria"|AREA=="Villavicencio"|AREA=="Pasto"|
+                  AREA=="Cucuta"|AREA=="Pereira"|AREA=="Bucaramanga"|AREA=="Ibague"|
+                  AREA=="Cali") 
 
+# Importamos data del DANE
+Dane_Desempleo <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DANE_DesemPobPIB.xls", sheet = "DesempleoyPoblacion")
+Dane_PIB_PC <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DANE_DesemPobPIB.xls", sheet = "PIB PC")
 
+# Modificamos data del Dane
+# Seleccionamos las columnas de interés
+# Cambiamos los códigos de areas para que coincidan con la GEIH
+Dane_Desempleo_2017 <- Dane_Desempleo %>% 
+  dplyr::select(.,c("Departamento","Desempleo_2017_Dane","Poblacion_2017_Dane")) %>% 
+  dplyr::rename(.,AREA=Departamento) %>% 
+  dplyr::mutate(AREA=ifelse(AREA=="Antioquia","Medellin",AREA),
+                AREA=ifelse(AREA=="Atlántico","Barranquilla",AREA),
+                AREA=ifelse(AREA=="Bogotá D.C.","Bogota DC",AREA),
+                AREA=ifelse(AREA=="Bolívar","Cartagena",AREA),
+                AREA=ifelse(AREA=="Caldas","Manizales",AREA),
+                AREA=ifelse(AREA=="Córdoba","Monteria",AREA),
+                AREA=ifelse(AREA=="Meta","Villavicencio",AREA),
+                AREA=ifelse(AREA=="Nariño","Pasto",AREA),
+                AREA=ifelse(AREA=="Norte de Santander","Cucuta",AREA),
+                AREA=ifelse(AREA=="Risaralda","Pereira",AREA),
+                AREA=ifelse(AREA=="Santander","Bucaramanga",AREA),
+                AREA=ifelse(AREA=="Tolima","Ibague",AREA),
+                AREA=ifelse(AREA=="Valle del Cauca","Cali",AREA)) %>% 
+  dplyr::filter(.,AREA=="Medellin"|AREA=="Barranquilla"|AREA=="Bogota DC"|AREA=="Cartagena"|
+                  AREA=="Manizales"|AREA=="Monteria"|AREA=="Villavicencio"|AREA=="Pasto"|
+                  AREA=="Cucuta"|AREA=="Pereira"|AREA=="Bucaramanga"|AREA=="Ibague"|
+                  AREA=="Cali")
 
+Dane_PIB_PC_2017 <- Dane_PIB_PC %>% 
+  dplyr::select(.,c("Departamento","PIB_PC2017_Dane")) %>% 
+  dplyr::rename(.,AREA=Departamento) %>% 
+  dplyr::mutate(AREA=ifelse(AREA=="Antioquia","Medellin",AREA),
+                AREA=ifelse(AREA=="Atlántico","Barranquilla",AREA),
+                AREA=ifelse(AREA=="Bogotá D.C.","Bogota DC",AREA),
+                AREA=ifelse(AREA=="Bolívar","Cartagena",AREA),
+                AREA=ifelse(AREA=="Caldas","Manizales",AREA),
+                AREA=ifelse(AREA=="Córdoba","Monteria",AREA),
+                AREA=ifelse(AREA=="Meta","Villavicencio",AREA),
+                AREA=ifelse(AREA=="Nariño","Pasto",AREA),
+                AREA=ifelse(AREA=="Norte de Santander","Cucuta",AREA),
+                AREA=ifelse(AREA=="Risaralda","Pereira",AREA),
+                AREA=ifelse(AREA=="Santander","Bucaramanga",AREA),
+                AREA=ifelse(AREA=="Tolima","Ibague",AREA),
+                AREA=ifelse(AREA=="Valle del Cauca","Cali",AREA)) %>% 
+  dplyr::filter(.,AREA=="Medellin"|AREA=="Barranquilla"|AREA=="Bogota DC"|AREA=="Cartagena"|
+                  AREA=="Manizales"|AREA=="Monteria"|AREA=="Villavicencio"|AREA=="Pasto"|
+                  AREA=="Cucuta"|AREA=="Pereira"|AREA=="Bucaramanga"|AREA=="Ibague"|
+                  AREA=="Cali")
+  
+# Ahora podemos aplicar el Join de toda la data para 2017: DataAnio+DataCCI+DataDane:
+DataAnio_2017_v3 <- join_all(list(DataAnio_2017_v2,DataCCI_2018,Dane_Desempleo_2017,Dane_PIB_PC_2017), by=c("AREA"),type = "full")
+
+# Finalmente revisamos y exportamos la data
+colnames(DataAnio_2017_v3)
+str(DataAnio_2017_v3)
+summary(DataAnio_2017_v3)
+write_xlsx(DataAnio_2017_v3, "DataAnio_2017_v3.xlsx")
 
 ##### Pruebas#####
-prueba <- DataAnio_2017 %>% 
-  filter(.,is.na(NivelEducativo)==T) 
+prueba <- DataAnio_2017_v3 %>% 
+  dplyr::filter(.,ID=="424820812")
+  
 
-prueba_2 <- DataAnio_2017_v2 %>% 
-  filter(.,is.na(EstadoCivil)==T) 
 
-nrow(prueba)==nrow(prueba_2)
+
 
 
 
