@@ -31,14 +31,14 @@ Produccion[,3:15] <- round(Produccion[,3:15],2)
 
 #### Gráficos de 1 vble ####
 # colores de gráficos: dodgerblue2, cyan4
-tiff(filename = "Grafico_Dependencia.tiff", # Cambiar indicador a gusto
+tiff(filename = "Grafico_CRContributivo.tiff", # Cambiar indicador a gusto
      width = 800, height = 600)
 ggplot(data=Datos,
-       aes(y=Municipio, x=Dependencia))+ # Cambiar indicador a gusto
-  geom_bar(stat="identity", position="dodge", fill="dodgerblue2")+
+       aes(y=Municipio, x=C.R.Contributivo))+ # Cambiar indicador a gusto
+  geom_bar(stat="identity", position="dodge", fill="cyan4")+
   ylab("Municipios")+
-  xlab("Indice de Dependencia")+ # Cambiar indicador a gusto
-  geom_text(aes(label = Dependencia), # Cambiar indicador a gusto
+  xlab("Indice de C.R.Contributivo")+ # Cambiar indicador a gusto
+  geom_text(aes(label = C.R.Contributivo), # Cambiar indicador a gusto
             size=4, vjust=0.5, hjust=0 ,col="black")+
   theme (axis.text.x = element_text(size=rel(1.5)),
          axis.text.y = element_text(size=rel(1.5)))
@@ -60,12 +60,12 @@ dev.off()
 #### Gráficos de +2  vbles ####
 # Se hacen en 3 pasos:
 #1. Aplicamos filtros por Polo e indicadores
-DosVbles <- Produccion %>% 
-  dplyr::select(.,-c(Eje,TotalValorAgregado)) # cambiar indicadores
+DosVbles <- Datos %>% 
+  dplyr::select(.,c(Municipio,R.Contributivo,R.Subsidiado)) # cambiar indicadores
 
 #2. Transformamos la data a tipo Long
 Data_long <- DosVbles %>% 
-  gather("Sector", "Participación", -Municipio) 
+  gather("Indicador", "Valor", -Municipio) 
 
 # 3A. Grafico +2 variables, tipo 3A: Con dodge: columna a lado y lado
 tiff(filename = "Grafico_InseguridadAlimentaria.tiff", # Cambiar indicador a gusto
@@ -80,7 +80,7 @@ ggplot(Data_long, aes(x = Valor, y = Municipio, fill = Indicador))+
 dev.off() 
 
 # 3B. Grafico +2 variables, tipo 3B: Columnas apiladas: Sin dodge
-tiff(filename = "Grafico_Formal-Informal.tiff", # Cambiar indicador a gusto
+tiff(filename = "Grafico_Contributivo-Subsidiado.tiff", # Cambiar indicador a gusto
      width = 800, height = 600)
 ggplot(Data_long, aes(x = Valor, y = Municipio, fill = Indicador))+
   geom_bar(stat="identity")+
