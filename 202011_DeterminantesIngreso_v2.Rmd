@@ -1,0 +1,105 @@
+---
+title: "Determinantes del Ingreso"
+author: "Lehyton Arenas"
+date: "12/21/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Análisis Descriptivo
+
+```{r Inicial: Librerías y Data, include=FALSE}
+library(tidyverse)
+library(plyr); library(dplyr)
+library(writexl) 
+library(readxl)
+DataAnio_2017 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
+
+```
+
+A continuación se exponen los principales descriptivos: Solamente para las primeras variables del data.
+
+```{r Descriptivos: Cuartiles, echo=FALSE}
+Descriptivos <- as.data.frame(do.call(rbind,lapply(X=select(DataAnio_2017,c("Sexo","Edad"))
+                                                            ,summary)))
+Desviación <- as.data.frame(do.call(rbind,lapply(X=select(DataAnio_2017,c("Sexo","Edad"))
+                                                            ,sd)))
+
+  knitr::kable(
+  Descriptivos,
+  caption = "Resumen estadístico"
+)
+  knitr::kable(
+  Desviación,
+  caption = "SD"
+)
+```
+También se han agrupado y encontrado data a nivel ciudad:
+```{r Ciudades: procesando data , include=FALSE}
+# Ciudades: Calculamos algunas medias:
+
+# Ingreso medio por ciudad: para toda la población
+# Años de escolaridad media por ciudad:
+EducacionCiudades_2017 <- DataAnio_2017 %>% 
+  dplyr::filter(.,is.na(AniosEscolaridad)==FALSE) %>%
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Educacion = round(sum(AniosEscolaridad*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    EducacionMedia = round(Sum_WiXi_Educacion/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","EducacionMedia"))
+
+IngresoCiudades_2017 <- DataAnio_2017 %>% 
+  dplyr::filter(.,is.na(IngresoLaboral_Mes)==FALSE) %>%
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    IngresoMedio = round(Sum_WiXi_Ingreso/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","IngresoMedio"))
+
+# Ingreso medio por ciudad: Solo para autoempleados
+IngAutoempleados_Ciudades_2017 <- DataAnio_2017 %>% 
+  dplyr::filter(.,Autoempleado==1 & is.na(IngresoLaboral_Mes)==FALSE) %>% 
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    IngresoAutoempleados = round(Sum_WiXi_Ingreso/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","IngresoAutoempleados"))
+
+# Ingreso medio por ciudad: Solo para Generadores
+IngGeneradores_Ciudades_2017 <- DataAnio_2017 %>% 
+  dplyr::filter(.,GeneradorEmpleo==1 & is.na(IngresoLaboral_Mes)==FALSE) %>% 
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    IngresoGeneradores = round(Sum_WiXi_Ingreso/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","IngresoGeneradores"))
+
+# Join para tener data por ciudad:
+Ciudades_2017 <- join_all(list(EducacionCiudades_2017,IngresoCiudades_2017,IngAutoempleados_Ciudades_2017,IngGeneradores_Ciudades_2017), by=c("AREA"),type = "full")
+
+```
+
+```{r Ciudades: Creando DF, echo=FALSE}
+library(knitr)
+knitr::kable(
+  Ciudades_2017,
+  caption = "Ciudades"
+)
+```
+
+
+
+
+
+
