@@ -37,6 +37,48 @@ Desviación <- as.data.frame(do.call(rbind,lapply(X=select(DataAnio_2017,c("Sexo
   caption = "SD"
 )
 ```
+También se pueden ver los descriptivos así:
+```{r Descriptivos2: Cuartiles, echo=FALSE}
+library(qwraps2)
+options(qwraps2_markup = "markdown")
+Descriptivos2 <- DataAnio_2017 %>% 
+  select(.,c("Sexo","Edad"))
+Descriptivos2 <- as.data.frame(Descriptivos2)
+
+summary_statistics <-
+  list(
+    "Sexo" =
+      list(
+        "Min" = ~min(Sexo, na.rm = TRUE),
+        "Q1" = ~round(quantile(Sexo, 0.25,na.rm = TRUE),0),
+        "Median" = ~median(Sexo, na.rm = TRUE),
+        "Q3" = ~round(quantile(Sexo, 0.75,na.rm = TRUE),0),
+        "Max" = ~max(Sexo, na.rm = TRUE),
+        "Mean" = ~round(mean(Sexo, na.rm = TRUE),2),
+        "Sd" = ~round(sd(Sexo, na.rm = TRUE),2)
+      ),
+    "Edad" =
+      list(
+        "Min" = ~min(Edad, na.rm = TRUE),
+        "Q1" = ~round(quantile(Edad, 0.25,na.rm = TRUE),0),
+        "Median" = ~median(Edad, na.rm = TRUE),
+        "Q3" = ~round(quantile(Edad, 0.75,na.rm = TRUE),0),
+        "Max" = ~max(Edad, na.rm = TRUE),
+        "Mean" = ~round(mean(Edad, na.rm = TRUE),2),
+        "Sd" = ~round(sd(Edad, na.rm = TRUE),2)
+      )
+  )
+as.data.frame(summary_table(Descriptivos2, summary_statistics))
+```
+Otra opción:
+```{r Descriptivos3, echo=FALSE}
+# Hacer un df con los descriptivos
+Descriptivos3 <- data.frame(
+  "Variable" = c("Sexo","Edad"),
+  "Min" = c(min(DataAnio_2017$Sexo, na.rm = TRUE),min(DataAnio_2017$Edad, na.rm = TRUE))
+)
+```
+
 También se han agrupado y encontrado data a nivel ciudad:
 ```{r Ciudades: procesando data , include=FALSE}
 # Ciudades: Calculamos algunas medias:
