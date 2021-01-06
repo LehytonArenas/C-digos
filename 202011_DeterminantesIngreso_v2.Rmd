@@ -24,114 +24,57 @@ A continuación se exponen los principales descriptivos para el año 2017:
 
 ```{r Descriptivos: Cuartiles, echo=FALSE}
 DataAnio_2017_v2 <- DataAnio_2017 %>% 
-  select(.,-c("AREA","ID","fex_c_2011"))
+  select(.,-c("ID","AREA","Anio_Mes","fex_c_2011"))
 
-Descriptivos <- as.data.frame(do.call(rbind,lapply(DataAnio_2017_v2[,1:2]
-                                                            ,summary)))
+# Creamos el df para Min:
+min <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= min, na.rm=T))
+min2 <- as.data.frame(t(min)) %>% 
+  dplyr::rename(Min="V1")
 
-Desviacion <- as.data.frame(do.call(rbind,lapply(DataAnio_2017_v2[,1:2]
-                                                            ,sd)))
-  knitr::kable(
-  Descriptivos,
-  caption = "Resumen estadístico"
-)
-  knitr::kable(
-  Desviacion,
-  caption = "SD"
-)
-```
-Otra forma de ver descriptivos:
-```{r Descriptivos: Cuartiles, echo=FALSE}
+# Creamos el df para Q25:
+Q25 <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= quantile, probs = c(.25), na.rm=T))
+Q25_2 <- as.data.frame(t(Q25)) %>% 
+  dplyr::rename(Q25="25%")
+Q25_2[,1] <- round(Q25_2[,1],2)
 
-DataAnio_2017_v2 <- DataAnio_2017 %>% 
-  select(.,c("Sexo","Edad","AniosEscolaridad"))
+# Creamos el df para la mediana:
+Median <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= median, na.rm=T))
+Median2 <- as.data.frame(t(Median)) %>% 
+  dplyr::rename(Median="V1")
+Median2[,1] <- round(Median2[,1],2)
 
-summ1 <- DataAnio_2017_v2 %>% 
-  dplyr::summarise(across(.fns = function(x){
-    y <- summary(x); z <- sd(x); round(c(y,z), 2) 
-    } ))
-summ1 <- t(summ1)
-colnames(summ1) <- c("Min", "1st_Q", "Median", "Mean", "3rd_Q", "Max", "St_d")
-View(summ1)
+# Creamos el df para Q75:
+Q75 <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= quantile, probs = c(.75), na.rm=T))
+Q75_2 <- as.data.frame(t(Q75)) %>% 
+  dplyr::rename(Q75="75%")
+Q75_2[,1] <- round(Q75_2[,1],2)
 
-summ2 <- as.data.frame(t(summary(DataAnio_2017_v2)))
-summ2$Estadistico <- as.factor(substr(summ2$Freq,start = 1,stop = 7))
-summ2$Valor <- as.numeric(substr(summ2$Freq,start = 9,stop = 13))
-summ2 <- summ2 %>% select(-Var2)
-View(summ2 %>% spread(value = Valor,key = Estadistico))
+# Creamos el df para Max:
+max <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= max, na.rm=T))
+max2 <- as.data.frame(t(max)) %>% 
+  dplyr::rename(Max="V1")
+max2[,1] <- round(max2[,1],2)
 
-# Esta opción está perfecta. Solo falta agregar SD y crear el df:
-summ2 <- as.data.frame(t(summary(DataAnio_2017_v2)))
-summ2$Medida <- as.factor(substr(summ2$Freq,start = 1,stop = 7))
-summ2$Freq<- as.numeric(substr(summ2$Freq,start = 9,stop = 13))
-summ2 <- summ2 %>% select(-Var2)
-View(summ2 %>% spread(value = Freq,key = Medida))
-```
-## Año 2017: Información por ciudad
+# Creamos el df para Mean:
+Mean <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= mean, na.rm=T))
+Mean_2 <- as.data.frame(t(Mean)) %>% 
+  dplyr::rename(Mean="V1")
+Mean_2[,1] <- round(Mean_2[,1],2)
 
-La data recopilada se ha agrupado por ciudad y se han encontrado algunos resultados:
-```{r Ciudades: procesando data , include=FALSE}
-# Ciudades: Calculamos algunas medias:
+# Creamos el df para SD:
+sd <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= sd, na.rm=T))
+sd2 <- as.data.frame(t(sd)) %>% 
+  dplyr::rename(SD="V1")
+sd2[,1] <- round(sd2[,1],2)
 
-# Ingreso medio por ciudad: para toda la población
-# Años de escolaridad media por ciudad:
-EducacionCiudades_2017 <- DataAnio_2017 %>% 
-  dplyr::filter(.,is.na(AniosEscolaridad)==FALSE) %>%
-  group_by(AREA) %>% 
-  dplyr::summarise(
-    Sum_WiXi_Educacion = round(sum(AniosEscolaridad*fex_c_2011,na.rm = TRUE),0),
-    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
-    EducacionMedia = round(Sum_WiXi_Educacion/Sum_Wi,0),
-  ) %>% 
-  dplyr::select(.,c("AREA","EducacionMedia"))
+# Creamos el DF con los puntos anteriores
+# Eliminamos decimales
+descriptivos <- as.data.frame(cbind(min2,Q25_2,Median2,Q75_2,max2,Mean_2,sd2))
+descriptivos[,1:2] <- round(descriptivos[,1:2],2)
 
-IngresoCiudades_2017 <- DataAnio_2017 %>% 
-  dplyr::filter(.,is.na(IngresoLaboral_Mes)==FALSE) %>%
-  group_by(AREA) %>% 
-  dplyr::summarise(
-    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
-    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
-    IngresoMedio = round(Sum_WiXi_Ingreso/Sum_Wi,0),
-  ) %>% 
-  dplyr::select(.,c("AREA","IngresoMedio"))
-
-# Ingreso medio por ciudad: Solo para autoempleados
-IngAutoempleados_Ciudades_2017 <- DataAnio_2017 %>% 
-  dplyr::filter(.,Autoempleado==1 & is.na(IngresoLaboral_Mes)==FALSE) %>% 
-  group_by(AREA) %>% 
-  dplyr::summarise(
-    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
-    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
-    IngresoAutoempleados = round(Sum_WiXi_Ingreso/Sum_Wi,0),
-  ) %>% 
-  dplyr::select(.,c("AREA","IngresoAutoempleados"))
-
-# Ingreso medio por ciudad: Solo para Generadores
-IngGeneradores_Ciudades_2017 <- DataAnio_2017 %>% 
-  dplyr::filter(.,GeneradorEmpleo==1 & is.na(IngresoLaboral_Mes)==FALSE) %>% 
-  group_by(AREA) %>% 
-  dplyr::summarise(
-    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
-    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
-    IngresoGeneradores = round(Sum_WiXi_Ingreso/Sum_Wi,0),
-  ) %>% 
-  dplyr::select(.,c("AREA","IngresoGeneradores"))
-
-# Join para tener data por ciudad:
-Ciudades_2017 <- join_all(list(EducacionCiudades_2017,IngresoCiudades_2017,IngAutoempleados_Ciudades_2017,IngGeneradores_Ciudades_2017), by=c("AREA"),type = "full")
-
-```
-
-```{r Ciudades: Creando DF, echo=FALSE}
-library(knitr)
+# Creamos la tabla:
 knitr::kable(
-  Ciudades_2017,
-  caption = "Ciudades"
+  descriptivos,
+  caption = "Resumen estadístico Año 2017"
 )
 ```
-
-
-
-
-
-
