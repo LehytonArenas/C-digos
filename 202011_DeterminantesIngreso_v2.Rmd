@@ -9,60 +9,61 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Año 2017: Estadísticos descriptivos
-
-```{r Inicial: Librerías y Data, include=FALSE}
+```{r Inicial: Librerías y Datas, include=FALSE}
 # Librerías a usar:
 library(tidyverse)
 library(plyr); library(dplyr)
 library(writexl) 
 library(readxl)
 DataAnio_2017 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
+DataAnio_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2018_v3.xlsx")
+DataAnio_2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019_v3.xlsx")
 ```
 
-A continuación se exponen los principales descriptivos para el año 2017: 
-
-```{r Descriptivos: Cuartiles, echo=FALSE}
-DataAnio_2017_v2 <- DataAnio_2017 %>% 
+## Resumen de estadísticos descriptivos
+```{r Función para Descriptivos, include=FALSE}
+# Creamos la función para crear el DF de descriptivos:
+Fun_Descriptivos <- function(Data){
+  Data_v2 <- Data %>% 
   select(.,-c("ID","AREA","Anio_Mes","fex_c_2011"))
 
 # Creamos el df para Min:
-min <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= min, na.rm=T))
+min <- as.data.frame(lapply(X= Data_v2, FUN= min, na.rm=T))
 min2 <- as.data.frame(t(min)) %>% 
   dplyr::rename(Min="V1")
 
 # Creamos el df para Q25:
-Q25 <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= quantile, probs = c(.25), na.rm=T))
+Q25 <- as.data.frame(lapply(X= Data_v2, FUN= quantile, probs = c(.25), na.rm=T))
 Q25_2 <- as.data.frame(t(Q25)) %>% 
   dplyr::rename(Q25="25%")
 Q25_2[,1] <- round(Q25_2[,1],2)
 
 # Creamos el df para la mediana:
-Median <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= median, na.rm=T))
+Median <- as.data.frame(lapply(X= Data_v2, FUN= median, na.rm=T))
 Median2 <- as.data.frame(t(Median)) %>% 
   dplyr::rename(Median="V1")
 Median2[,1] <- round(Median2[,1],2)
 
 # Creamos el df para Q75:
-Q75 <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= quantile, probs = c(.75), na.rm=T))
+Q75 <- as.data.frame(lapply(X= Data_v2, FUN= quantile, probs = c(.75), na.rm=T))
 Q75_2 <- as.data.frame(t(Q75)) %>% 
   dplyr::rename(Q75="75%")
 Q75_2[,1] <- round(Q75_2[,1],2)
 
 # Creamos el df para Max:
-max <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= max, na.rm=T))
+max <- as.data.frame(lapply(X= Data_v2, FUN= max, na.rm=T))
 max2 <- as.data.frame(t(max)) %>% 
   dplyr::rename(Max="V1")
 max2[,1] <- round(max2[,1],2)
 
 # Creamos el df para Mean:
-Mean <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= mean, na.rm=T))
+Mean <- as.data.frame(lapply(X= Data_v2, FUN= mean, na.rm=T))
 Mean_2 <- as.data.frame(t(Mean)) %>% 
   dplyr::rename(Mean="V1")
 Mean_2[,1] <- round(Mean_2[,1],2)
 
 # Creamos el df para SD:
-sd <- as.data.frame(lapply(X= DataAnio_2017_v2, FUN= sd, na.rm=T))
+sd <- as.data.frame(lapply(X= Data_v2, FUN= sd, na.rm=T))
 sd2 <- as.data.frame(t(sd)) %>% 
   dplyr::rename(SD="V1")
 sd2[,1] <- round(sd2[,1],2)
@@ -71,10 +72,160 @@ sd2[,1] <- round(sd2[,1],2)
 # Eliminamos decimales
 descriptivos <- as.data.frame(cbind(min2,Q25_2,Median2,Q75_2,max2,Mean_2,sd2))
 descriptivos[,1:2] <- round(descriptivos[,1:2],2)
+return(descriptivos)
+}
 
-# Creamos la tabla:
+# Aplicamos la funcion a la data de los años correspondientes:
+Descriptivos_2017 <- Fun_Descriptivos(Data=DataAnio_2017)
+Descriptivos_2018 <- Fun_Descriptivos(Data=DataAnio_2018)
+Descriptivos_2019 <- Fun_Descriptivos(Data=DataAnio_2019)
+```
+En las siguientes tres tablas se encuentran los resúmenes estadísticos para los datos en cada uno de los años aquí contemplados: 2017, 2018 y 2019. Por lo tanto, cada tabla contiene en las columnas los estadísticos de: valor mínimo, cuantil al 25%, mediana, cuantil al 75%, valor máximo, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continúo. Tal y como se puede evidenciar a continuación.
+
+```{r Tabla Descriptivos 2017, echo=FALSE}
+
 knitr::kable(
-  descriptivos,
+  Descriptivos_2017,
   caption = "Resumen estadístico Año 2017"
 )
 ```
+
+```{r Tabla Descriptivos 2018, echo=FALSE}
+
+knitr::kable(
+  Descriptivos_2018,
+  caption = "Resumen estadístico Año 2018"
+)
+```
+
+```{r Tabla Descriptivos 2019, echo=FALSE}
+
+knitr::kable(
+  Descriptivos_2019,
+  caption = "Resumen estadístico Año 2019"
+)
+```
+## Estadísticas por ciudad
+La data recopilada se ha agrupado por ciudad y se han encontrado algunos resultados que vale la pena exponer. En primer lugar, en términos de educación no hay diferencias significativas ni entre ciudades ni entre años contemplados, pues el promedio de años de educación es de 8-9 años en todas las ciudades y en todos los años aquí expuestos. En segundo lugar, en términos de ingresos, sí se evidencia disparidades entre las ciudades, pues algunas ciudades exponen ingresos medios superiores al millón de pesos (año 2017), mientras que otras se encuentran por debajo de dicho nivel para el mismo año. Algo similar se presenta en los años 2018 y 2019. Finalmente, es interesante observar como el ingreso medio de la población denominada Autoempleada es sustancialmente inferior a los ingresos medios de la ciudad; mientras que la población denominada Generadores de empleo exponen ingresos medios sustancialmente superiores.
+```{r Función para Estadísticas por Ciudad, include=FALSE}
+# Creamos la función para crear el DF de estadísticas por ciudad:
+Fun_Ciudad <- function(Data) {
+ 
+# Años de escolaridad media por ciudad:
+EducacionCiudades <- Data %>% 
+  dplyr::filter(.,is.na(AniosEscolaridad)==FALSE) %>%
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Educacion = round(sum(AniosEscolaridad*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    EducacionMedia = round(Sum_WiXi_Educacion/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","EducacionMedia"))
+
+ # Ingreso medio por ciudad: para toda la población
+IngresoCiudades <- Data %>% 
+  dplyr::filter(.,is.na(IngresoLaboral_Mes)==FALSE) %>%
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    IngresoMedio = round(Sum_WiXi_Ingreso/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","IngresoMedio"))
+
+# Ingreso medio por ciudad: Solo para autoempleados
+IngAutoempleados_Ciudades <- Data %>% 
+  dplyr::filter(.,Autoempleado==1 & is.na(IngresoLaboral_Mes)==FALSE) %>% 
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    IngresoAutoempleados = round(Sum_WiXi_Ingreso/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","IngresoAutoempleados"))
+
+# Ingreso medio por ciudad: Solo para Generadores
+IngGeneradores_Ciudades <- Data %>% 
+  dplyr::filter(.,GeneradorEmpleo==1 & is.na(IngresoLaboral_Mes)==FALSE) %>% 
+  group_by(AREA) %>% 
+  dplyr::summarise(
+    Sum_WiXi_Ingreso = round(sum(IngresoLaboral_Mes*fex_c_2011,na.rm = TRUE),0),
+    Sum_Wi = round(sum(fex_c_2011,na.rm = TRUE),0),
+    IngresoGeneradores = round(Sum_WiXi_Ingreso/Sum_Wi,0),
+  ) %>% 
+  dplyr::select(.,c("AREA","IngresoGeneradores"))
+
+# Join para tener data por ciudad:
+Ciudades <- join_all(list(EducacionCiudades,IngresoCiudades,
+                               IngAutoempleados_Ciudades,
+                               IngGeneradores_Ciudades), 
+                          by=c("AREA"),type = "full")
+return(Ciudades)
+}
+
+# Aplicamos la funcion a la data de los años correspondientes:
+Ciudad_2017 <- Fun_Ciudad(Data=DataAnio_2017)
+Ciudad_2018 <- Fun_Ciudad(Data=DataAnio_2018)
+Ciudad_2019 <- Fun_Ciudad(Data=DataAnio_2019)
+```
+```{r Tabla Ciudad 2017, echo=FALSE}
+
+knitr::kable(
+  Ciudad_2017,
+  caption = "Estadísticas Ciudad Año 2017"
+)
+```
+
+```{r Tabla Ciudad 2018, echo=FALSE}
+
+knitr::kable(
+  Ciudad_2018,
+  caption = "Estadísticas Ciudad Año 2018"
+)
+```
+
+```{r Tabla Ciudad 2019, echo=FALSE}
+
+knitr::kable(
+  Ciudad_2019,
+  caption = "Estadísticas Ciudad Año 2019"
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
