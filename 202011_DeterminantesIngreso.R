@@ -705,9 +705,10 @@ str(DataAnio_2019_v3)
 summary(DataAnio_2019_v3)
 write_xlsx(DataAnio_2019_v3, "DataAnio_2019_v3.xlsx")
 
+
+
 ##### Pruebas#####
-prueba <- DataAnio_2019_v3 %>% 
-  dplyr::filter(.,ID=="498168112")
+prueba <- DataAnio_2017[,3:4]
   
 
 
