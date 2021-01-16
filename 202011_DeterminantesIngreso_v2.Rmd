@@ -105,6 +105,19 @@ knitr::kable(
   caption = "Resumen estadístico Año 2019"
 )
 ```
+Al ver estos estadísticos es curioso ver los valores negativos en la Experiencia potencial. Entonces procedemos a filtrar aquellos valores negativos, y luego miaremos cuantos de éstos son mayores de edad:
+```{r ExperPotecial<0, include=FALSE}
+# Veamos el total de los negativos:
+ExpPotencial_2017 <- DataAnio_2017 %>% select(.,c("ID","Edad","AniosEscolaridad","ExperienciaPotencial")) %>% filter(ExperienciaPotencial<0)
+ExpPotencial_2018 <- DataAnio_2018 %>% select(.,c("ID","Edad","AniosEscolaridad","ExperienciaPotencial")) %>% filter(ExperienciaPotencial<0)
+ExpPotencial_2019 <- DataAnio_2019 %>% select(.,c("ID","Edad","AniosEscolaridad","ExperienciaPotencial")) %>% filter(ExperienciaPotencial<0)
+
+# Veamos los que son mayores
+Mayores_2017 <- ExpPotencial_2017 %>%  filter(Edad>=18)
+Mayores_2018 <- ExpPotencial_2018 %>%  filter(Edad>=18)
+Mayores_2019 <- ExpPotencial_2019 %>%  filter(Edad>=18)
+```
+
 ## Estadísticas por ciudad
 La data recopilada se ha agrupado por ciudad y se han encontrado algunos resultados que vale la pena exponer. En primer lugar, en términos de educación no hay diferencias significativas ni entre ciudades ni entre años contemplados, pues el promedio de años de educación es de 8-9 años en todas las ciudades y en todos los años aquí expuestos. En segundo lugar, en términos de ingresos, sí se evidencia disparidades entre las ciudades, pues algunas ciudades exponen ingresos medios superiores al millón de pesos (año 2017), mientras que otras se encuentran por debajo de dicho nivel para el mismo año. Algo similar se presenta en los años 2018 y 2019. Finalmente, es interesante observar como el ingreso medio de la población denominada Autoempleada es sustancialmente inferior a los ingresos medios de la ciudad; mientras que la población denominada Generadores de empleo exponen ingresos medios sustancialmente superiores.
 ```{r Función para Estadísticas por Ciudad, include=FALSE}
