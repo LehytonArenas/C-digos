@@ -6,42 +6,31 @@ output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(root.dir="/Volumes/Respaldo/C-digos")
-```
-
-```{r Inicial: Librerías y Datas, eval=FALSE}
-# Librerías y data a usar:
-library(tidyverse)
-library(plyr); library(dplyr)
-library(writexl) 
-library(readxl)
-library(survey)
-library(jtools)
-library(memisc)
-library(stargazer)
-
-DataAnio_2017 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
-DataAnio_2018 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2018_v3.xlsx")
-DataAnio_2019 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019_v3.xlsx")
-
-# Evitemos la notación científica:
-options(scipen=999)
-
-# Debido a que se decidió tabajar con la población mayor de edad. 
-# Procedemos a filtrar y eliminar.
-Adultos_2017 <- DataAnio_2017 %>% 
-  filter(Edad>=18)
-Adultos_2018 <- DataAnio_2018 %>% 
-  filter(Edad>=18)
-Adultos_2019 <- DataAnio_2019 %>% 
-  filter(Edad>=18)
-
-rm(DataAnio_2017,DataAnio_2018,DataAnio_2019)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Resumen de estadísticos descriptivos
+En la siguiente tabla se encuentra el resúmen estadístico para el año 2017. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
 ```{r Descriptivos con Survey Package, echo=FALSE}
-# Primero debemos dividir el Fex en 12:
+# Evitemos la notación científica:
+options(scipen=999)
+
+# Librerias
+library(readxl)
+library(tidyverse)
+library(plyr); library(dplyr)
+library(survey)
+library(jtools)
+library(stargazer)
+
+# Data 2017
+DataAnio_2017 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
+
+# Adultos
+Adultos_2017 <- DataAnio_2017 %>% 
+  filter(Edad>=18)
+
+# dividimos el Fex en 12:
 Adultos_2017 <- Adultos_2017 %>% 
   mutate(FExp=fex_c_2011/12) %>% 
   select(.,-c(fex_c_2011))
@@ -95,17 +84,16 @@ rm(Q_Sexo,Q_Edad,Q_NivelEducativo)
 Descriptivos_2017 <- cbind(Q_2017,Means_2017,SD_2017)
 rm(Q_2017,Means_2017,SD_2017)
 
-Tabla <- knitr::kable(
+knitr::kable(
   Descriptivos_2017,
   caption = "Resumen estadístico Año 2017"
 )
 ```
-En la siguiente tabla se encuentra el resúmen estadístico para el año 2017. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
 
 ## Estadísticas por ciudad
 La data recopilada se ha agrupado por ciudad y se han encontrado algunos resultados que vale la pena exponer. Es interesante observar como el ingreso medio de la población denominada Autoempleada es sustancialmente inferior a los ingresos medios de la ciudad; mientras que la población denominada Generadores de empleo exponen ingresos medios sustancialmente superiores.
-```{r Estadísticas por Ciudad con Survey, eval=FALSE}
-# Se puede mejorar con los subgrupos explicados en el Seminario(Justo antes de modelos)
+```{r Estadísticas por Ciudad con Survey, echo=FALSE}
+# Se puede mejorar con los subgrupos explicados en el Seminario (Justo antes de modelos)
 # Solo se hace para Medellin en 2017.
 # En caso de mas se puede crear una función.
 
@@ -158,19 +146,17 @@ Medellin_Means <- data.frame(t(rbind(Medellin_MeanEduca,
                 "Ingreso de Autoempleadores"="IngresoLaboral_Mes1",
                 "Ingreso de Generadores"="IngresoLaboral_Mes2")
 
-Medellin_Means
 rm(Medellin_2017,MedellinSvy_2017,MedellinAutoem_2017,MedellinAutoSvy_2017,
    MedellinGener_2017,MedellinGenerSvy_2017,Medellin_MeanEduca,
    Medellin_MeanIngreso,Medellin_MeanIngAuto,Medellin_MeanIngGener)
-```
 
-```{r Tabla Ciudad 2017, eval=FALSE}
-
+# Creamos la tabla.
 knitr::kable(
   Medellin_Means,
   caption = "Estadísticas Ciudad Año 2017"
 )
 ```
+
 ## Modelos
 
 Recordemos que el modelo se desarrollará en tres etapas:
@@ -180,8 +166,8 @@ Esta etapa busca encontrar la probabilidad de que un individuo sea Generador de 
 Variable dependiente: Se usarán las varibles dicotomicas de Generador de empleo y Autoempleado, respectivamente.
 variables independientes: Se emplearán aquí las características socioeconómicas. Especificamente se usarán las variables de Ciudad impuestos, Ciudad apoyo al emprendimiento, Ciudad exportación de tecnologías.
 Controles: Se emplearán aquí las características institucionales (o individules?). Estas son: Sexo, Edad, Posesión de TICs, Carga económica, Ciudad: PIB PC, y, Ciudad: Desempleo
-```{r Etapa 1, eval=FALSE}
-# Hagamos para 2017:
+```{r Etapa 1 Modelos Probit, echo=FALSE}
+# Para 2017:
 # Usamos la data original, ya dividido fex en 12.
 # Primero debemos seleccionar las variables de interés en DF original:
 # Dependiente: Autoempleado, GeneradorEmpleo
@@ -234,8 +220,17 @@ stargazer(Et1AutoemLog_2017_v1,
           type = "latex",
           style="demography")
 
-# Prueba del modelo 2spls: intentarlo con el DF original.
-# tspls <- function(formula1, formula2, data) {
+
+
+```
+
+Etapa 2: Aquí se estimará el ingreso del individuo empresario
+Variable dependiente: Ingreso del individuo empresario.
+Variables independientes: La probabilidad estimada en la etapa1, el sector económico, nivel educativo, experiencia potencial.
+Controles: Se usarán aquí características institucionales. Es decir variables asociadas con el capital financiero, Ciudad:tamaño(población), Ciudad: tasa de delicuencia.
+```{r Etapas 1y2 Simultaneas, echo=FALSE}
+# Traemos la función.
+tspls <- function(formula1, formula2, data) {
     # The Continous model
     mf1 <- model.frame(formula1, data)
     y1 <- model.response(mf1)
@@ -316,18 +311,22 @@ stargazer(Et1AutoemLog_2017_v1,
     print(ans2)
 }
 
-# La aplicación no sirve porque la data no está en DF
+# Formula original:
+#tspls(continua~variable1+variable2,
+ #    dicotomica~variable3+variable44,
+  #  data = AdutosSvy_2017)
+
+# Creamos data de prueba1:
+tspls_Prueba1 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","Autoempleado",
+                  "AutonomiaFiscal_2018_base2017")) %>% 
+  drop_na(.)
+
+# Aplicamos el modelo:
 tspls(IngresoLaboral_Mes~AniosEscolaridad,
      Autoempleado~AutonomiaFiscal_2018_base2017,
-    data = AdutosSvy_2017)
-
+    data = tspls_Prueba1)
 ```
-
-Etapa 2: Aquí se estimará el ingreso del individuo empresario
-Variable dependiente: Ingreso del individuo empresario.
-Variables independientes: La probabilidad estimada en la etapa1, el sector económico, nivel educativo, experiencia potencial.
-Controles: Se usarán aquí características institucionales. Es decir variables asociadas con el capital financiero, Ciudad:tamaño(población), Ciudad: tasa de delicuencia.
-
 Etapa 3: Aquí se estimará el ingreso del hogar del empresario.
 Variable dependiente: Ingreso del hogar del individuo empresario.
 Variable independiente: Se usará el ingreso del individuo empresario estimado en la etapa 1.
