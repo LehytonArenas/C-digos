@@ -6,10 +6,10 @@ output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(root.dir="/Volumes/Respaldo/C-digos")
 ```
 
-```{r Inicial: Librerías y Datas, include=FALSE}
+```{r Inicial: Librerías y Datas, eval=FALSE}
 # Librerías y data a usar:
 library(tidyverse)
 library(plyr); library(dplyr)
@@ -17,10 +17,12 @@ library(writexl)
 library(readxl)
 library(survey)
 library(jtools)
+library(memisc)
+library(stargazer)
 
-DataAnio_2017 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
-DataAnio_2018 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2018_v3.xlsx")
-DataAnio_2019 <- read_excel("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019_v3.xlsx")
+DataAnio_2017 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
+DataAnio_2018 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2018_v3.xlsx")
+DataAnio_2019 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019_v3.xlsx")
 
 # Evitemos la notación científica:
 options(scipen=999)
@@ -38,8 +40,7 @@ rm(DataAnio_2017,DataAnio_2018,DataAnio_2019)
 ```
 
 ## Resumen de estadísticos descriptivos
-```{r Descriptivos con Survey Package, include=FALSE}
-
+```{r Descriptivos con Survey Package, echo=FALSE}
 # Primero debemos dividir el Fex en 12:
 Adultos_2017 <- Adultos_2017 %>% 
   mutate(FExp=fex_c_2011/12) %>% 
@@ -93,20 +94,18 @@ rm(Q_Sexo,Q_Edad,Q_NivelEducativo)
 # Se apila todo en un solo DF y se eliminan los anteriores pasos
 Descriptivos_2017 <- cbind(Q_2017,Means_2017,SD_2017)
 rm(Q_2017,Means_2017,SD_2017)
-```
-En la siguiente tabla se encuentra el resúmen estadístico para el año 2017. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
 
-```{r Tabla Descriptivos 2017, echo=FALSE}
-
-knitr::kable(
+Tabla <- knitr::kable(
   Descriptivos_2017,
   caption = "Resumen estadístico Año 2017"
 )
 ```
+En la siguiente tabla se encuentra el resúmen estadístico para el año 2017. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
 
 ## Estadísticas por ciudad
 La data recopilada se ha agrupado por ciudad y se han encontrado algunos resultados que vale la pena exponer. Es interesante observar como el ingreso medio de la población denominada Autoempleada es sustancialmente inferior a los ingresos medios de la ciudad; mientras que la población denominada Generadores de empleo exponen ingresos medios sustancialmente superiores.
-```{r Estadísticas por Ciudad con Survey, include=FALSE}
+```{r Estadísticas por Ciudad con Survey, eval=FALSE}
+# Se puede mejorar con los subgrupos explicados en el Seminario(Justo antes de modelos)
 # Solo se hace para Medellin en 2017.
 # En caso de mas se puede crear una función.
 
@@ -165,16 +164,174 @@ rm(Medellin_2017,MedellinSvy_2017,MedellinAutoem_2017,MedellinAutoSvy_2017,
    Medellin_MeanIngreso,Medellin_MeanIngAuto,Medellin_MeanIngGener)
 ```
 
-```{r Tabla Ciudad 2017, echo=FALSE}
+```{r Tabla Ciudad 2017, eval=FALSE}
 
 knitr::kable(
   Medellin_Means,
   caption = "Estadísticas Ciudad Año 2017"
 )
 ```
+## Modelos
 
+Recordemos que el modelo se desarrollará en tres etapas:
 
+Etapa 1: 
+Esta etapa busca encontrar la probabilidad de que un individuo sea Generador de empleo o Autoempleado. Por lo cual se harán dos estimaciones.
+Variable dependiente: Se usarán las varibles dicotomicas de Generador de empleo y Autoempleado, respectivamente.
+variables independientes: Se emplearán aquí las características socioeconómicas. Especificamente se usarán las variables de Ciudad impuestos, Ciudad apoyo al emprendimiento, Ciudad exportación de tecnologías.
+Controles: Se emplearán aquí las características institucionales (o individules?). Estas son: Sexo, Edad, Posesión de TICs, Carga económica, Ciudad: PIB PC, y, Ciudad: Desempleo
+```{r Etapa 1, eval=FALSE}
+# Hagamos para 2017:
+# Usamos la data original, ya dividido fex en 12.
+# Primero debemos seleccionar las variables de interés en DF original:
+# Dependiente: Autoempleado, GeneradorEmpleo
+# Independientes: Ciudad Impuestos (AutonomiaFiscal_2018_base2017,CapacidadRecaudo_2018_base2017), Ciudad Apoyo al emprendimiento (FacilidadEmpresa_2018,ImpuestosEmpresa_2018), Ciudad exportación tecnologías (ComplejidadProductiva_2018, DiversifCanasta_2018_base2018).
+# Controles: Sexo, Edad, Posesión TICS(PosesionComputador,PosesionInternet), CargaEconomica, Ciudad PIB PC(PIB_PC2017_Dane), Ciudad Desempleo(Desempleo_2018,Desempleo_2017_Dane)
 
+# Primero miremos algunos modelos para los autoempleados (Logit):
+# Incluyendo solo variables de Impuestos
+Et1AutoemLog_2017_v1 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
+                         CapacidadRecaudo_2018_base2017,
+                       family=quasibinomial, design=AdutosSvy_2017, 
+                       na.action = na.omit)
+summary(Et1AutoemLog_2017_v1)
+
+# Ahora incluyamos todos los controles:
+Et1AutoemLog_2017_v2 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
+                         CapacidadRecaudo_2018_base2017+Sexo+Edad+PosesionComputador+
+                           PosesionInternet+CargaEconomica+PIB_PC2017_Dane+
+                           Desempleo_2018+Desempleo_2017_Dane,
+                       family=quasibinomial, design=AdutosSvy_2017, 
+                       na.action = na.omit)
+summary(Et1AutoemLog_2017_v2)
+
+# Incuyendo variables de impuestos y de apoyo al emprendimiento:
+Et1AutoemLog_2017_v3 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
+                      CapacidadRecaudo_2018_base2017+FacilidadEmpresa_2018+
+                        ImpuestosEmpresa_2018+
+                           Sexo+Edad+PosesionComputador+
+                           PosesionInternet+CargaEconomica+PIB_PC2017_Dane+
+                           Desempleo_2018+Desempleo_2017_Dane,
+                       family=quasibinomial, design=AdutosSvy_2017, 
+                       na.action = na.omit)
+summary(Et1AutoemLog_2017_v3)
+
+# Incuyendo variables de impuestos, apoyo al emprendimiento y exportación tecnologías
+Et1AutoemLog_2017_v4 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
+                      CapacidadRecaudo_2018_base2017+
+                        FacilidadEmpresa_2018+ImpuestosEmpresa_2018+
+                        ComplejidadProductiva_2018+DiversifCanasta_2018_base2018+
+                           Sexo+Edad+PosesionComputador+
+                           PosesionInternet+CargaEconomica+PIB_PC2017_Dane+
+                           Desempleo_2018+Desempleo_2017_Dane,
+                       family=quasibinomial, design=AdutosSvy_2017, 
+                       na.action = na.omit)
+summary(Et1AutoemLog_2017_v4)
+
+# Creamos una tabla:
+stargazer(Et1AutoemLog_2017_v1,
+          Et1AutoemLog_2017_v2,
+          type = "latex",
+          style="demography")
+
+# Prueba del modelo 2spls: intentarlo con el DF original.
+# tspls <- function(formula1, formula2, data) {
+    # The Continous model
+    mf1 <- model.frame(formula1, data)
+    y1 <- model.response(mf1)
+    x1 <- model.matrix(attr(mf1, "terms"), mf1)
+
+    # The dicontionous model
+    mf2 <- model.frame(formula2, data)
+    y2 <- model.response(mf2)
+    x2 <- model.matrix(attr(mf2, "terms"), mf2)
+
+    # The matrix of all the exogenous variables
+    X <- cbind(x1, x2)
+    X <- X[, unique(colnames(X))]
+
+    J1 <- matrix(0, nrow = ncol(X), ncol = ncol(x1))
+    J2 <- matrix(0, nrow = ncol(X), ncol = ncol(x2))
+    for (i in 1:ncol(x1)) J1[match(colnames(x1)[i], colnames(X)), i] <- 1
+    for (i in 1:ncol(x2)) J2[match(colnames(x2)[i], colnames(X)), i] <- 1
+
+    # Step 1:
+    cat("\n\tNOW THE FIRST STAGE REGRESSION")
+    m1 <- lm(y1 ~ X - 1)
+    m2 <- glm(y2 ~ X - 1, family = binomial(link = "probit"))
+    print(summary(m1))
+    print(summary(m2))
+
+    yhat1 <- m1$fitted.values
+    yhat2 <- X %*% coef(m2)
+
+    PI1 <- m1$coefficients
+    PI2 <- m2$coefficients
+    V0 <- vcov(m2)
+    sigma1sq <- sum(m1$residuals ^ 2) / m1$df.residual
+    sigma12 <- 1 / length(y2) * sum(y2 * m1$residuals / dnorm(yhat2))
+
+    # Step 2:
+    cat("\n\tNOW THE SECOND STAGE REGRESSION WITH INSTRUMENTS")
+
+    m1 <- lm(y1 ~ yhat2 + x1 - 1)
+    m2 <- glm(y2 ~ yhat1 + x2 - 1, family = binomial(link = "probit"))
+    sm1 <- summary(m1)
+    sm2 <- summary(m2)
+    print(sm1)
+    print(sm2)
+
+    # Step  3:
+    cat("\tNOW THE SECOND STAGE REGRESSION WITH CORRECTED STANDARD ERRORS\n\n")
+    gamma1 <- m1$coefficients[1]
+    gamma2 <- m2$coefficients[1]
+
+    cc <- sigma1sq - 2 * gamma1 * sigma12
+    dd <- gamma2 ^ 2 * sigma1sq - 2 * gamma2 * sigma12
+    H <- cbind(PI2, J1)
+    G <- cbind(PI1, J2)
+
+    XX <- crossprod(X)                          # X'X
+    HXXH <- solve(t(H) %*% XX %*% H)            # (H'X'XH)^(-1)
+    HXXVXXH <- t(H) %*% XX %*% V0 %*% XX %*% H  # H'X'V0X'XH
+    Valpha1 <- cc * HXXH + gamma1 ^ 2 * HXXH %*% HXXVXXH %*% HXXH
+
+    GV <- t(G) %*% solve(V0)    # G'V0^(-1)
+    GVG <- solve(GV %*% G)      # (G'V0^(-1)G)^(-1)
+    Valpha2 <- GVG + dd * GVG %*% GV %*% solve(XX) %*% solve(V0) %*% G %*% GVG
+
+    ans1 <- coef(sm1)
+    ans2 <- coef(sm2)
+
+    ans1[,2] <- sqrt(diag(Valpha1))
+    ans2[,2] <- sqrt(diag(Valpha2))
+    ans1[,3] <- ans1[,1] / ans1[,2]
+    ans2[,3] <- ans2[,1] / ans2[,2]
+    ans1[,4] <- 2 * pt(abs(ans1[,3]), m1$df.residual, lower.tail = FALSE)
+    ans2[,4] <- 2 * pnorm(abs(ans2[,3]), lower.tail = FALSE)
+
+    cat("Continuous:\n")
+    print(ans1)
+    cat("Dichotomous:\n")
+    print(ans2)
+}
+
+# La aplicación no sirve porque la data no está en DF
+tspls(IngresoLaboral_Mes~AniosEscolaridad,
+     Autoempleado~AutonomiaFiscal_2018_base2017,
+    data = AdutosSvy_2017)
+
+```
+
+Etapa 2: Aquí se estimará el ingreso del individuo empresario
+Variable dependiente: Ingreso del individuo empresario.
+Variables independientes: La probabilidad estimada en la etapa1, el sector económico, nivel educativo, experiencia potencial.
+Controles: Se usarán aquí características institucionales. Es decir variables asociadas con el capital financiero, Ciudad:tamaño(población), Ciudad: tasa de delicuencia.
+
+Etapa 3: Aquí se estimará el ingreso del hogar del empresario.
+Variable dependiente: Ingreso del hogar del individuo empresario.
+Variable independiente: Se usará el ingreso del individuo empresario estimado en la etapa 1.
+Controles: Se usarán controles por familias. Específicamente variables de Parentesco con Jefe de hogar, Estado Civil, Situación laboral, Transferencias o subsidios, posesión de viviendda, # de niños menores a 14 años, # Personas en el hogar, y educación de los padres.
 
 
 
