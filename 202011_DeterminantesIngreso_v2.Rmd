@@ -166,63 +166,6 @@ Esta etapa busca encontrar la probabilidad de que un individuo sea Generador de 
 Variable dependiente: Se usarán las varibles dicotomicas de Generador de empleo y Autoempleado, respectivamente.
 variables independientes: Se emplearán aquí las características socioeconómicas. Especificamente se usarán las variables de Ciudad impuestos, Ciudad apoyo al emprendimiento, Ciudad exportación de tecnologías.
 Controles: Se emplearán aquí las características institucionales (o individules?). Estas son: Sexo, Edad, Posesión de TICs, Carga económica, Ciudad: PIB PC, y, Ciudad: Desempleo
-```{r Etapa 1 Modelos Probit, echo=FALSE}
-# Para 2017:
-# Usamos la data original, ya dividido fex en 12.
-# Primero debemos seleccionar las variables de interés en DF original:
-# Dependiente: Autoempleado, GeneradorEmpleo
-# Independientes: Ciudad Impuestos (AutonomiaFiscal_2018_base2017,CapacidadRecaudo_2018_base2017), Ciudad Apoyo al emprendimiento (FacilidadEmpresa_2018,ImpuestosEmpresa_2018), Ciudad exportación tecnologías (ComplejidadProductiva_2018, DiversifCanasta_2018_base2018).
-# Controles: Sexo, Edad, Posesión TICS(PosesionComputador,PosesionInternet), CargaEconomica, Ciudad PIB PC(PIB_PC2017_Dane), Ciudad Desempleo(Desempleo_2018,Desempleo_2017_Dane)
-
-# Primero miremos algunos modelos para los autoempleados (Logit):
-# Incluyendo solo variables de Impuestos
-Et1AutoemLog_2017_v1 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
-                         CapacidadRecaudo_2018_base2017,
-                       family=quasibinomial, design=AdutosSvy_2017, 
-                       na.action = na.omit)
-summary(Et1AutoemLog_2017_v1)
-
-# Ahora incluyamos todos los controles:
-Et1AutoemLog_2017_v2 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
-                         CapacidadRecaudo_2018_base2017+Sexo+Edad+PosesionComputador+
-                           PosesionInternet+CargaEconomica+PIB_PC2017_Dane+
-                           Desempleo_2018+Desempleo_2017_Dane,
-                       family=quasibinomial, design=AdutosSvy_2017, 
-                       na.action = na.omit)
-summary(Et1AutoemLog_2017_v2)
-
-# Incuyendo variables de impuestos y de apoyo al emprendimiento:
-Et1AutoemLog_2017_v3 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
-                      CapacidadRecaudo_2018_base2017+FacilidadEmpresa_2018+
-                        ImpuestosEmpresa_2018+
-                           Sexo+Edad+PosesionComputador+
-                           PosesionInternet+CargaEconomica+PIB_PC2017_Dane+
-                           Desempleo_2018+Desempleo_2017_Dane,
-                       family=quasibinomial, design=AdutosSvy_2017, 
-                       na.action = na.omit)
-summary(Et1AutoemLog_2017_v3)
-
-# Incuyendo variables de impuestos, apoyo al emprendimiento y exportación tecnologías
-Et1AutoemLog_2017_v4 <- svyglm(Autoempleado~AutonomiaFiscal_2018_base2017+
-                      CapacidadRecaudo_2018_base2017+
-                        FacilidadEmpresa_2018+ImpuestosEmpresa_2018+
-                        ComplejidadProductiva_2018+DiversifCanasta_2018_base2018+
-                           Sexo+Edad+PosesionComputador+
-                           PosesionInternet+CargaEconomica+PIB_PC2017_Dane+
-                           Desempleo_2018+Desempleo_2017_Dane,
-                       family=quasibinomial, design=AdutosSvy_2017, 
-                       na.action = na.omit)
-summary(Et1AutoemLog_2017_v4)
-
-# Creamos una tabla:
-stargazer(Et1AutoemLog_2017_v1,
-          Et1AutoemLog_2017_v2,
-          type = "latex",
-          style="demography")
-
-
-
-```
 
 Etapa 2: Aquí se estimará el ingreso del individuo empresario
 Variable dependiente: Ingreso del individuo empresario.
@@ -311,12 +254,26 @@ tspls <- function(formula1, formula2, data) {
     print(ans2)
 }
 
+# Para 2017:
+# Creamos la data seleccionando las variables de interés y eliminando na.
+# Variables Etapa 1:
+# Dependiente: Autoempleado, GeneradorEmpleo
+# Independientes: Ciudad Impuestos (AutonomiaFiscal_2018_base2017,CapacidadRecaudo_2018_base2017), Ciudad Apoyo al emprendimiento (FacilidadEmpresa_2018,ImpuestosEmpresa_2018), Ciudad exportación tecnologías (ComplejidadProductiva_2018, DiversifCanasta_2018_base2018).
+# Controles: Sexo, Edad, Posesión TICS(PosesionComputador,PosesionInternet), CargaEconomica, Ciudad PIB PC(PIB_PC2017_Dane), Ciudad Desempleo(Desempleo_2018,Desempleo_2017_Dane)
+
+# Variables Etapa 2:
+# Dependiente: IngresoLaboral_Mes
+# Independientes: Dummies de Sector económico
+# Controles: Educación (NivelEducativo,AniosEscolaridad); ExperienciaPotencial; K Financiero(CapFinanciero_Mes,CapFinanciero_Anio); Ciudad Tamaño (Poblacion_2017_Dane); Ciudad delincuencia (Homicidios_2018_base2018,Hurtos_2018_base2018,Extorsion_2018_base2018,EficJusticia_2018_base2017,ProducJueces_2018_base2017)
+
 # Formula original:
 #tspls(continua~variable1+variable2,
  #    dicotomica~variable3+variable44,
   #  data = AdutosSvy_2017)
 
-# Creamos data de prueba1:
+# Prueba1:
+# Modelo continuo: Ingreso vs anios escolaridad.
+# Modelo discreto: Autoempleado vs Autonomia Fiscal
 tspls_Prueba1 <- Adultos_2017 %>% 
   dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","Autoempleado",
                   "AutonomiaFiscal_2018_base2017")) %>% 
@@ -326,6 +283,169 @@ tspls_Prueba1 <- Adultos_2017 %>%
 tspls(IngresoLaboral_Mes~AniosEscolaridad,
      Autoempleado~AutonomiaFiscal_2018_base2017,
     data = tspls_Prueba1)
+
+# Prueba 2:
+# Modelo continuo: Ingreso vs nivel educativo
+# Modelo discreto: Autoempleado vs Autonomia fiscal
+
+tspls_Prueba2 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "NivelEducativo",
+                  "AutonomiaFiscal_2018_base2017")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~NivelEducativo,
+     Autoempleado~AutonomiaFiscal_2018_base2017,
+    data = tspls_Prueba2)
+
+# Prueba 3:
+tspls_Prueba3 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "AniosEscolaridad",
+                  "NivelEducativo",
+                  "AutonomiaFiscal_2018_base2017")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~AniosEscolaridad+NivelEducativo,
+     Autoempleado~AutonomiaFiscal_2018_base2017,
+    data = tspls_Prueba3)
+
+# Prueba 4:
+#  Incluir Ciudad Apoyo al emprendimiento
+
+tspls_Prueba4 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "AniosEscolaridad",
+                  "AutonomiaFiscal_2018_base2017",
+                  "FacilidadEmpresa_2018")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~AniosEscolaridad,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018,
+    data = tspls_Prueba4)
+
+# Prueba 5:
+#  Incluir Ciudad Apoyo al emprendimiento
+tspls_Prueba5 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "AniosEscolaridad",
+                  "AutonomiaFiscal_2018_base2017",
+                  "ImpuestosEmpresa_2018")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~AniosEscolaridad,
+     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018,
+    data = tspls_Prueba5)
+
+# Prueba 6
+#  Incluir Ciudad Apoyo al emprendimiento
+tspls_Prueba6 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "NivelEducativo",
+                  "AutonomiaFiscal_2018_base2017",
+                  "ImpuestosEmpresa_2018")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~NivelEducativo,
+     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018,
+    data = tspls_Prueba6)
+
+# Prueba 7
+#  Incluir Experiencia Poptencial
+tspls_Prueba7 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "AniosEscolaridad",
+                  "AutonomiaFiscal_2018_base2017",
+                  "FacilidadEmpresa_2018",
+                  "ExperienciaPotencial")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018,
+    data = tspls_Prueba7)
+
+# Prueba 8
+#  Incluir Experiencia Poptencial
+tspls_Prueba8 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "AniosEscolaridad",
+                  "AutonomiaFiscal_2018_base2017",
+                  "ImpuestosEmpresa_2018",
+                  "ExperienciaPotencial")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial,
+     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018,
+    data = tspls_Prueba8)
+
+# Prueba 9
+#  Incluir Experiencia Poptencial
+tspls_Prueba9 <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "NivelEducativo",
+                  "AutonomiaFiscal_2018_base2017",
+                  "ImpuestosEmpresa_2018",
+                  "ExperienciaPotencial")) %>%
+  drop_na(.)
+# Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~NivelEducativo+ExperienciaPotencial,
+     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018,
+    data = tspls_Prueba9)
+
+# Prueba con el for:
+# Definimos los vectores de las vbles independientes
+IV_Educacion <- c("AniosEscolaridad","NivelEducativo")
+IV_Impuestos <- c("AutonomiaFiscal_2018_base2017","CapacidadRecaudo_2018_base2017")
+
+t=0
+for (i in IV_Educacion) {
+  for (j in IV_Impuestos) {
+    tspls_PruebaFor <- Adultos_2017 %>%
+      dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  i,j)) %>%
+      drop_na(.)
+    
+    funp <- as.formula(paste("IngresoLaboral_Mes",i,sep = "~"))
+    funp2 <- as.formula(paste("Autoempleado",j,sep = "~"))
+    try(tspls(funp,
+          funp2,
+          data = tspls_PruebaFor))
+    t=t+1
+    print(c(i,j))
+    }
+}
+print(t)
+
+# Paso1: Filtramos info.
+tspls_PruebaFor <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  "AniosEscolaridad",
+                  "NivelEducativo",
+                  "AutonomiaFiscal_2018_base2017",
+                  "CapacidadRecaudo_2018_base2017")) %>% 
+  drop_na(.)
+
+# Joe:
+tspls_PruebaFor <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes",
+                  "Autoempleado",
+                  i,j)) %>% 
+  drop_na(.)
+# Paso 2: Aplicamos el modelo:
+tspls(IngresoLaboral_Mes~AniosEscolaridad,
+     Autoempleado~AutonomiaFiscal_2018_base2017,
+    data = tspls_Prueba1)
+
 ```
 Etapa 3: Aquí se estimará el ingreso del hogar del empresario.
 Variable dependiente: Ingreso del hogar del individuo empresario.
