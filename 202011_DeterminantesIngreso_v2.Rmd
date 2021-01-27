@@ -191,8 +191,8 @@ Data_Corr_ModDisc2 <- Adultos_2017 %>%
 
 Corr_ModDisc2 <- round(cor(Data_Corr_ModDisc2,use = "pairwise.complete.obs"),3)
 ```
-A continuación algunas pruebas de los modelos simultaneos.
-```{r Etapas 1y2 Simultaneas, echo=FALSE}
+A continuación se realizarán algunas pruebas de los modelos simultaneos para la popblación de Autoempleados:
+```{r Etapas 1y2 Simultaneas Autoempleados, echo=FALSE}
 # Técnica de 2spls:
 tspls <- function(formula1, formula2, data) {
     # The Continous model
@@ -449,10 +449,601 @@ for (i in IV_Educacion) {
 print(t)
 # Total modelos: 16. Modelos con resultados: 0.
 
-# For para: 3 vble en continuo y 3 en discreto: VOY AQUI Hacer For
+# For para: 3 vble en continuo y 3 en discreto
 # Ingreso vs IV_Educacion+IV_KFinanciero+IV_ExpPotencial
 # Autoempleado vs CV_PosesionTics+IV_Emprendimiento+CV_CargaEcon
+t=0
+for (i in IV_Educacion) {
+  for (j in CV_PosesionTics) { 
+    for (z in IV_Emprendimiento) {
+      for (k in IV_KFinanciero) {
+        for (l in IV_ExpPotencial) { 
+           for (m in CV_CargaEcon) {
+             Data_For <- Adultos_2017 %>%
+               dplyr::select(c("IngresoLaboral_Mes","Autoempleado",
+                  i,j,z,k,l,m)) %>%
+               drop_na(.)
+             
+             funp <- as.formula(paste("IngresoLaboral_Mes","~",i,"+",k,"+",l,sep = ""))
+             funp2 <- as.formula(paste("Autoempleado","~",j,"+",z,"+",m,sep = ""))
+             try(tspls(funp,
+                       funp2,
+                       data = Data_For))
+             t=t+1
+             print(c(i,k,l,j,z,m))  
+           }
+        }
+      }
+    }
+    }
+}
+print(t)
+# Total modelos: 16. Modelos con resultados: 0.
+
+# Dado lo hecho hasta ahora intentemos el 2spls completo (sin For):
+# IngresoLaboral_Mes vs AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018
+# Autoempleado vs AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+DiversifCanasta_2018_base2018+Sexo+Edad+PosesionInternet+CargaEconomica+PIB_PC2017_Dane+Desempleo_2018
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","DiversifCanasta_2018_base2018","Sexo","Edad","PosesionInternet","CargaEconomica","PIB_PC2017_Dane","Desempleo_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+
+        Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+DiversifCanasta_2018_base2018+
+       Sexo+Edad+PosesionInternet+CargaEconomica+PIB_PC2017_Dane+Desempleo_2018,
+    data = Data_Prueba)
+# Resultado: Error de singularidad
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018,
+    data = Data_Prueba)
+# Resultado: Prueba 14
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018",
+                  "DiversifCanasta_2018_base2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+DiversifCanasta_2018_base2018,
+    data = Data_Prueba)
+# Resultado: Prueba Error de singularidad
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018",
+                  "ComplejidadProductiva_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+ComplejidadProductiva_2018,
+    data = Data_Prueba)
+# Resultado: Prueba Error de singularidad. PLT: Parece que vbles de exportacion de tecnologías deben quitarse
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo,
+    data = Data_Prueba)
+# Resultado: Prueba 15
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo,
+    data = Data_Prueba)
+# Resultado: Prueba 16
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo","Edad")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+Edad,
+    data = Data_Prueba)
+# Resultado: Error de singularidad. PLT omitir edad.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador,
+    data = Data_Prueba)
+# Resultado: Prueba 17.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet,
+    data = Data_Prueba)
+# Resultado: Prueba 18.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador","CargaEconomica")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador+CargaEconomica,
+    data = Data_Prueba)
+# Resultado: Prueba 19.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet","CargaEconomica")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+CargaEconomica,
+    data = Data_Prueba)
+# Resultado: Prueba 20.
+
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador","CargaEconomica","PIB_PC2017_Dane")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador+
+       CargaEconomica+PIB_PC2017_Dane,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet","CargaEconomica","PIB_PC2017_Dane")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+
+       CargaEconomica+PIB_PC2017_Dane,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad. PLT Omitir PIB.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet","CargaEconomica","Desempleo_2017_Dane")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+
+       CargaEconomica+Desempleo_2017_Dane,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador","CargaEconomica","Desempleo_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador+
+       CargaEconomica+Desempleo_2018,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad. PLT Omitir Desempleo.
 ```
+A continuación se realizarán algunas pruebas de los modelos simultaneos para la popblación de Generadores:
+```{r Etapas 1y2 Simultaneas Generadores, echo=FALSE}
+# Etapa 1: Modelo Continuo
+# Dependiente: IngresoLaboral_Mes
+# Independientes: Dummies de Sector económico
+# Controles: Educación (NivelEducativo,AniosEscolaridad); ExperienciaPotencial; K Financiero(CapFinanciero_Mes,CapFinanciero_Anio); Ciudad Tamaño (Poblacion_2017_Dane); Ciudad delincuencia (Homicidios_2018_base2018,Hurtos_2018_base2018,Extorsion_2018_base2018,EficJusticia_2018_base2017,ProducJueces_2018_base2017)
+
+IV_Educacion <- c("AniosEscolaridad","NivelEducativo")
+IV_ExpPotencial <- c("ExperienciaPotencial")
+IV_KFinanciero <- c("CapFinanciero_Mes","CapFinanciero_Anio")
+IV_CTamanio <- c("Poblacion_2017_Dane")
+IV_CDelincuencia <- c("Homicidios_2018_base2018","Hurtos_2018_base2018","Extorsion_2018_base2018","EficJusticia_2018_base2017","ProducJueces_2018_base2017")
+CV_Sector <- c("Sector_NR","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario","Sector_Domestico")
+
+# Etapa 2: Modelo Discreto
+# Dependiente: GeneradorEmpleo
+# Independientes: Ciudad Impuestos (AutonomiaFiscal_2018_base2017,CapacidadRecaudo_2018_base2017), Ciudad Apoyo al emprendimiento (FacilidadEmpresa_2018,ImpuestosEmpresa_2018), Ciudad exportación tecnologías (ComplejidadProductiva_2018, DiversifCanasta_2018_base2018).
+# Controles: Sexo, Edad, Posesión TICS(PosesionComputador,PosesionInternet), CargaEconomica, Ciudad PIB PC(PIB_PC2017_Dane), Ciudad Desempleo(Desempleo_2018,Desempleo_2017_Dane)
+IV_Impuestos <- c("AutonomiaFiscal_2018_base2017","CapacidadRecaudo_2018_base2017")
+IV_Emprendimiento <- c("FacilidadEmpresa_2018","ImpuestosEmpresa_2018")
+IV_ExpTecnologías <- c("ComplejidadProductiva_2018", "DiversifCanasta_2018_base2018")
+CV_Sexo <- c("Sexo")
+CV_Edad <- c("Edad")
+CV_PosesionTics <- c("PosesionComputador","PosesionInternet")
+CV_CargaEcon <- c("CargaEconomica")
+CV_CPib <- c("PIB_PC2017_Dane")
+CV_CDesempleo <- c("Desempleo_2018","Desempleo_2017_Dane")
+
+# Vectores de variables:
+VblesContinuo <- c("IV_Educacion","IV_ExpPotencial","IV_KFinanciero","IV_CTamanio","IV_CDelincuencia","CV_Sector")
+VblesDiscreto <- c("IV_Impuestos","IV_Emprendimiento","IV_ExpTecnologías","CV_Sexo","CV_Edad","CV_PosesionTics","CV_CargaEcon","CV_CPib","CV_CDesempleo")
+
+# Aplicación de las iteraciones (FOR):
+
+# For para: 1 vble independiente en cada modelo
+# Ingreso vs IV_Educacion 
+# Generador vs IV_Impuestos
+t=0
+for (i in IV_Educacion) {
+  for (j in IV_Impuestos) {
+    Data_For <- Adultos_2017 %>%
+      dplyr::select(c("IngresoLaboral_Mes",
+                  "GeneradorEmpleo",
+                  i,j)) %>%
+      drop_na(.)
+    
+    funp <- as.formula(paste("IngresoLaboral_Mes",i,sep = "~"))
+    funp2 <- as.formula(paste("GeneradorEmpleo",j,sep = "~"))
+    try(tspls(funp,
+          funp2,
+          data = Data_For))
+    t=t+1
+    print(c(i,j))
+    }
+}
+print(t)
+# Total Modelos: 4. Modelos con resultados: 2 
+
+# For para: 1 vble en continuo y 2 en discreto
+# Ingreso vs IV_Educacion
+# GeneradorEmpleo vs V_Impuestos+IV_Emprendimiento
+t=0
+for (i in IV_Educacion) {
+  for (j in IV_Impuestos) {
+    for (z in IV_Emprendimiento) {
+     Data_For <- Adultos_2017 %>%
+      dplyr::select(c("IngresoLaboral_Mes",
+                  "GeneradorEmpleo",
+                  i,j,z)) %>%
+      drop_na(.)
+    
+    funp <- as.formula(paste("IngresoLaboral_Mes",i,sep = "~"))
+    funp2 <- as.formula(paste("GeneradorEmpleo","~",j,"+",z,sep = ""))
+    try(tspls(funp,
+          funp2,
+          data = Data_For))
+    t=t+1
+    print(c(i,j,z)) 
+    }
+    }
+}
+print(t)
+# Total Modelos: 8. Modelos con resultados: 2
+
+# For para: 2 vble en continuo y 2 en discreto
+# Ingreso vs IV_Educacion+IV_ExpPotencial
+# GeneradorEmpleo vs IV_Impuestos+IV_Emprendimiento
+t=0
+for (i in IV_Educacion) {
+  for (j in IV_Impuestos) {
+    for (z in IV_Emprendimiento) {
+      for (k in IV_ExpPotencial) {
+       Data_For <- Adultos_2017 %>%
+      dplyr::select(c("IngresoLaboral_Mes",
+                  "GeneradorEmpleo",
+                  i,j,z,k)) %>%
+      drop_na(.)
+    
+    funp <- as.formula(paste("IngresoLaboral_Mes","~",i,"+",k,sep = ""))
+    funp2 <- as.formula(paste("GeneradorEmpleo","~",j,"+",z,sep = ""))
+    try(tspls(funp,
+          funp2,
+          data = Data_For))
+    t=t+1
+    print(c(i,j,z,k)) 
+      }
+    }
+    }
+}
+print(t)
+# Total Modelos: 8. Modelos con resultados: 1
+
+# For para: 3 vble en continuo y 3 en discreto
+# Ingreso vs IV_Educacion+IV_ExpPotencial+IV_CTamanio
+# GeneradorEmpleo vs IV_Impuestos+IV_Emprendimiento+CV_CDesempleo
+t=0
+for (i in IV_Educacion) {
+  for (j in IV_Impuestos) {
+    for (z in IV_Emprendimiento) {
+      for (k in IV_ExpPotencial) {
+        for (l in IV_CTamanio) {
+           for (m in CV_CDesempleo) {
+             Data_For <- Adultos_2017 %>%
+               dplyr::select(c("IngresoLaboral_Mes","GeneradorEmpleo",
+                  i,j,z,k,l,m)) %>%
+               drop_na(.)
+             
+             funp <- as.formula(paste("IngresoLaboral_Mes","~",i,"+",k,"+",l,sep = ""))
+             funp2 <- as.formula(paste("GeneradorEmpleo","~",j,"+",z,"+",m,sep = ""))
+             try(tspls(funp,
+                       funp2,
+                       data = Data_For))
+             t=t+1
+             print(c(i,k,l,j,z,m))  
+           }
+        }
+      }
+    }
+    }
+}
+print(t)
+# Total Modelos: 16. Modelos con resultados: 1
+
+# For para: 3 vble en continuo y 3 en discreto
+# Ingreso vs IV_Educacion+IV_KFinanciero+IV_CTamanio
+# GeneradorEmpleo vs IV_Impuestos+IV_Emprendimiento+CV_CargaEcon
+t=0
+for (i in IV_Educacion) {
+  for (j in IV_Impuestos) {
+    for (z in IV_Emprendimiento) {
+      for (k in IV_KFinanciero) {
+        for (l in IV_CTamanio) {
+           for (m in CV_CargaEcon) {
+             Data_For <- Adultos_2017 %>%
+               dplyr::select(c("IngresoLaboral_Mes","GeneradorEmpleo",
+                  i,j,z,k,l,m)) %>%
+               drop_na(.)
+             
+             funp <- as.formula(paste("IngresoLaboral_Mes","~",i,"+",k,"+",l,sep = ""))
+             funp2 <- as.formula(paste("GeneradorEmpleo","~",j,"+",z,"+",m,sep = ""))
+             try(tspls(funp,
+                       funp2,
+                       data = Data_For))
+             t=t+1
+             print(c(i,k,l,j,z,m))  
+           }
+        }
+      }
+    }
+    }
+}
+print(t)
+# Total modelos: 16. Modelos con resultados: 0.
+
+# For para: 3 vble en continuo y 3 en discreto
+# Ingreso vs IV_Educacion+IV_KFinanciero+IV_ExpPotencial
+# GeneradorEmpleo vs CV_PosesionTics+IV_Emprendimiento+CV_CargaEcon
+t=0
+for (i in IV_Educacion) {
+  for (j in CV_PosesionTics) { 
+    for (z in IV_Emprendimiento) {
+      for (k in IV_KFinanciero) {
+        for (l in IV_ExpPotencial) { 
+           for (m in CV_CargaEcon) {
+             Data_For <- Adultos_2017 %>%
+               dplyr::select(c("IngresoLaboral_Mes","GeneradorEmpleo",
+                  i,j,z,k,l,m)) %>%
+               drop_na(.)
+             
+             funp <- as.formula(paste("IngresoLaboral_Mes","~",i,"+",k,"+",l,sep = ""))
+             funp2 <- as.formula(paste("GeneradorEmpleo","~",j,"+",z,"+",m,sep = ""))
+             try(tspls(funp,
+                       funp2,
+                       data = Data_For))
+             t=t+1
+             print(c(i,k,l,j,z,m))  
+           }
+        }
+      }
+    }
+    }
+}
+print(t)
+# Total modelos: 16. Modelos con resultados: 0.
+
+# Dado lo hecho hasta ahora intentemos el 2spls completo (sin For):
+# IngresoLaboral_Mes vs AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018
+# GeneradorEmpleo vs AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+DiversifCanasta_2018_base2018+Sexo+Edad+PosesionInternet+CargaEconomica+PIB_PC2017_Dane+Desempleo_2018
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","DiversifCanasta_2018_base2018","Sexo","Edad","PosesionInternet","CargaEconomica","PIB_PC2017_Dane","Desempleo_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+
+        Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+DiversifCanasta_2018_base2018+
+       Sexo+Edad+PosesionInternet+CargaEconomica+PIB_PC2017_Dane+Desempleo_2018,
+    data = Data_Prueba)
+# Resultado: Error de singularidad
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018,
+    data = Data_Prueba)
+# Resultado: Prueba 14
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018",
+                  "DiversifCanasta_2018_base2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+DiversifCanasta_2018_base2018,
+    data = Data_Prueba)
+# Resultado: Prueba Error de singularidad
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018",
+                  "ComplejidadProductiva_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+ComplejidadProductiva_2018,
+    data = Data_Prueba)
+# Resultado: Prueba Error de singularidad. PLT: Parece que vbles de exportacion de tecnologías deben quitarse
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo,
+    data = Data_Prueba)
+# Resultado: Prueba 15
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo,
+    data = Data_Prueba)
+# Resultado: Prueba 16
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo","Edad")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+Edad,
+    data = Data_Prueba)
+# Resultado: Error de singularidad. PLT omitir edad.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador,
+    data = Data_Prueba)
+# Resultado: Prueba 17.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet,
+    data = Data_Prueba)
+# Resultado: Prueba 18.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador","CargaEconomica")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador+CargaEconomica,
+    data = Data_Prueba)
+# Resultado: Prueba 19.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet","CargaEconomica")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+CargaEconomica,
+    data = Data_Prueba)
+# Resultado: Prueba 20.
+
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador","CargaEconomica","PIB_PC2017_Dane")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador+
+       CargaEconomica+PIB_PC2017_Dane,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet","CargaEconomica","PIB_PC2017_Dane")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+
+       CargaEconomica+PIB_PC2017_Dane,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad. PLT Omitir PIB.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionInternet","CargaEconomica","Desempleo_2017_Dane")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+
+       CargaEconomica+Desempleo_2017_Dane,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad.
+
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial",
+                  "Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo",
+                  "PosesionComputador","CargaEconomica","Desempleo_2018")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionComputador+
+       CargaEconomica+Desempleo_2018,
+    data = Data_Prueba)
+# Resultado: Error de Singularidad. PLT Omitir Desempleo.
+```
+
 Etapa 3: Aquí se estimará el ingreso del hogar del empresario.
 Variable dependiente: Ingreso del hogar del individuo empresario.
 Variable independiente: Se usará el ingreso del individuo empresario estimado en la etapa 1.
