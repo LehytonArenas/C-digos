@@ -339,6 +339,46 @@ Data_Prueba <- Adultos_2017 %>%
 tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
      Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica,
     data = Data_Prueba)
+
+# PLT: dados los resultados anteriores se continuará con la prueba 12 de Generadores y su homologación, con el fin de agregar controles y otras variables.
+
+# Agregando Edad Cuadratica:
+# Prueba 12 de Generadores:
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
+  drop_na(.)
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
+    data = Data_Prueba)
+
+# Homologación a Autoempleadores:
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
+  drop_na(.)
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
+     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
+    data = Data_Prueba)
+
+# Agregando Dummies de Sector:
+# Prueba 12 de Generadores:
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
+                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
+  drop_na(.)
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
+     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
+    data = Data_Prueba)
+
+# Homologación a Autoempleadores:
+Data_Prueba <- Adultos_2017 %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
+                  "Autoempleado","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
+  drop_na(.)
+tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
+     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
+    data = Data_Prueba)
 ```
 
 Etapa 3: Aquí se estimará el ingreso del hogar del empresario.
