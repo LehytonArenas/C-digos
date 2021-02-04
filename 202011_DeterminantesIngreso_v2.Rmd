@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Resumen de estadísticos descriptivos
 En la siguiente tabla se encuentra el resúmen estadístico para el año 2017. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
-```{r Descriptivos con Survey Package, echo=FALSE}
+```{r Procesamiento de Data, echo=FALSE}
 # Evitemos la notación científica:
 options(scipen=999)
 # Para volver a notación cientifica:
@@ -25,8 +25,74 @@ library(survey)
 library(jtools)
 library(stargazer)
 
-# Data 2017
+# Data previamente procesada:
 DataAnio_2017 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
+DataAnio_2018 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2018_v3.xlsx")
+DataAnio_2019 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019_v3.xlsx")
+
+# El objetivo es crear un solo DF para todos los años.
+# Debemos renombrar algunas variables en cada DF, así:
+DataAnio_2017 <- DataAnio_2017 %>% 
+  dplyr::rename(AutonomiaFiscal="AutonomiaFiscal_2018_base2017",
+                CapacidadRecaudo="CapacidadRecaudo_2018_base2017", 
+                Homicidios="Homicidios_2018_base2018",
+                Hurtos="Hurtos_2018_base2018",
+                Extorsion="Extorsion_2018_base2018",
+                EficJusticia="EficJusticia_2018_base2017",      
+                ProducJueces="ProducJueces_2018_base2017",
+                FacilidadEmpresa= "FacilidadEmpresa_2018",          
+                ImpuestosEmpresa="ImpuestosEmpresa_2018",
+                Desempleo_ICC="Desempleo_2018",                  
+                ComplejidadProductiva="ComplejidadProductiva_2018",
+                DiversifCanasta= "DiversifCanasta_2018_base2018",   
+                Desempleo_Dane="Desempleo_2017_Dane",
+                Poblacion_Dane="Poblacion_2017_Dane",             
+                PIB_PC="PIB_PC2017_Dane")
+
+DataAnio_2018 <- DataAnio_2018 %>% 
+  dplyr::rename(AutonomiaFiscal="AutonomiaFiscal_2019_base2017",
+                CapacidadRecaudo="CapacidadRecaudo_2019_base2018", 
+                Homicidios="Homicidios_2019_base2019",
+                Hurtos="Hurtos_2019_base2019",
+                Extorsion="Extorsion_2019_base2019",
+                EficJusticia="EficJusticia_2019_base2019",      
+                ProducJueces="ProducJueces_2019_base2019",
+                FacilidadEmpresa= "FacilidadEmpresa_2019",          
+                ImpuestosEmpresa="ImpuestosEmpresa_2019",
+                Desempleo_ICC="Desempleo_2019",                  
+                ComplejidadProductiva="ComplejidadProductiva_2019",
+                DiversifCanasta= "DiversifCanasta_2019_base2019",   
+                Desempleo_Dane="Desempleo_2018_Dane",
+                Poblacion_Dane="Poblacion_2018_Dane",             
+                PIB_PC="PIB_PC2018_Dane")
+
+DataAnio_2019 <- DataAnio_2019 %>% 
+  dplyr::rename(AutonomiaFiscal="AutonomiaFiscal_2020_base2018",
+                CapacidadRecaudo="CapacidadRecaudo_2020_base2018", 
+                Homicidios="Homicidios_2020_base2019",
+                Hurtos="Hurtos_2020_base2019",
+                Extorsion="Extorsion_2020_base2019",
+                EficJusticia="EficJusticia_2020_base2019",      
+                ProducJueces="ProducJueces_2020_base2019",
+                FacilidadEmpresa= "FacilidadEmpresa_2020",          
+                ImpuestosEmpresa="ImpuestosEmpresa_2020",
+                Desempleo_ICC="Desempleo_2020",                  
+                ComplejidadProductiva="ComplejidadProductiva_2020",
+                DiversifCanasta= "DiversifCanasta_2020_base2019",   
+                Desempleo_Dane="Desempleo_2019_Dane",
+                Poblacion_Dane="Poblacion_2019_Dane",             
+                PIB_PC="PIB_PC2019_Dane")
+
+# Concatenamos toda la data en un solo DF
+DataAnio <- rbind(DataAnio_2017,DataAnio_2018,DataAnio_2019)
+
+# Filtraremos por adultos
+Adultos <- DataAnio %>% 
+  filter(Edad>=18)
+```
+
+```{r Descriptivos con Survey Package, echo=FALSE}
+# Data 2017
 
 # Adultos
 Adultos_2017 <- DataAnio_2017 %>% 
@@ -195,8 +261,8 @@ Corr_ModDisc2 <- round(cor(Data_Corr_ModDisc2,use = "pairwise.complete.obs"),3)
 ```
 A continuación se realizarán algunas pruebas de los modelos simultaneos para la popblación de Autoempleados y Generadores:
 ```{r Etapas 1y2 Simultaneas, echo=FALSE}
-# Creamos la edad cuadratica:
-Adultos_2017 <- Adultos_2017 %>% 
+# Creamos la edad cuadratica, como varriable alternativa de Edad:
+Adultos <- Adultos %>% 
   dplyr::mutate(EdadCuadratica=round(Edad^2,2))
 
 # Técnica de 2spls:
@@ -281,103 +347,27 @@ tspls <- function(formula1, formula2, data) {
     print(ans2)
     return(c(ans1,ans2))
 }
-# Para 2017:
-# Homologación de Pruebas:
 
-# Prueba 20 de Autoempleados:
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","Poblacion_2017_Dane",
-                  "Autoempleado","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo","Sexo","PosesionInternet","CargaEconomica")) %>% 
+# Para Data completa:
+
+# GeneradorEmpleo:
+Data_Prueba <- Adultos %>% 
+  dplyr::select(c("IngresoLaboral_Mes","NivelEducativo","ExperienciaPotencial","Poblacion_Dane","Homicidios","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
+                  "GeneradorEmpleo","AutonomiaFiscal","ComplejidadProductiva","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
   drop_na(.)
 
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-      Autoempleado~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+CargaEconomica,
+tspls(IngresoLaboral_Mes~NivelEducativo+ExperienciaPotencial+Poblacion_Dane+Homicidios+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
+     GeneradorEmpleo~AutonomiaFiscal+ComplejidadProductiva+CargaEconomica+Sexo+Edad+PosesionComputador+Desempleo_Dane,
     data = Data_Prueba)
 
-# Homologación a Generadores: Error de singularidad
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","Poblacion_2017_Dane",
-                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","FacilidadEmpresa_2018","Sexo","Sexo","PosesionInternet","CargaEconomica")) %>% 
+# Autoempleado:
+Data_Prueba <- Adultos %>% 
+  dplyr::select(c("IngresoLaboral_Mes","NivelEducativo","ExperienciaPotencial","Poblacion_Dane","Homicidios","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
+                  "Autoempleado","AutonomiaFiscal","ComplejidadProductiva","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
   drop_na(.)
 
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-      GeneradorEmpleo~AutonomiaFiscal_2018_base2017+FacilidadEmpresa_2018+Sexo+PosesionInternet+CargaEconomica,
-    data = Data_Prueba)
-
-# Prueba 11 de Generadores:
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
-                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionComputador","CargaEconomica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionComputador+CargaEconomica,
-    data = Data_Prueba)
-
-# Homologación a Autoempleados: Si da resultados!
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
-                  "Autoempleado","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionComputador","CargaEconomica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionComputador+CargaEconomica,
-    data = Data_Prueba)
-
-# Prueba 12 de Generadores:
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
-                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica,
-    data = Data_Prueba)
-
-# Homologación a Autoempleados: Si da resultados
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
-                  "Autoempleado","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica,
-    data = Data_Prueba)
-
-# PLT: dados los resultados anteriores se continuará con la prueba 12 de Generadores y su homologación, con el fin de agregar controles y otras variables.
-
-# Agregando Edad Cuadratica:
-# Prueba 12 de Generadores:
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
-                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
-    data = Data_Prueba)
-
-# Homologación a Autoempleadores:
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018",
-                  "Autoempleado","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018,
-     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
-    data = Data_Prueba)
-
-# Agregando Dummies de Sector:
-# Prueba 12 de Generadores:
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
-                  "GeneradorEmpleo","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
-     GeneradorEmpleo~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
-    data = Data_Prueba)
-
-# Homologación a Autoempleadores:
-Data_Prueba <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","ExperienciaPotencial","Poblacion_2017_Dane","Homicidios_2018_base2018","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
-                  "Autoempleado","AutonomiaFiscal_2018_base2017","ImpuestosEmpresa_2018","Desempleo_2018","Sexo","PosesionInternet","CargaEconomica","EdadCuadratica")) %>% 
-  drop_na(.)
-tspls(IngresoLaboral_Mes~AniosEscolaridad+ExperienciaPotencial+Poblacion_2017_Dane+Homicidios_2018_base2018+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
-     Autoempleado~AutonomiaFiscal_2018_base2017+ImpuestosEmpresa_2018+Desempleo_2018+Sexo+PosesionInternet+CargaEconomica+EdadCuadratica,
+tspls(IngresoLaboral_Mes~NivelEducativo+ExperienciaPotencial+Poblacion_Dane+Homicidios+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
+     Autoempleado~AutonomiaFiscal+ComplejidadProductiva+CargaEconomica+Sexo+Edad+PosesionComputador+Desempleo_Dane,
     data = Data_Prueba)
 ```
 
