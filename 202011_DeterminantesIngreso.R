@@ -705,11 +705,69 @@ str(DataAnio_2019_v3)
 summary(DataAnio_2019_v3)
 write_xlsx(DataAnio_2019_v3, "DataAnio_2019_v3.xlsx")
 
+##### Concatenando data anual en un solo DF #####
+DataAnio_2017 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
+DataAnio_2018 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2018_v3.xlsx")
+DataAnio_2019 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019_v3.xlsx")
 
+# Debemos renombrar algunas variables en cada DF, así:
+DataAnio_2017_v4 <- DataAnio_2017 %>% 
+  dplyr::rename(AutonomiaFiscal="AutonomiaFiscal_2018_base2017",
+                CapacidadRecaudo="CapacidadRecaudo_2018_base2017", 
+                Homicidios="Homicidios_2018_base2018",
+                Hurtos="Hurtos_2018_base2018",
+                Extorsion="Extorsion_2018_base2018",
+                EficJusticia="EficJusticia_2018_base2017",      
+                ProducJueces="ProducJueces_2018_base2017",
+                FacilidadEmpresa= "FacilidadEmpresa_2018",          
+                ImpuestosEmpresa="ImpuestosEmpresa_2018",
+                Desempleo_ICC="Desempleo_2018",                  
+                ComplejidadProductiva="ComplejidadProductiva_2018",
+                DiversifCanasta= "DiversifCanasta_2018_base2018",   
+                Desempleo_Dane="Desempleo_2017_Dane",
+                Poblacion_Dane="Poblacion_2017_Dane",             
+                PIB_PC="PIB_PC2017_Dane")
+
+DataAnio_2018_v4 <- DataAnio_2018 %>% 
+  dplyr::rename(AutonomiaFiscal="AutonomiaFiscal_2019_base2017",
+                CapacidadRecaudo="CapacidadRecaudo_2019_base2018", 
+                Homicidios="Homicidios_2019_base2019",
+                Hurtos="Hurtos_2019_base2019",
+                Extorsion="Extorsion_2019_base2019",
+                EficJusticia="EficJusticia_2019_base2019",      
+                ProducJueces="ProducJueces_2019_base2019",
+                FacilidadEmpresa= "FacilidadEmpresa_2019",          
+                ImpuestosEmpresa="ImpuestosEmpresa_2019",
+                Desempleo_ICC="Desempleo_2019",                  
+                ComplejidadProductiva="ComplejidadProductiva_2019",
+                DiversifCanasta= "DiversifCanasta_2019_base2019",   
+                Desempleo_Dane="Desempleo_2018_Dane",
+                Poblacion_Dane="Poblacion_2018_Dane",             
+                PIB_PC="PIB_PC2018_Dane")
+
+DataAnio_2019_v4 <- DataAnio_2019 %>% 
+  dplyr::rename(AutonomiaFiscal="AutonomiaFiscal_2020_base2018",
+                CapacidadRecaudo="CapacidadRecaudo_2020_base2018", 
+                Homicidios="Homicidios_2020_base2019",
+                Hurtos="Hurtos_2020_base2019",
+                Extorsion="Extorsion_2020_base2019",
+                EficJusticia="EficJusticia_2020_base2019",      
+                ProducJueces="ProducJueces_2020_base2019",
+                FacilidadEmpresa= "FacilidadEmpresa_2020",          
+                ImpuestosEmpresa="ImpuestosEmpresa_2020",
+                Desempleo_ICC="Desempleo_2020",                  
+                ComplejidadProductiva="ComplejidadProductiva_2020",
+                DiversifCanasta= "DiversifCanasta_2020_base2019",   
+                Desempleo_Dane="Desempleo_2019_Dane",
+                Poblacion_Dane="Poblacion_2019_Dane",             
+                PIB_PC="PIB_PC2019_Dane")
+
+DataAnio <- rbind(DataAnio_2017_v4,DataAnio_2018_v4,DataAnio_2019_v4)
 
 ##### Pruebas#####
-prueba <- DataAnio_2017[,3:4]
-  
+prueba2017 <- DataAnio_2017[1:1000,3:4]
+prueba2018 <- DataAnio_2017[1:1000,3:4]
+prueba <- rbind(prueba2017,prueba2018)
 
 
 
