@@ -353,21 +353,21 @@ tspls <- function(formula1, formula2, data) {
 # GeneradorEmpleo:
 Data_Prueba <- Adultos %>% 
   dplyr::select(c("IngresoLaboral_Mes","NivelEducativo","ExperienciaPotencial","Poblacion_Dane","Homicidios","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
-                  "GeneradorEmpleo","AutonomiaFiscal","ComplejidadProductiva","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
+                  "GeneradorEmpleo","AutonomiaFiscal","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
   drop_na(.)
 
 tspls(IngresoLaboral_Mes~NivelEducativo+ExperienciaPotencial+Poblacion_Dane+Homicidios+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
-     GeneradorEmpleo~AutonomiaFiscal+ComplejidadProductiva+CargaEconomica+Sexo+Edad+PosesionComputador+Desempleo_Dane,
+     GeneradorEmpleo~AutonomiaFiscal+CargaEconomica+Sexo+Edad+PosesionComputador+Desempleo_Dane,
     data = Data_Prueba)
 
 # Autoempleado:
 Data_Prueba <- Adultos %>% 
   dplyr::select(c("IngresoLaboral_Mes","NivelEducativo","ExperienciaPotencial","Poblacion_Dane","Homicidios","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
-                  "Autoempleado","AutonomiaFiscal","ComplejidadProductiva","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
+                  "Autoempleado","AutonomiaFiscal","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
   drop_na(.)
 
 tspls(IngresoLaboral_Mes~NivelEducativo+ExperienciaPotencial+Poblacion_Dane+Homicidios+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
-     Autoempleado~AutonomiaFiscal+ComplejidadProductiva+CargaEconomica+Sexo+Edad+PosesionComputador+Desempleo_Dane,
+     Autoempleado~AutonomiaFiscal+CargaEconomica+Sexo+Edad+PosesionComputador+Desempleo_Dane,
     data = Data_Prueba)
 ```
 
@@ -375,7 +375,111 @@ Etapa 3: Aquí se estimará el ingreso del hogar del empresario.
 Variable dependiente: Ingreso del hogar del individuo empresario.
 Variable independiente: Se usará el ingreso del individuo empresario estimado en la etapa 1.
 Controles: Se usarán controles por familias. Específicamente variables de Parentesco con Jefe de hogar, Estado Civil, Situación laboral, Transferencias o subsidios, posesión de viviendda, # de niños menores a 14 años, # Personas en el hogar, y educación de los padres.
+Debido a los cambios del proyecto. Esta etapa requerirá del procesamiento de data.
+```{r Etapa 3 Procesamiento Data, echo=FALSE}
+# Primero crearemos los INgresos de Generadores y Autoempleados con una media simple.
+# Traemos  la data procesada previamente en v0: 2017, 2018 y 2019:
+# Esta data es útil porque los sectores son factores, no dummies
+DataAnio_2019_v0 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019.xlsx")
 
+# Se deben codificar las areas:
+DataAnio_2019_v0 <- DataAnio_2019_v0 %>%
+  dplyr::mutate(AREA=ifelse(AREA==5,"Medellin",AREA),
+                AREA=ifelse(AREA==8,"Barranquilla",AREA),
+                AREA=ifelse(AREA==11,"Bogota DC",AREA),
+                AREA=ifelse(AREA==13,"Cartagena",AREA),
+                AREA=ifelse(AREA==17,"Manizales",AREA),
+                AREA=ifelse(AREA==23,"Monteria",AREA),
+                AREA=ifelse(AREA==50,"Villavicencio",AREA),
+                AREA=ifelse(AREA==52,"Pasto",AREA),
+                AREA=ifelse(AREA==54,"Cucuta",AREA),
+                AREA=ifelse(AREA==66,"Pereira",AREA),
+                AREA=ifelse(AREA==68,"Bucaramanga",AREA),
+                AREA=ifelse(AREA==73,"Ibague",AREA),
+                AREA=ifelse(AREA==76,"Cali",AREA))
+
+#Primero creemos promedios simples:
+
+# Debemos crear una variable por año:
+DataAnio_2017_v0$Anio <- c("2017")
+DataAnio_2018_v0$Anio <- c("2018")
+DataAnio_2019_v0$Anio <- c("2019")
+
+# Se crea una solo DFv0:
+DataAnio_v0 <- rbind(DataAnio_2017_v0,DataAnio_2018_v0,DataAnio_2019_v0)
+
+# Creamos los Ingresos de Generadores:
+IngresosGeneradores_Anio <- DataAnio_v0 %>% 
+    dplyr::filter(Generadores_Empleo=="Generador de empleo") %>% 
+    dplyr::group_by(Anio, AREA, SectorEconomico) %>%
+    dplyr::summarise(
+      IngresosGeneradores_Simple = mean(IngresoLaboral_Mes,na.rm = TRUE)
+      )
+# Creamos los Ingresos de Autoempleados:
+IngresosAutoempleados_Anio <- DataAnio_v0 %>% 
+    dplyr::filter(Generadores_Empleo=="Autoempleado") %>% 
+    dplyr::group_by(Anio, AREA, SectorEconomico) %>%
+    dplyr::summarise(
+      IngresosAutoempleados_Simple = mean(IngresoLaboral_Mes,na.rm = TRUE)
+      )
+
+# Se concatena:
+Ingresos_Simples <- join_all(list(IngresosGeneradores_Anio,IngresosAutoempleados_Anio),
+                             by=c("Anio","AREA","SectorEconomico"),type = "full")
+
+# Ahora, creamos promedios con Survey (factor de expansión):
+# Transformamos la data a tipo Survey:
+# dividimos el Fex en 12:
+DataAnio_v0 <- DataAnio_v0 %>% 
+  mutate(FExp=fex_c_2011/12) %>% 
+  select(.,-c(fex_c_2011))
+
+# Creamos la población de Generadores:
+GeneradoresAnio <- DataAnio_v0 %>% 
+  dplyr::filter(Generadores_Empleo=="Generador de empleo")
+
+GeneradoresAnio_Svy <- svydesign(ids=~0,weights=~FExp,
+                                  data=GeneradoresAnio)
+
+# Ahora apliquemos la media agrupando con svyby:
+
+MeansGeneradores_Svy <- svyby(~IngresoLaboral_Mes, ~Anio+AREA+SectorEconomico, 
+      GeneradoresAnio_Svy, svymean,na = TRUE)
+
+# Aplicamos lo mismo para los Autoempleados. 
+# Creamos la población de autoempleados:
+AutoempleadosAnio <- DataAnio_v0 %>% 
+  dplyr::filter(Generadores_Empleo=="Autoempleado")
+
+AutoempleadosAnio_Svy <- svydesign(ids=~0,weights=~FExp,
+                                  data=AutoempleadosAnio)
+
+# Ahora apliquemos la media agrupando con svyby:
+MeansAutoempleados_Svy <- svyby(~IngresoLaboral_Mes, ~Anio+AREA+SectorEconomico, 
+      AutoempleadosAnio_Svy, svymean,na = TRUE)
+
+# Aplicamos unas modificaciones a ambos DF:
+MeansGeneradores_Svy <- MeansGeneradores_Svy %>% 
+  select(.,-c(se)) %>% 
+  dplyr::rename(IngresosGeneradores_Svy="IngresoLaboral_Mes")
+
+MeansAutoempleados_Svy <- MeansAutoempleados_Svy %>% 
+  select(.,-c(se)) %>% 
+  dplyr::rename(IngresosAutoempleados_Svy="IngresoLaboral_Mes")
+
+# Se concatena:
+Ingresos_Svy <- join_all(list(MeansGeneradores_Svy,MeansAutoempleados_Svy),
+                             by=c("Anio","AREA","SectorEconomico"),type = "full")
+
+# Cambiamos los 0 por NA:
+Ingresos_Svy <- Ingresos_Svy %>%
+  dplyr::mutate(IngresosGeneradores_Svy=ifelse(IngresosGeneradores_Svy==0,NA,
+                                         IngresosGeneradores_Svy),
+                IngresosAutoempleados_Svy=ifelse(IngresosAutoempleados_Svy==0,NA,
+                                         IngresosAutoempleados_Svy))
+
+# PLT ahora tenemos dos DF de Ingresos: Uno Simple y uno con Survey. Ingresos_Simples e Ingresos_Svy. Se eliminan intermedios.
+```
 
 
 
