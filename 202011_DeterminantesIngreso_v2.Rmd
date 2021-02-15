@@ -10,7 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Resumen de estadísticos descriptivos
-En la siguiente tabla se encuentra el resúmen estadístico para el año 2017. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
+
+Con la data procesada en el código anterior .R, se procede a crear un sólo DF que reuna toda la información de lostres años 2017-2019.
 ```{r Procesamiento de Data, echo=FALSE}
 # Evitemos la notación científica:
 options(scipen=999)
@@ -90,7 +91,7 @@ DataAnio <- rbind(DataAnio_2017,DataAnio_2018,DataAnio_2019)
 Adultos <- DataAnio %>% 
   filter(Edad>=18)
 ```
-
+En la siguiente tabla se encuentra el resúmen estadístico (a modo de prueba) para el año 2017, utilizando la técnica Survey, que nos permite usar el factor de expansión de las encuestas. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
 ```{r Descriptivos con Survey Package, echo=FALSE}
 # Data 2017
 
@@ -159,6 +160,7 @@ knitr::kable(
 ```
 
 ## Estadísticas por ciudad
+
 La data recopilada se ha agrupado por ciudad y se han encontrado algunos resultados que vale la pena exponer. Es interesante observar como el ingreso medio de la población denominada Autoempleada es sustancialmente inferior a los ingresos medios de la ciudad; mientras que la población denominada Generadores de empleo exponen ingresos medios sustancialmente superiores.
 ```{r Estadísticas por Ciudad con Survey, echo=FALSE}
 # Se puede mejorar con los subgrupos explicados en el Seminario (Justo antes de modelos)
@@ -239,6 +241,8 @@ Etapa 2: Aquí se estimará el ingreso del individuo empresario
 Variable dependiente: Ingreso del individuo empresario.
 Variables independientes: La probabilidad estimada en la etapa1, el sector económico, nivel educativo, experiencia potencial.
 Controles: Se usarán aquí características institucionales. Es decir variables asociadas con el capital financiero, Ciudad:tamaño(población), Ciudad: tasa de delicuencia.
+
+Para lo anterior se empleará la técnica 2spls simultanea. Sin embargo, inicialmente se hará un análisis de correlación de variables:
 ```{r Correlación de vbles, echo=FALSE}
 # Correlaciones entre las variables del modelo continuo:
 Data_Corr_ModCont <- Adultos_2017 %>% 
@@ -371,12 +375,17 @@ tspls(IngresoLaboral_Mes~NivelEducativo+ExperienciaPotencial+Poblacion_Dane+Homi
     data = Data_Prueba)
 ```
 
-Etapa 3: Aquí se estimará el ingreso del hogar del empresario.
-Variable dependiente: Ingreso del hogar del individuo empresario.
-Variable independiente: Se usará el ingreso del individuo empresario estimado en la etapa 1.
-Controles: Se usarán controles por familias. Específicamente variables de Parentesco con Jefe de hogar, Estado Civil, Situación laboral, Transferencias o subsidios, posesión de viviendda, # de niños menores a 14 años, # Personas en el hogar, y educación de los padres.
-Debido a los cambios del proyecto. Esta etapa requerirá del procesamiento de data.
+Etapa 3: Aquí se estimará el ingreso de la ciudad (PIB o Desempleo) en términos de los ingresos de los Generadores y de los Autoempleados, más algunos controles.
+
+Variable dependiente: PIB (o Desempleo), desagregado por Ciudad, Año y Sector.
+Variable independiente: Ingreso medio de Generadores de empleo (y Autoempleados), desagregado por Ciudad, Año y Sector.
+Controles: Se usarán controles típicos de modelos de crecimiento económico.
+
+A continuación se procesará la data acorde.
+
 ```{r Etapa 3 Procesamiento Data, echo=FALSE}
+#### calculando ingresos medios ####
+# El objetivo aquí es encontrar los ingresos medios por año, sector y ciudad.
 # Primero crearemos los INgresos de Generadores y Autoempleados con una media simple.
 # Traemos  la data procesada previamente en v0: 2017, 2018 y 2019:
 # Esta data es útil porque los sectores son factores, no dummies
@@ -408,24 +417,39 @@ DataAnio_2019_v0$Anio <- c("2019")
 # Se crea una solo DFv0:
 DataAnio_v0 <- rbind(DataAnio_2017_v0,DataAnio_2018_v0,DataAnio_2019_v0)
 
+# Se recodifica la variable de Sectores, agrupando a 10 sectores económicos:
+DataAnio_v0$SectoresAgrupa10 <- DataAnio_v0$SectorEconomico
+
+DataAnio_v0 <- DataAnio_v0 %>% 
+      dplyr::mutate(SectoresAgrupa10=ifelse(SectorEconomico=="Agrícultura Ganadería Caza Y Silvicultura" | SectorEconomico=="Pesca", "Agricultura, ganadería, caza, silvicultura y pesca",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Explotación de Minas y Canteras", "Explotación de minas y canteras",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Industrias Manufactureras","Industrias manufactureras",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Suministro Electricidad Gas y Agua","Suministro de electricidad, gas, agua, vapor y aire",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Comercio al por Mayor y por Menor" | SectorEconomico=="Hoteles y Restaurantes" | SectorEconomico=="Transporte Almacenamiento y Comunicaciones","Comercio, Turismo y Comunicaciones",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Intermediación Financiera","Actividades financieras y de seguros",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Actividades Inmobiliarias Empresariales y Alquiler", "Actividades empresariales, científicas y de apoyo",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Administración Pública y Defensa" | SectorEconomico=="Educación" |SectorEconomico=="Servicios Sociales y de Salud","Administración, Defensa, Educación, Servicios sociales y salud",SectoresAgrupa10),
+                    SectoresAgrupa10=ifelse(SectorEconomico=="Servicios Comunitarios Sociales y Personales" |SectorEconomico=="Hogares Privados con servicio doméstico" |SectorEconomico=="Organizaciones Extraterritoriales","Otras actividades",SectoresAgrupa10))
+
 # Creamos los Ingresos de Generadores:
 IngresosGeneradores_Anio <- DataAnio_v0 %>% 
     dplyr::filter(Generadores_Empleo=="Generador de empleo") %>% 
-    dplyr::group_by(Anio, AREA, SectorEconomico) %>%
+    dplyr::group_by(Anio, AREA, SectoresAgrupa10) %>%
     dplyr::summarise(
       IngresosGeneradores_Simple = mean(IngresoLaboral_Mes,na.rm = TRUE)
       )
 # Creamos los Ingresos de Autoempleados:
 IngresosAutoempleados_Anio <- DataAnio_v0 %>% 
     dplyr::filter(Generadores_Empleo=="Autoempleado") %>% 
-    dplyr::group_by(Anio, AREA, SectorEconomico) %>%
+    dplyr::group_by(Anio, AREA, SectoresAgrupa10) %>%
     dplyr::summarise(
       IngresosAutoempleados_Simple = mean(IngresoLaboral_Mes,na.rm = TRUE)
       )
 
-# Se concatena:
+# Se concatena y se eliminan pasos intermedios
 Ingresos_Simples <- join_all(list(IngresosGeneradores_Anio,IngresosAutoempleados_Anio),
-                             by=c("Anio","AREA","SectorEconomico"),type = "full")
+                             by=c("Anio","AREA","SectoresAgrupa10"),type = "full")
+rm(IngresosGeneradores_Anio,IngresosAutoempleados_Anio)
 
 # Ahora, creamos promedios con Survey (factor de expansión):
 # Transformamos la data a tipo Survey:
@@ -442,8 +466,7 @@ GeneradoresAnio_Svy <- svydesign(ids=~0,weights=~FExp,
                                   data=GeneradoresAnio)
 
 # Ahora apliquemos la media agrupando con svyby:
-
-MeansGeneradores_Svy <- svyby(~IngresoLaboral_Mes, ~Anio+AREA+SectorEconomico, 
+MeansGeneradores_Svy <- svyby(~IngresoLaboral_Mes, ~Anio+AREA+SectoresAgrupa10, 
       GeneradoresAnio_Svy, svymean,na = TRUE)
 
 # Aplicamos lo mismo para los Autoempleados. 
@@ -455,7 +478,7 @@ AutoempleadosAnio_Svy <- svydesign(ids=~0,weights=~FExp,
                                   data=AutoempleadosAnio)
 
 # Ahora apliquemos la media agrupando con svyby:
-MeansAutoempleados_Svy <- svyby(~IngresoLaboral_Mes, ~Anio+AREA+SectorEconomico, 
+MeansAutoempleados_Svy <- svyby(~IngresoLaboral_Mes, ~Anio+AREA+SectoresAgrupa10, 
       AutoempleadosAnio_Svy, svymean,na = TRUE)
 
 # Aplicamos unas modificaciones a ambos DF:
@@ -469,7 +492,7 @@ MeansAutoempleados_Svy <- MeansAutoempleados_Svy %>%
 
 # Se concatena:
 Ingresos_Svy <- join_all(list(MeansGeneradores_Svy,MeansAutoempleados_Svy),
-                             by=c("Anio","AREA","SectorEconomico"),type = "full")
+                             by=c("Anio","AREA","SectoresAgrupa10"),type = "full")
 
 # Cambiamos los 0 por NA:
 Ingresos_Svy <- Ingresos_Svy %>%
@@ -477,8 +500,40 @@ Ingresos_Svy <- Ingresos_Svy %>%
                                          IngresosGeneradores_Svy),
                 IngresosAutoempleados_Svy=ifelse(IngresosAutoempleados_Svy==0,NA,
                                          IngresosAutoempleados_Svy))
+# Eliminamos pasos intermedios:
+rm(GeneradoresAnio,GeneradoresAnio_Svy,MeansGeneradores_Svy,AutoempleadosAnio,AutoempleadosAnio_Svy,MeansAutoempleados_Svy)
+# PLT ahora tenemos dos DF de Ingresos: Uno Simple y uno con Survey. Ingresos_Simples e Ingresos_Svy. 
 
-# PLT ahora tenemos dos DF de Ingresos: Uno Simple y uno con Survey. Ingresos_Simples e Ingresos_Svy. Se eliminan intermedios.
+#### Concatendando con otras fuentes ####
+# De las datas creadas de ingresos medios, eliminaremos los No Responde:
+# Así quedamos estrictamente con 10 sectores:
+Ingresos_Simples <- Ingresos_Simples %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde")
+Ingresos_Svy <- Ingresos_Svy %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde")
+
+# Traemos y modificamos la data de PIB desagregado:
+PIB <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/PIBCiudadSector.xlsx", sheet = "10Sectores")
+
+PIB <- PIB %>%
+  dplyr::rename(.,AREA=Departamento,SectoresAgrupa10=Sector) %>% 
+    dplyr::mutate(AREA=ifelse(AREA=="Antioquia","Medellin",AREA),
+                AREA=ifelse(AREA=="Atlantico","Barranquilla",AREA),
+                AREA=ifelse(AREA=="Bogotá D.C.","Bogota DC",AREA),
+                AREA=ifelse(AREA=="Bolívar","Cartagena",AREA),
+                AREA=ifelse(AREA=="Caldas","Manizales",AREA),
+                AREA=ifelse(AREA=="Córdoba","Monteria",AREA),
+                AREA=ifelse(AREA=="Meta","Villavicencio",AREA),
+                AREA=ifelse(AREA=="Nariño","Pasto",AREA),
+                AREA=ifelse(AREA=="Norte de Santander","Cucuta",AREA),
+                AREA=ifelse(AREA=="Risaralda","Pereira",AREA),
+                AREA=ifelse(AREA=="Santander","Bucaramanga",AREA),
+                AREA=ifelse(AREA=="Tolima","Ibague",AREA),
+                AREA=ifelse(AREA=="Valle del Cauca","Cali",AREA))
+
+# Concatenamos:
+Data_Etapa3 <- join_all(list(Ingresos_Simples,Ingresos_Svy,PIB), 
+                       by=c("Anio","AREA","SectoresAgrupa10"),type = "full")
 ```
 
 
