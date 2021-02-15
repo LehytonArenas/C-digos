@@ -1,5 +1,5 @@
 # Directorio de trabajo
-setwd("/Users/lehyton/Google Drive/Ecsim/Proyecto Agosto/3_Entregables Lehyton")
+setwd("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton")
 
 # Paquetes a usar
 library(tidyverse)
