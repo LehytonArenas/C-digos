@@ -13,6 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Con la data procesada en el código anterior .R, se procede a crear un sólo DF que reuna toda la información de lostres años 2017-2019.
 ```{r Procesamiento de Data, echo=FALSE}
+# Directorio de trabajo
+setwd("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton")
+
 # Evitemos la notación científica:
 options(scipen=999)
 # Para volver a notación cientifica:
@@ -25,6 +28,7 @@ library(plyr); library(dplyr)
 library(survey)
 library(jtools)
 library(stargazer)
+library(haven)
 
 # Data previamente procesada:
 DataAnio_2017 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
@@ -384,6 +388,26 @@ Controles: Se usarán controles típicos de modelos de crecimiento económico.
 A continuación se procesará la data acorde.
 
 ```{r Etapa 3 Procesamiento Data, echo=FALSE}
+#### PIB ####
+# Traemos y modificamos la data de PIB desagregado:
+PIB <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/PIBCiudadSector.xlsx", sheet = "10Sectores")
+
+PIB <- PIB %>%
+  dplyr::rename(.,AREA=Departamento,SectoresAgrupa10=Sector) %>% 
+    dplyr::mutate(AREA=ifelse(AREA=="Antioquia","Medellin",AREA),
+                AREA=ifelse(AREA=="Atlantico","Barranquilla",AREA),
+                AREA=ifelse(AREA=="Bogotá D.C.","Bogota DC",AREA),
+                AREA=ifelse(AREA=="Bolívar","Cartagena",AREA),
+                AREA=ifelse(AREA=="Caldas","Manizales",AREA),
+                AREA=ifelse(AREA=="Córdoba","Monteria",AREA),
+                AREA=ifelse(AREA=="Meta","Villavicencio",AREA),
+                AREA=ifelse(AREA=="Nariño","Pasto",AREA),
+                AREA=ifelse(AREA=="Norte de Santander","Cucuta",AREA),
+                AREA=ifelse(AREA=="Risaralda","Pereira",AREA),
+                AREA=ifelse(AREA=="Santander","Bucaramanga",AREA),
+                AREA=ifelse(AREA=="Tolima","Ibague",AREA),
+                AREA=ifelse(AREA=="Valle del Cauca","Cali",AREA))
+
 #### calculando ingresos medios ####
 # El objetivo aquí es encontrar los ingresos medios por año, sector y ciudad.
 # Primero crearemos los INgresos de Generadores y Autoempleados con una media simple.
@@ -502,9 +526,7 @@ Ingresos_Svy <- Ingresos_Svy %>%
                                          IngresosAutoempleados_Svy))
 # Eliminamos pasos intermedios:
 rm(GeneradoresAnio,GeneradoresAnio_Svy,MeansGeneradores_Svy,AutoempleadosAnio,AutoempleadosAnio_Svy,MeansAutoempleados_Svy)
-# PLT ahora tenemos dos DF de Ingresos: Uno Simple y uno con Survey. Ingresos_Simples e Ingresos_Svy. 
 
-#### Concatendando con otras fuentes ####
 # De las datas creadas de ingresos medios, eliminaremos los No Responde:
 # Así quedamos estrictamente con 10 sectores:
 Ingresos_Simples <- Ingresos_Simples %>% 
@@ -512,30 +534,114 @@ Ingresos_Simples <- Ingresos_Simples %>%
 Ingresos_Svy <- Ingresos_Svy %>% 
   dplyr::filter(SectoresAgrupa10!="No Responde")
 
-# Traemos y modificamos la data de PIB desagregado:
-PIB <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/PIBCiudadSector.xlsx", sheet = "10Sectores")
+# PLT ahora tenemos dos DF de Ingresos: Uno Simple y uno con Survey. Ingresos_Simples e Ingresos_Svy. 
 
-PIB <- PIB %>%
-  dplyr::rename(.,AREA=Departamento,SectoresAgrupa10=Sector) %>% 
-    dplyr::mutate(AREA=ifelse(AREA=="Antioquia","Medellin",AREA),
-                AREA=ifelse(AREA=="Atlantico","Barranquilla",AREA),
-                AREA=ifelse(AREA=="Bogotá D.C.","Bogota DC",AREA),
-                AREA=ifelse(AREA=="Bolívar","Cartagena",AREA),
-                AREA=ifelse(AREA=="Caldas","Manizales",AREA),
-                AREA=ifelse(AREA=="Córdoba","Monteria",AREA),
-                AREA=ifelse(AREA=="Meta","Villavicencio",AREA),
-                AREA=ifelse(AREA=="Nariño","Pasto",AREA),
-                AREA=ifelse(AREA=="Norte de Santander","Cucuta",AREA),
-                AREA=ifelse(AREA=="Risaralda","Pereira",AREA),
-                AREA=ifelse(AREA=="Santander","Bucaramanga",AREA),
-                AREA=ifelse(AREA=="Tolima","Ibague",AREA),
-                AREA=ifelse(AREA=="Valle del Cauca","Cali",AREA))
+#### Calculando Capital Financiero ####
+# Creamos data a tipo Svy
+DataAniov0_Svy <- svydesign(ids=~0,weights=~FExp,
+                                  data=DataAnio_v0)
 
-# Concatenamos:
-Data_Etapa3 <- join_all(list(Ingresos_Simples,Ingresos_Svy,PIB), 
+# capital Financiero Mensual.
+# Ahora apliquemos la media agrupando con svyby:
+KFcieroMes_Svy <- svyby(~CapFinanciero_Mes, ~Anio+AREA+SectoresAgrupa10, 
+      DataAniov0_Svy, svymean,na = TRUE)
+
+# Hacemos algunas modificaciones a la data enccontrada:
+KFcieroMes_Svy <- KFcieroMes_Svy %>% 
+  dplyr::select(.,-c(se)) %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde") %>% 
+  dplyr::mutate(CapFinanciero_Mes=ifelse(CapFinanciero_Mes==0,NA,
+                                         CapFinanciero_Mes))
+
+# capital Financiero Anual
+# Ahora apliquemos la media agrupando con svyby:
+KFcieroAnio_Svy <- svyby(~CapFinanciero_Anio, ~Anio+AREA+SectoresAgrupa10, 
+      DataAniov0_Svy, svymean,na = TRUE)
+
+# Hacemos algunas modificaciones a la data enccontrada:
+KFcieroAnio_Svy <- KFcieroAnio_Svy %>% 
+  dplyr::select(.,-c(se)) %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde") %>% 
+  dplyr::mutate(CapFinanciero_Anio=ifelse(CapFinanciero_Anio==0,NA,
+                                         CapFinanciero_Anio))
+
+#### Calculando media de años de educación ####
+# Apliquemos la media agrupando con svyby:
+KHumano_Svy <- svyby(~AniosEscolaridad, ~Anio+AREA+SectoresAgrupa10, 
+      DataAniov0_Svy, svymean,na = TRUE)
+
+# Hacemos algunas modificaciones a la data enccontrada:
+KHumano_Svy <- KHumano_Svy %>% 
+  dplyr::select(.,-c(se)) %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde")
+
+#### calculando la Tasa de Ocupación ####
+# Primero calcularemos la PET por año y ciudad; y luego los OC por año, ciudad y sector
+# Definición PET según Dane: Personas de 12 años y más
+# Hacemos los filtros correspondiente:
+DataPET <- DataAnio_v0 %>%
+  dplyr::filter(Edad>=12)
+
+DataOC <- DataAnio_v0 %>%
+  dplyr::filter(OCI==1)
+
+# Calculemos sin Survey
+# PET: año y ciudad
+CiudadPET <- DataPET %>% 
+    dplyr::group_by(Anio, AREA) %>%
+    dplyr::summarise(
+      PET_Simple = round(sum(FExp,na.rm = TRUE),2)
+      )
+# OC: año, ciudad y sector:
+CiudadOC <- DataOC %>% 
+    dplyr::group_by(Anio, AREA, SectoresAgrupa10) %>%
+    dplyr::summarise(
+      OC_Simple = round(sum(FExp,na.rm = TRUE),2)
+      ) %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde")
+# Concatenamos PET y OC:
+DataTOC <- join_all(list(CiudadOC,CiudadPET), 
+                       by=c("Anio","AREA"),type = "full")
+# Calculamos la tasa de Ocupación: TOC=OC/PET
+DataTOC <- DataTOC %>% 
+  dplyr::mutate(TOC=round((OC_Simple/PET_Simple)*100,2))
+
+#### Concatendando Data ####
+Data_Etapa3 <- join_all(list(PIB,Ingresos_Svy,KFcieroAnio_Svy,KFcieroMes_Svy,
+                             KHumano_Svy, DataTOC), 
                        by=c("Anio","AREA","SectoresAgrupa10"),type = "full")
-```
 
+# Recodifiquemos la data
+# Es importante crear un id para cada observación por ciudad-sector
+# Creamos un data manipulable
+Data_Etapa3_v2 <- Data_Etapa3
+# Crearemos una vble ficticia para acortar el nombre de sectores y luego creamos el id:
+Data_Etapa3_v2$Sectores10Cortos <- c("Sector")
+
+Data_Etapa3_v2 <- Data_Etapa3_v2 %>% 
+      dplyr::mutate(Sectores10Cortos=ifelse(SectoresAgrupa10=="Comercio, Turismo y Comunicaciones","Comercio",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Actividades empresariales, científicas y de apoyo","Apoyo",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Agricultura, ganadería, caza, silvicultura y pesca","Agricultura",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Explotación de minas y canteras","Minas",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Industrias manufactureras","Industria",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Suministro de electricidad, gas, agua, vapor y aire","Electricidad",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Construcción","Construcción",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Actividades financieras y de seguros","Finanzas",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Administración, Defensa, Educación, Servicios sociales y salud","Administración",Sectores10Cortos),
+                   Sectores10Cortos=ifelse(SectoresAgrupa10=="Otras actividades","Otras",Sectores10Cortos)) %>% 
+  dplyr::select(.,c(Anio,AREA,Sectores10Cortos,SectoresAgrupa10,PIB,IngresosGeneradores_Svy,
+                    IngresosAutoempleados_Svy,CapFinanciero_Anio,CapFinanciero_Mes,
+                    AniosEscolaridad,OC_Simple,TOC)) %>% 
+  unite(.,ID,c(2:3),sep="_",remove=F)
+
+# Ahora tenemos la data lista. Se puede exportar en formato .dta (para trabajar con Stata)
+write_dta(Data_Etapa3_v2, "Data_Etapa3.dta")
+
+# eliminamos puntos intermedios:
+rm(CiudadOC,CiudadPET,Data_Etapa3,DataOC,DataPET,DataTOC,Ingresos_Simples,Ingresos_Svy,
+   KFcieroAnio_Svy,KFcieroMes_Svy,KHumano_Svy,PIB)
+```
+Con la data creada podemos correr el modelo con datos panel:
 
 
 
