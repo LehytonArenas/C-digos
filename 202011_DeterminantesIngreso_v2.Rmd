@@ -29,6 +29,7 @@ library(survey)
 library(jtools)
 library(stargazer)
 library(haven)
+library(plm)
 
 # Data previamente procesada:
 DataAnio_2017 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2017_v3.xlsx")
@@ -634,16 +635,94 @@ Data_Etapa3_v2 <- Data_Etapa3_v2 %>%
                     AniosEscolaridad,OC_Simple,TOC)) %>% 
   unite(.,ID,c(2:3),sep="_",remove=F)
 
-# Ahora tenemos la data lista. Se puede exportar en formato .dta (para trabajar con Stata)
-write_dta(Data_Etapa3_v2, "Data_Etapa3.dta")
-
 # eliminamos puntos intermedios:
 rm(CiudadOC,CiudadPET,Data_Etapa3,DataOC,DataPET,DataTOC,Ingresos_Simples,Ingresos_Svy,
    KFcieroAnio_Svy,KFcieroMes_Svy,KHumano_Svy,PIB)
+
+# Es importante, en la data creada elaborar un ID numérico:
+# Pasamos el ID a tipo factor:
+Data_Etapa3_v2$ID <- as.factor(Data_Etapa3_v2$ID)
+# Creamos un ID numérico
+Data_Etapa3_v2$IDNumerico <- Data_Etapa3_v2$ID 
+# Transformación a tipo numérico: ID y anio
+Data_Etapa3_v2$IDNumerico <- as.numeric(Data_Etapa3_v2$IDNumerico)
+Data_Etapa3_v2$Anio <- as.numeric(Data_Etapa3_v2$Anio)
+
+# Ahora tenemos la data lista. Se puede exportar en formato .dta (para trabajar con Stata)
+write_dta(Data_Etapa3_v2, "Data_Etapa3.dta")
 ```
 Con la data creada podemos correr el modelo con datos panel:
+```{r Etapa 3 Modelos Panel, echo=FALSE}
+# Recordemos que con data panel debemos hacer tres modelos: agrupado (pooled), efectos fijos y efectos variaables.
 
+#### Modelos para Generadores de empleo ####
 
+# Modelo agrupado (Pooled)
+# Este modelo se estima por MCO, ignorando la naturaleza de los datos y considerando que el término independiente es el mismo para todos los periodos.
+reg.mco <- lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+              data = Data_Etapa3_v2)
+summary(reg.mco)
+# Esto también se puede hacer ccon un plm:
+reg.mco.plm <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("IDNumerico","Anio"), model="pooling", data=Data_Etapa3_v2 )
+summary(reg.mco.plm)
+# Los resultados de este modelo son buenos, con un ingreso de los generadores de empleo incidiendo positivamente en el PIb de ciudad.
+
+# Modelo con efectos fijos.
+# Este modelo asume que el término independiente puede ser distinto por individuo o por periodo.
+# Modelo con efectos fijos sobre los individuos
+reg.fijos.ind = lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(IDNumerico),
+                   data = Data_Etapa3_v2)
+summary(reg.fijos.ind)
+# Esto también se puede hacer ccon un plm:
+reg.fijos.within <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("IDNumerico"), model="within", data=Data_Etapa3_v2 )
+summary(reg.fijos.within)
+# Lo resultaddos de este modelo no son buenos: ingresos no es significativo
+
+# Modelo con efectos fijos sobre el tiempo:
+reg.fijos.peri = lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(Anio),
+              data = Data_Etapa3_v2)
+summary(reg.fijos.peri)
+# probemos con plm:
+reg.fijos.within.t <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("Anio"), model="within", data=Data_Etapa3_v2 )
+summary(reg.fijos.within.t)
+# Los resultados de éste modelo son buenos: con un ingreso significativo
+
+# Modelo con efectos aleatorios.
+reg.aleatorios <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("IDNumerico","Anio"), model="random", data=Data_Etapa3_v2 )
+summary(reg.aleatorios)
+# Lo resultaddos de este modelo no son buenos: ingresos no es significativo.
+
+# Eligiendo el mejor modelo: Con efectos fijos sobre individuo
+
+# H0: modelo agrupado es mejor que efectos fijos
+pFtest(reg.fijos.within,reg.mco)
+# Según este resultado, se rechaza H0 y los efectos fijos son preferibles al modelo agrupado.
+
+# H0: modelo agrupado es mejor que efectos aleatorios
+plmtest(reg.mco.plm, type=c("bp"))
+# Según este resultado, se rechaza H0 y efectos aleatorios son preferibles al agrupado
+
+# H0: Efectos aleatorios es mejor a efectos fijos.
+phtest(reg.fijos.within,reg.aleatorios)
+# Según este resultado, se rechaza H0 y efectos fijos es preferible a efectos aleatorios.
+
+# PLT. El enfoque idoneo es efectos fijos, es decir que el modelo apropiado es:
+summary(reg.fijos.within)
+
+#Eligienddo el mejor modelo con efectos fijos sobre t:
+
+# H0: Efectos aleatorios es mejor a efectos fijos.
+phtest(reg.fijos.within.t,reg.aleatorios)
+# Según este resultado, se rechaza H0 y efectos fijos es preferible a efectos aleatorios.
+
+# H0: modelo agrupado es mejor que efectos fijos
+pFtest(reg.fijos.within.t,reg.mco)
+# Según este resultado, se acepta H0 y el modelo agrupado es mejor a efectos fijos.
+```
 
 
 
