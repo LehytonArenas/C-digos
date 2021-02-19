@@ -722,6 +722,78 @@ phtest(reg.fijos.within.t,reg.aleatorios)
 # H0: modelo agrupado es mejor que efectos fijos
 pFtest(reg.fijos.within.t,reg.mco)
 # Según este resultado, se acepta H0 y el modelo agrupado es mejor a efectos fijos.
+
+
+#### Modelos para Autoempleados ####
+
+# Modelo agrupado (Pooled)
+# Este modelo se estima por MCO, ignorando la naturaleza de los datos y considerando que el término independiente es el mismo para todos los periodos.
+reg.mco.Aut <- lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+              data = Data_Etapa3_v2)
+summary(reg.mco.Aut)
+# Esto también se puede hacer ccon un plm:
+reg.mco.plm.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("IDNumerico","Anio"), model="pooling", data=Data_Etapa3_v2 )
+summary(reg.mco.plm.Aut)
+# Los resultados de este modelo no son buenos.
+
+# Modelo con efectos fijos.
+# Este modelo asume que el término independiente puede ser distinto por individuo o por periodo.
+# Modelo con efectos fijos sobre los individuos
+reg.fijos.ind.Aut = lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(IDNumerico),
+                   data = Data_Etapa3_v2)
+summary(reg.fijos.ind.Aut)
+# Esto también se puede hacer ccon un plm:
+reg.fijos.within.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("IDNumerico"), model="within", data=Data_Etapa3_v2 )
+summary(reg.fijos.within.Aut)
+# Lo resultados de este modelo no son buenos: significativos pero con signos no acordes.
+
+# Modelo con efectos fijos sobre el tiempo:
+reg.fijos.peri.Aut = lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(Anio),
+              data = Data_Etapa3_v2)
+summary(reg.fijos.peri.Aut)
+# probemos con plm:
+reg.fijos.within.t.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("Anio"), model="within", data=Data_Etapa3_v2 )
+summary(reg.fijos.within.t.Aut)
+# Los resultados de éste modelo no presentn buena significancia.
+
+# Modelo con efectos aleatorios.
+reg.aleatorios.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+                      index=c("IDNumerico","Anio"), model="random", data=Data_Etapa3_v2 )
+summary(reg.aleatorios.Aut)
+# Lo resultaddos de este modelo son buenos.
+
+# Eligiendo el mejor modelo: Con efectos fijos sobre individuo
+
+# H0: modelo agrupado es mejor que efectos fijos
+pFtest(reg.fijos.within.Aut,reg.mco.Aut)
+# Según este resultado, se rechaza H0 y los efectos fijos son preferibles al modelo agrupado.
+
+# H0: modelo agrupado es mejor que efectos aleatorios
+plmtest(reg.mco.plm.Aut, type=c("bp"))
+# Según este resultado, se rechaza H0 y efectos aleatorios son preferibles al agrupado
+
+# H0: Efectos aleatorios es mejor a efectos fijos.
+phtest(reg.fijos.within.Aut,reg.aleatorios.Aut)
+# Según este resultado, se rechaza H0 y efectos fijos es preferible a efectos aleatorios.
+
+# PLT. El enfoque idoneo es efectos fijos, es decir que el modelo apropiado es:
+summary(reg.fijos.within.Aut)
+
+#Eligienddo el mejor modelo con efectos fijos sobre t:
+
+# H0: modelo agrupado es mejor que efectos fijos
+pFtest(reg.fijos.within.t.Aut,reg.mco.Aut)
+# Según este resultado, se acepta H0 y modelo agrupado es mejor a efectos fijos.
+
+# H0: modelo agrupado es mejor que efectos aleatorios
+plmtest(reg.mco.plm.Aut, type=c("bp"))
+# Según este resultado, se rechaza H0 y efectos aleatorios es mejor a modelo agrupado.
+
+# PLT. El enfoque ideal es efectos aleatorios:
+summary(reg.aleatorios.Aut)
 ```
 
 
