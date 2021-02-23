@@ -547,7 +547,7 @@ DataAniov0_Svy <- svydesign(ids=~0,weights=~FExp,
 KFcieroMes_Svy <- svyby(~CapFinanciero_Mes, ~Anio+AREA+SectoresAgrupa10, 
       DataAniov0_Svy, svymean,na = TRUE)
 
-# Hacemos algunas modificaciones a la data enccontrada:
+# Hacemos algunas modificaciones a la data encontrada:
 KFcieroMes_Svy <- KFcieroMes_Svy %>% 
   dplyr::select(.,-c(se)) %>% 
   dplyr::filter(SectoresAgrupa10!="No Responde") %>% 
@@ -565,6 +565,16 @@ KFcieroAnio_Svy <- KFcieroAnio_Svy %>%
   dplyr::filter(SectoresAgrupa10!="No Responde") %>% 
   dplyr::mutate(CapFinanciero_Anio=ifelse(CapFinanciero_Anio==0,NA,
                                          CapFinanciero_Anio))
+#### Calculando las transferencias anuales ####
+# Pdemos usar el objeto ya creado DataAniov0_Svy
+TransfAnio_Svy <- svyby(~TransfSubsidios_Anio, ~Anio+AREA+SectoresAgrupa10, 
+      DataAniov0_Svy, svymean,na = TRUE)
+# Hacemos algunas modificaciones a la data enccontrada:
+TransfAnio_Svy <- TransfAnio_Svy %>% 
+  dplyr::select(.,-c(se)) %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde") %>% 
+  dplyr::mutate(TransfSubsidios_Anio=ifelse(TransfSubsidios_Anio==0,NA,
+                                         TransfSubsidios_Anio))
 
 #### Calculando media de años de educación ####
 # Apliquemos la media agrupando con svyby:
@@ -609,7 +619,7 @@ DataTOC <- DataTOC %>%
 
 #### Concatendando Data ####
 Data_Etapa3 <- join_all(list(PIB,Ingresos_Svy,KFcieroAnio_Svy,KFcieroMes_Svy,
-                             KHumano_Svy, DataTOC), 
+                             TransfAnio_Svy,KHumano_Svy, DataTOC), 
                        by=c("Anio","AREA","SectoresAgrupa10"),type = "full")
 
 # Recodifiquemos la data
@@ -630,14 +640,13 @@ Data_Etapa3_v2 <- Data_Etapa3_v2 %>%
                    Sectores10Cortos=ifelse(SectoresAgrupa10=="Actividades financieras y de seguros","Finanzas",Sectores10Cortos),
                    Sectores10Cortos=ifelse(SectoresAgrupa10=="Administración, Defensa, Educación, Servicios sociales y salud","Administración",Sectores10Cortos),
                    Sectores10Cortos=ifelse(SectoresAgrupa10=="Otras actividades","Otras",Sectores10Cortos)) %>% 
-  dplyr::select(.,c(Anio,AREA,Sectores10Cortos,SectoresAgrupa10,PIB,IngresosGeneradores_Svy,
-                    IngresosAutoempleados_Svy,CapFinanciero_Anio,CapFinanciero_Mes,
+  dplyr::select(.,c(Anio,AREA,Sectores10Cortos,SectoresAgrupa10,PIB,IngresosGeneradores_Svy,IngresosAutoempleados_Svy,CapFinanciero_Anio,CapFinanciero_Mes,TransfSubsidios_Anio,
                     AniosEscolaridad,OC_Simple,TOC)) %>% 
   unite(.,ID,c(2:3),sep="_",remove=F)
 
 # eliminamos puntos intermedios:
-rm(CiudadOC,CiudadPET,Data_Etapa3,DataOC,DataPET,DataTOC,Ingresos_Simples,Ingresos_Svy,
-   KFcieroAnio_Svy,KFcieroMes_Svy,KHumano_Svy,PIB)
+rm(CiudadOC,CiudadPET,Data_Etapa3,DataOC,DataPET,DataTOC,Ingresos_Svy,
+   KFcieroAnio_Svy,KFcieroMes_Svy,KHumano_Svy,PIB,TransfAnio_Svy)
 
 # Es importante, en la data creada elaborar un ID numérico:
 # Pasamos el ID a tipo factor:
