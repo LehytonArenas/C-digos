@@ -764,10 +764,174 @@ DataAnio_2019_v4 <- DataAnio_2019 %>%
 
 DataAnio <- rbind(DataAnio_2017_v4,DataAnio_2018_v4,DataAnio_2019_v4)
 
+#### Data GEIH. Controles Etapa3 ####
+# Es importante tener presente la construcción del ID:
+# ID Hogares: Directorio+Hogar
+# ID Personas:Directorio+Orden+Hogar, se cambia a: Directorio+Hogar+Orden
+# También es de recordar la data que necesitamos: Modulo CGP
+# Gasto en salud (P6120): Cuánto paga o cuánto le descuentan por la afiliación?
+# Analfabetismo (P6160): Sabe leer y escribir.
+
+# Funcion para seleccionar vbles de interés:
+Funcion1 <- function(Data){
+  Data <- Data %>% 
+    dplyr::select(., c("AREA", "DIRECTORIO","HOGAR", "ORDEN",
+                       "P6120", "P6160"))
+  return(Data)
+}
+
+# Importamos la data mensual y seleccionamos las vbles de interés:
+# Anio 2017
+# Enero:
+GEIH_CGP_201701 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/1_Enero.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201701 <- Funcion1(Data=GEIH_CGP_201701)
+# Febrero:
+GEIH_CGP_201702 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/2_Febrero.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201702 <- Funcion1(Data=GEIH_CGP_201702)
+# Marzo:
+GEIH_CGP_201703 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/3_Marzo.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201703 <- Funcion1(Data=GEIH_CGP_201703)
+# Abril
+GEIH_CGP_201704 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/4_Abril.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201704 <- Funcion1(Data=GEIH_CGP_201704)
+# Mayo:
+GEIH_CGP_201705 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/5_Mayo.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201705 <- Funcion1(Data=GEIH_CGP_201705)
+# Junio:
+GEIH_CGP_201706 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/6_Junio.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201706 <- Funcion1(Data=GEIH_CGP_201706)
+# Julio:
+GEIH_CGP_201707 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/7_Julio.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201707 <- Funcion1(Data=GEIH_CGP_201707)
+# Agosto:
+GEIH_CGP_201708 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/8_Agosto.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201708 <- Funcion1(Data=GEIH_CGP_201708)
+# Septiembre
+GEIH_CGP_201709 <- read.delim("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/9_Septiembre.txt/Area - Caracteristicas generales (Personas).txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_CGP_201709 <- Funcion1(Data=GEIH_CGP_201709)
+# Octubre:
+GEIH_CGP_201710 <- read.delim("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/10_Octubre.txt/Area - Caracteristicas generales (Personas).txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_CGP_201710 <- Funcion1(Data=GEIH_CGP_201710)
+# Noviembre:
+GEIH_CGP_201711 <- read.delim("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/11_Noviembre.txt/Area - Caracteristicas generales (Personas).txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_CGP_201711 <- Funcion1(Data=GEIH_CGP_201711)
+# Diciembre:
+GEIH_CGP_201712 <- read.delim("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2017/12_Diciembre.txt/Area - Caracteristicas generales (Personas).txt",header = TRUE, sep = "\t", dec = ".")
+GEIH_CGP_201712 <- Funcion1(Data=GEIH_CGP_201712)
+
+# Anio 2018:
+# Enero:
+GEIH_CGP_201801 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/1_Enero.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201801 <- Funcion1(Data=GEIH_CGP_201801)
+# Febrero:
+GEIH_CGP_201802 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/2_Febrero.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201802 <- Funcion1(Data=GEIH_CGP_201802)
+# Marzo:
+GEIH_CGP_201803 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/3_Marzo.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201803 <- Funcion1(Data=GEIH_CGP_201803)
+# Abril
+GEIH_CGP_201804 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/4_Abril.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201804 <- Funcion1(Data=GEIH_CGP_201804)
+# Mayo:
+GEIH_CGP_201805 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/5_Mayo.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201805 <- Funcion1(Data=GEIH_CGP_201805)
+# Junio:
+GEIH_CGP_201806 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/6_Junio.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201806 <- Funcion1(Data=GEIH_CGP_201806)
+# Julio:
+GEIH_CGP_201807 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/7_Julio.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201807 <- Funcion1(Data=GEIH_CGP_201807)
+# Agosto:
+GEIH_CGP_201808 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/8_Agosto.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201808 <- Funcion1(Data=GEIH_CGP_201808)
+# Septiembre
+GEIH_CGP_201809 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/9_Septiembre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201809 <- Funcion1(Data=GEIH_CGP_201809)
+# Octubre:
+GEIH_CGP_201810 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/10_Octubre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201810 <- Funcion1(Data=GEIH_CGP_201810)
+# Noviembre:
+GEIH_CGP_201811 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/11_Noviembre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201811 <- Funcion1(Data=GEIH_CGP_201811)
+# Diciembre:
+GEIH_CGP_201812 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2018/12_Diciembre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201812 <- Funcion1(Data=GEIH_CGP_201812)
+
+# Anio 2019:
+# Fuuncion para cambiar minúsculas por mayúsculas
+Funcion2 <- function(Data){
+  Data <- Data %>% 
+    dplyr::rename(.,AREA=Area,DIRECTORIO=Directorio,HOGAR=Hogar,ORDEN=Orden)
+  return(Data)
+}
+# Enero:
+GEIH_CGP_201901 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/1_Enero.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201901 <- GEIH_CGP_201901 %>% 
+  dplyr::rename(.,AREA=Area,DIRECTORIO=Directorio,HOGAR=Hogar,ORDEN=Orden)
+GEIH_CGP_201901 <- Funcion1(Data=GEIH_CGP_201901)
+# Febrero:
+GEIH_CGP_201902 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/2_Febrero.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201902 <- Funcion2(Data=GEIH_CGP_201902)
+GEIH_CGP_201902 <- Funcion1(Data=GEIH_CGP_201902)
+# Marzo:
+GEIH_CGP_201903 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/3_Marzo.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201903 <- Funcion2(Data=GEIH_CGP_201903)
+GEIH_CGP_201903 <- Funcion1(Data=GEIH_CGP_201903)
+# Abril
+GEIH_CGP_201904 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/4_Abril.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201904 <- Funcion2(Data=GEIH_CGP_201904)
+GEIH_CGP_201904 <- Funcion1(Data=GEIH_CGP_201904)
+# Mayo:
+GEIH_CGP_201905 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/5_Mayo.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201905 <- Funcion2(Data=GEIH_CGP_201905)
+GEIH_CGP_201905 <- Funcion1(Data=GEIH_CGP_201905)
+# Junio:
+GEIH_CGP_201906 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/6_Junio.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201906 <- Funcion2(Data=GEIH_CGP_201906)
+GEIH_CGP_201906 <- Funcion1(Data=GEIH_CGP_201906)
+# Julio:
+GEIH_CGP_201907 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/7_Julio.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201907 <- Funcion1(Data=GEIH_CGP_201907)
+# Agosto:
+GEIH_CGP_201908 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/8_Agosto.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_CGP_201908 <- Funcion1(Data=GEIH_CGP_201908)
+# Septiembre
+GEIH_CGP_201909 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/9_Septiembre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201909 <- Funcion1(Data=GEIH_CGP_201909)
+# Octubre:
+GEIH_CGP_201910 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/10_Octubre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201910 <- Funcion1(Data=GEIH_CGP_201910)
+# Noviembre:
+GEIH_CGP_201911 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/11_Noviembre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201911 <- Funcion1(Data=GEIH_CGP_201911)
+# Diciembre:
+GEIH_CGP_201912 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/12_Diciembre.csv/Area - Caracteristicas generales (Personas).csv",sep = ";", header = TRUE, dec = ",")
+GEIH_CGP_201912 <- Funcion1(Data=GEIH_CGP_201912)
+
+# Concatenamos todo
+DataControles <- join_all(list(GEIH_CGP_201701,GEIH_CGP_201702,GEIH_CGP_201703,GEIH_CGP_201704,GEIH_CGP_201705,GEIH_CGP_201706,
+                               GEIH_CGP_201707,GEIH_CGP_201708,GEIH_CGP_201709,GEIH_CGP_201710,GEIH_CGP_201711,GEIH_CGP_201712,
+                               GEIH_CGP_201801,GEIH_CGP_201802,GEIH_CGP_201803,GEIH_CGP_201804,GEIH_CGP_201805,GEIH_CGP_201806,
+                               GEIH_CGP_201807,GEIH_CGP_201808,GEIH_CGP_201809,GEIH_CGP_201810,GEIH_CGP_201811,GEIH_CGP_201812,
+                               GEIH_CGP_201901,GEIH_CGP_201902,GEIH_CGP_201903,GEIH_CGP_201904,GEIH_CGP_201905,GEIH_CGP_201906,
+                               GEIH_CGP_201907,GEIH_CGP_201908,GEIH_CGP_201909,GEIH_CGP_201910,GEIH_CGP_201911,GEIH_CGP_201912), by=c("DIRECTORIO","HOGAR","ORDEN"),type = "full")
+
+# Eliminamos AREA pues no necesitamos
+# Creamos ID
+# Eliminamos malas respuestas en P6120
+# Organizamos rtas en P6160: Sabe leer y escribir 1 Si; 0 No.
+# Renombramos las vaariables
+DataControles_v2 <- DataControles %>% 
+  dplyr::select(.,-c("AREA")) %>%
+  unite(.,ID,c(1:3),sep="",remove=TRUE,na.rm = FALSE) %>% 
+  dplyr::mutate(P6120=ifelse(P6120==98 | P6120==99,NA,P6120),
+                P6160=ifelse(P6160==2,0,P6160)) %>% 
+  dplyr::rename(GastoAfiliacion="P6120",Lectoescritura="P6160")
+
+# Exportamos la data: en formato dta porque .xls no deja
+write_dta(DataControles_v2, "DataControles.dta")
 ##### Pruebas#####
-prueba2017 <- DataAnio_2017[1:1000,3:4]
-prueba2018 <- DataAnio_2017[1:1000,3:4]
-prueba <- rbind(prueba2017,prueba2018)
+
 
 
 
