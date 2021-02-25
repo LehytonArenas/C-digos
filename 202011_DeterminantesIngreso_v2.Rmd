@@ -409,9 +409,7 @@ PIB <- PIB %>%
                 AREA=ifelse(AREA=="Tolima","Ibague",AREA),
                 AREA=ifelse(AREA=="Valle del Cauca","Cali",AREA))
 
-#### calculando ingresos medios ####
-# El objetivo aquí es encontrar los ingresos medios por año, sector y ciudad.
-# Primero crearemos los INgresos de Generadores y Autoempleados con una media simple.
+#### Se trae data de GEIH #### 
 # Traemos  la data procesada previamente en v0: 2017, 2018 y 2019:
 # Esta data es útil porque los sectores son factores, no dummies
 DataAnio_2019_v0 <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataAnio_2019.xlsx")
@@ -431,8 +429,6 @@ DataAnio_2019_v0 <- DataAnio_2019_v0 %>%
                 AREA=ifelse(AREA==68,"Bucaramanga",AREA),
                 AREA=ifelse(AREA==73,"Ibague",AREA),
                 AREA=ifelse(AREA==76,"Cali",AREA))
-
-#Primero creemos promedios simples:
 
 # Debemos crear una variable por año:
 DataAnio_2017_v0$Anio <- c("2017")
@@ -456,6 +452,15 @@ DataAnio_v0 <- DataAnio_v0 %>%
                     SectoresAgrupa10=ifelse(SectorEconomico=="Administración Pública y Defensa" | SectorEconomico=="Educación" |SectorEconomico=="Servicios Sociales y de Salud","Administración, Defensa, Educación, Servicios sociales y salud",SectoresAgrupa10),
                     SectoresAgrupa10=ifelse(SectorEconomico=="Servicios Comunitarios Sociales y Personales" |SectorEconomico=="Hogares Privados con servicio doméstico" |SectorEconomico=="Organizaciones Extraterritoriales","Otras actividades",SectoresAgrupa10))
 
+# Se importa la data manipulada previamente para salud y analfabetismo:
+DataControles <- read_dta("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton/Data/DataControles.dta")
+# se hace el join
+DataAnio_v0 <- join_all(list(DataAnio_v0,DataControles), by=c("ID"),type = "full")
+
+#### Calculando ingresos medios ####
+# El objetivo aquí es encontrar los ingresos medios por año, sector y ciudad.
+
+# Creamos promedios sin Surevey:
 # Creamos los Ingresos de Generadores:
 IngresosGeneradores_Anio <- DataAnio_v0 %>% 
     dplyr::filter(Generadores_Empleo=="Generador de empleo") %>% 
@@ -470,13 +475,12 @@ IngresosAutoempleados_Anio <- DataAnio_v0 %>%
     dplyr::summarise(
       IngresosAutoempleados_Simple = mean(IngresoLaboral_Mes,na.rm = TRUE)
       )
-
 # Se concatena y se eliminan pasos intermedios
 Ingresos_Simples <- join_all(list(IngresosGeneradores_Anio,IngresosAutoempleados_Anio),
                              by=c("Anio","AREA","SectoresAgrupa10"),type = "full")
 rm(IngresosGeneradores_Anio,IngresosAutoempleados_Anio)
 
-# Ahora, creamos promedios con Survey (factor de expansión):
+# Creamos promedios con Survey (factor de expansión):
 # Transformamos la data a tipo Survey:
 # dividimos el Fex en 12:
 DataAnio_v0 <- DataAnio_v0 %>% 
@@ -532,10 +536,15 @@ rm(GeneradoresAnio,GeneradoresAnio_Svy,MeansGeneradores_Svy,AutoempleadosAnio,Au
 # Así quedamos estrictamente con 10 sectores:
 Ingresos_Simples <- Ingresos_Simples %>% 
   dplyr::filter(SectoresAgrupa10!="No Responde")
+
 Ingresos_Svy <- Ingresos_Svy %>% 
   dplyr::filter(SectoresAgrupa10!="No Responde")
 
-# PLT ahora tenemos dos DF de Ingresos: Uno Simple y uno con Survey. Ingresos_Simples e Ingresos_Svy. 
+# Podemos comprobar que algunos secctores no tienen generadores o autoempleaddos:
+prueba <- DataAnio_v0 %>% 
+  dplyr::filter(AREA=="Cartagena" & Anio=="2017" & SectoresAgrupa10=="Actividades financieras y de seguros" & Generadores_Empleo=="Generador de empleo") %>% 
+  dplyr::select(.,c(AREA,ID,Anio,IngresoLaboral_Mes,FExp))
+rm(prueba)
 
 #### Calculando Capital Financiero ####
 # Creamos data a tipo Svy
@@ -565,8 +574,8 @@ KFcieroAnio_Svy <- KFcieroAnio_Svy %>%
   dplyr::filter(SectoresAgrupa10!="No Responde") %>% 
   dplyr::mutate(CapFinanciero_Anio=ifelse(CapFinanciero_Anio==0,NA,
                                          CapFinanciero_Anio))
+
 #### Calculando las transferencias anuales ####
-# Pdemos usar el objeto ya creado DataAniov0_Svy
 TransfAnio_Svy <- svyby(~TransfSubsidios_Anio, ~Anio+AREA+SectoresAgrupa10, 
       DataAniov0_Svy, svymean,na = TRUE)
 # Hacemos algunas modificaciones a la data enccontrada:
@@ -586,7 +595,28 @@ KHumano_Svy <- KHumano_Svy %>%
   dplyr::select(.,-c(se)) %>% 
   dplyr::filter(SectoresAgrupa10!="No Responde")
 
-#### calculando la Tasa de Ocupación ####
+#### Calculando Gasto en Salud #### 
+# Apliquemos la media agrupando con svyby:
+GSalud_Svy <- svyby(~GastoAfiliacion, ~Anio+AREA+SectoresAgrupa10, 
+      DataAniov0_Svy, svymean,na = TRUE)
+
+# Hacemos algunas modificaciones a la data enccontrada:
+GSalud_Svy <- GSalud_Svy %>% 
+  dplyr::select(.,-c(se)) %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde")
+
+#### Calculando tasa de Alfabetismo ####
+# Esta variiable es sabe leer y escribir: 1 (Si), 0 (No)
+# Apliquemos la media agrupando con svyby:
+LectoEsc_Svy <- svyby(~Lectoescritura, ~Anio+AREA+SectoresAgrupa10, 
+      DataAniov0_Svy, svymean,na = TRUE)
+
+# Hacemos algunas modificaciones a la data enccontrada:
+LectoEsc_Svy <- LectoEsc_Svy %>% 
+  dplyr::select(.,-c(se)) %>% 
+  dplyr::filter(SectoresAgrupa10!="No Responde")
+
+#### Calculando la Tasa de Ocupación ####
 # Primero calcularemos la PET por año y ciudad; y luego los OC por año, ciudad y sector
 # Definición PET según Dane: Personas de 12 años y más
 # Hacemos los filtros correspondiente:
@@ -618,8 +648,9 @@ DataTOC <- DataTOC %>%
   dplyr::mutate(TOC=round((OC_Simple/PET_Simple)*100,2))
 
 #### Concatendando Data ####
-Data_Etapa3 <- join_all(list(PIB,Ingresos_Svy,KFcieroAnio_Svy,KFcieroMes_Svy,
-                             TransfAnio_Svy,KHumano_Svy, DataTOC), 
+Data_Etapa3 <- join_all(list(PIB,Ingresos_Simples,Ingresos_Svy,KFcieroAnio_Svy,
+                             KFcieroMes_Svy,TransfAnio_Svy,KHumano_Svy,GSalud_Svy,
+                             LectoEsc_Svy,DataTOC), 
                        by=c("Anio","AREA","SectoresAgrupa10"),type = "full")
 
 # Recodifiquemos la data
@@ -640,13 +671,9 @@ Data_Etapa3_v2 <- Data_Etapa3_v2 %>%
                    Sectores10Cortos=ifelse(SectoresAgrupa10=="Actividades financieras y de seguros","Finanzas",Sectores10Cortos),
                    Sectores10Cortos=ifelse(SectoresAgrupa10=="Administración, Defensa, Educación, Servicios sociales y salud","Administración",Sectores10Cortos),
                    Sectores10Cortos=ifelse(SectoresAgrupa10=="Otras actividades","Otras",Sectores10Cortos)) %>% 
-  dplyr::select(.,c(Anio,AREA,Sectores10Cortos,SectoresAgrupa10,PIB,IngresosGeneradores_Svy,IngresosAutoempleados_Svy,CapFinanciero_Anio,CapFinanciero_Mes,TransfSubsidios_Anio,
-                    AniosEscolaridad,OC_Simple,TOC)) %>% 
+  dplyr::select(.,c(Anio,AREA,Sectores10Cortos,SectoresAgrupa10,PIB,IngresosGeneradores_Svy,IngresosAutoempleados_Svy,IngresosGeneradores_Simple,IngresosAutoempleados_Simple,CapFinanciero_Anio,CapFinanciero_Mes,TransfSubsidios_Anio,AniosEscolaridad,
+                    GastoAfiliacion,Lectoescritura,OC_Simple,TOC)) %>% 
   unite(.,ID,c(2:3),sep="_",remove=F)
-
-# eliminamos puntos intermedios:
-rm(CiudadOC,CiudadPET,Data_Etapa3,DataOC,DataPET,DataTOC,Ingresos_Svy,
-   KFcieroAnio_Svy,KFcieroMes_Svy,KHumano_Svy,PIB,TransfAnio_Svy)
 
 # Es importante, en la data creada elaborar un ID numérico:
 # Pasamos el ID a tipo factor:
@@ -657,10 +684,16 @@ Data_Etapa3_v2$IDNumerico <- Data_Etapa3_v2$ID
 Data_Etapa3_v2$IDNumerico <- as.numeric(Data_Etapa3_v2$IDNumerico)
 Data_Etapa3_v2$Anio <- as.numeric(Data_Etapa3_v2$Anio)
 
+# eliminamos puntos intermedios:
+rm(CiudadOC,CiudadPET,DataOC,DataPET,DataTOC,Ingresos_Svy,
+   KFcieroAnio_Svy,KFcieroMes_Svy,KHumano_Svy,PIB,TransfAnio_Svy,DataControles,GSalud_Svy,Ingresos_Simples,LectoEsc_Svy)
+
 # Ahora tenemos la data lista. Se puede exportar en formato .dta (para trabajar con Stata)
 write_dta(Data_Etapa3_v2, "Data_Etapa3.dta")
 ```
-Con la data creada podemos correr el modelo con datos panel:
+
+Con la data procesada podemos correr el modelo con datos panel:
+
 ```{r Etapa 3 Modelos Panel, echo=FALSE}
 # Recordemos que con data panel debemos hacer tres modelos: agrupado (pooled), efectos fijos y efectos variaables.
 
@@ -668,42 +701,45 @@ Con la data creada podemos correr el modelo con datos panel:
 
 # Modelo agrupado (Pooled)
 # Este modelo se estima por MCO, ignorando la naturaleza de los datos y considerando que el término independiente es el mismo para todos los periodos.
-reg.mco <- lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.mco <- lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
               data = Data_Etapa3_v2)
 summary(reg.mco)
 # Esto también se puede hacer ccon un plm:
-reg.mco.plm <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.mco.plm <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("IDNumerico","Anio"), model="pooling", data=Data_Etapa3_v2 )
 summary(reg.mco.plm)
-# Los resultados de este modelo son buenos, con un ingreso de los generadores de empleo incidiendo positivamente en el PIb de ciudad.
 
 # Modelo con efectos fijos.
 # Este modelo asume que el término independiente puede ser distinto por individuo o por periodo.
 # Modelo con efectos fijos sobre los individuos
-reg.fijos.ind = lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(IDNumerico),
+reg.fijos.ind = lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC+factor(IDNumerico),
                    data = Data_Etapa3_v2)
 summary(reg.fijos.ind)
 # Esto también se puede hacer ccon un plm:
-reg.fijos.within <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.fijos.within <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("IDNumerico"), model="within", data=Data_Etapa3_v2 )
 summary(reg.fijos.within)
-# Lo resultaddos de este modelo no son buenos: ingresos no es significativo
+
 
 # Modelo con efectos fijos sobre el tiempo:
-reg.fijos.peri = lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(Anio),
+reg.fijos.peri = lm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC+factor(Anio),
               data = Data_Etapa3_v2)
 summary(reg.fijos.peri)
 # probemos con plm:
-reg.fijos.within.t <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.fijos.within.t <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("Anio"), model="within", data=Data_Etapa3_v2 )
 summary(reg.fijos.within.t)
-# Los resultados de éste modelo son buenos: con un ingreso significativo
 
 # Modelo con efectos aleatorios.
-reg.aleatorios <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.aleatorios <- plm(PIB~IngresosGeneradores_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("IDNumerico","Anio"), model="random", data=Data_Etapa3_v2 )
 summary(reg.aleatorios)
-# Lo resultaddos de este modelo no son buenos: ingresos no es significativo.
 
 # Eligiendo el mejor modelo: Con efectos fijos sobre individuo
 
@@ -724,55 +760,66 @@ summary(reg.fijos.within)
 
 #Eligienddo el mejor modelo con efectos fijos sobre t:
 
+# H0: modelo agrupado es mejor que efectos fijos
+pFtest(reg.fijos.within.t,reg.mco)
+# Según este resultado, se acepta H0 y el modelo agrupado es mejor a efectos fijos.
+
+# H0: modelo agrupado es mejor que efectos aleatorios
+plmtest(reg.mco.plm, type=c("bp"))
+# Según este resultado, se rechaza H0 y efectos aleatorios son preferibles al agrupado
+
 # H0: Efectos aleatorios es mejor a efectos fijos.
 phtest(reg.fijos.within.t,reg.aleatorios)
 # Según este resultado, se rechaza H0 y efectos fijos es preferible a efectos aleatorios.
 
-# H0: modelo agrupado es mejor que efectos fijos
-pFtest(reg.fijos.within.t,reg.mco)
-# Según este resultado, se acepta H0 y el modelo agrupado es mejor a efectos fijos.
+# PLT. El enfoque idoneo es efectos aleatorios, es decir que el modelo apropiado es:
+summary(reg.aleatorios)
 
 
 #### Modelos para Autoempleados ####
 
 # Modelo agrupado (Pooled)
 # Este modelo se estima por MCO, ignorando la naturaleza de los datos y considerando que el término independiente es el mismo para todos los periodos.
-reg.mco.Aut <- lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.mco.Aut <- lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
               data = Data_Etapa3_v2)
 summary(reg.mco.Aut)
 # Esto también se puede hacer ccon un plm:
-reg.mco.plm.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.mco.plm.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("IDNumerico","Anio"), model="pooling", data=Data_Etapa3_v2 )
 summary(reg.mco.plm.Aut)
-# Los resultados de este modelo no son buenos.
 
 # Modelo con efectos fijos.
 # Este modelo asume que el término independiente puede ser distinto por individuo o por periodo.
+
 # Modelo con efectos fijos sobre los individuos
-reg.fijos.ind.Aut = lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(IDNumerico),
+reg.fijos.ind.Aut = lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC+factor(IDNumerico),
                    data = Data_Etapa3_v2)
 summary(reg.fijos.ind.Aut)
 # Esto también se puede hacer ccon un plm:
-reg.fijos.within.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.fijos.within.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("IDNumerico"), model="within", data=Data_Etapa3_v2 )
 summary(reg.fijos.within.Aut)
-# Lo resultados de este modelo no son buenos: significativos pero con signos no acordes.
 
 # Modelo con efectos fijos sobre el tiempo:
-reg.fijos.peri.Aut = lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC+factor(Anio),
+reg.fijos.peri.Aut = lm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC+factor(Anio),
               data = Data_Etapa3_v2)
 summary(reg.fijos.peri.Aut)
 # probemos con plm:
-reg.fijos.within.t.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.fijos.within.t.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("Anio"), model="within", data=Data_Etapa3_v2 )
 summary(reg.fijos.within.t.Aut)
-# Los resultados de éste modelo no presentn buena significancia.
 
 # Modelo con efectos aleatorios.
-reg.aleatorios.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+AniosEscolaridad+TOC,
+reg.aleatorios.Aut <- plm(PIB~IngresosAutoempleados_Svy+CapFinanciero_Anio+TransfSubsidios_Anio+
+                AniosEscolaridad+GastoAfiliacion+TOC,
                       index=c("IDNumerico","Anio"), model="random", data=Data_Etapa3_v2 )
 summary(reg.aleatorios.Aut)
-# Lo resultaddos de este modelo son buenos.
 
 # Eligiendo el mejor modelo: Con efectos fijos sobre individuo
 
