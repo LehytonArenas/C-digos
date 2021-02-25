@@ -767,7 +767,7 @@ DataAnio <- rbind(DataAnio_2017_v4,DataAnio_2018_v4,DataAnio_2019_v4)
 #### Data GEIH. Controles Etapa3 ####
 # Es importante tener presente la construcción del ID:
 # ID Hogares: Directorio+Hogar
-# ID Personas:Directorio+Orden+Hogar, se cambia a: Directorio+Hogar+Orden
+# ID Personas: Directorio+Hogar+Orden
 # También es de recordar la data que necesitamos: Modulo CGP
 # Gasto en salud (P6120): Cuánto paga o cuánto le descuentan por la afiliación?
 # Analfabetismo (P6160): Sabe leer y escribir.
