@@ -694,7 +694,11 @@ write_dta(Data_Etapa3_v2, "Data_Etapa3.dta")
 
 Con la data procesada podemos correr el modelo con datos panel:
 
-```{r Etapa 3 Modelos Panel, echo=FALSE}
+Los datos de panel son datos que combinan una dimensión temporal (en nuestro caso, tres años: 2017, 2018 y 2019) con una dimensión transversal (en nuestro caso 130 unidades transvesales, que corresponden a 13 ciudades y 10 sectores).
+Cuando se tienen datos de esta naturaleza se suelen adoptar tres enfoques para posteriormente decidir (mediante las correspondientes pruebas) con cuál de ellos nos quedamos. Los enfoques son: modelo agrupado, modelo de efectos fijos y modelo de efectos aleatorios.
+A continuación se presentarán los resultados de los enfoques.
+
+```{r Etapa 3 Modelos Panel Pte 1, echo=FALSE}
 # Recordemos que con data panel debemos hacer tres modelos: agrupado (pooled), efectos fijos y efectos variaables.
 
 #### Modelos para Generadores de empleo ####
@@ -791,8 +795,87 @@ phtest(reg.fijos.within.Aut,reg.aleatorios.Aut)
 summary(reg.fijos.within.Aut)
 ```
 
+Sin embargo, debido a que los resultados no han sido los esperados se procede a hacer pruebas con: modelos pooled, Modelo RE,modelo FE Two-Ways, modelo FE sobre individuo, modelo FE sobre el tiempo; jugando con diferentes alternativas de variables, buscando significancia y sin realizar los test: F Test, Lagrange Multiplier Test, Hausman Test.
 
+```{r Etapa 3 Modelos Panel Pte 2, echo=FALSE}
+#### Modelos para Generadores de empleo ####
+Modelo.Gen <-as.formula(PIB~IngresosGeneradores_Svy+TransfSubsidios_Anio+GastoAfiliacion+TOC+CapFinanciero_Anio+Lectoescritura)
 
+# Modelo agrupado (Pooled)
+reg.gen.pool <- plm(Modelo.Gen,
+                   index=c("IDNumerico","Anio"), 
+                   model="pooling", 
+                   data=Data_Etapa3_v2)
+summary(reg.gen.pool)
+
+# Modelo con efectos aleatorios.
+reg.gen.re <- plm(Modelo.Gen,
+                  index=c("IDNumerico","Anio"),
+                  model="random",
+                  data=Data_Etapa3_v2 )
+summary(reg.gen.re)
+
+# Modelo con efectos fijos: Two ways fixed effects:
+reg.gen.feTW <- plm(Modelo.Gen,
+                    index=c("IDNumerico","Anio"), 
+                    model="within",
+                    effect = "twoways", 
+                    data=Data_Etapa3_v2 )
+summary(reg.gen.feTW)
+
+# Modelo con efectos fijos sobre los individuos
+reg.gen.feInd <- plm(Modelo.Gen,
+                     index=c("IDNumerico"), 
+                     model="within", 
+                     data=Data_Etapa3_v2 )
+summary(reg.gen.feInd)
+
+# Modelo con efectos fijos sobre el tiempo:
+reg.gen.feTim <- plm(Modelo.Gen,
+                     index=c("Anio"),
+                     model="within",
+                     data=Data_Etapa3_v2 )
+summary(reg.gen.feTim)
+
+#### Modelos para Autoempleados ####
+Modelo.Aut <-as.formula(PIB~IngresosAutoempleados_Svy+TransfSubsidios_Anio+GastoAfiliacion+TOC+CapFinanciero_Anio+Lectoescritura)
+
+# Modelo agrupado (Pooled)
+reg.aut.pool <- plm(Modelo.Aut,
+                    index=c("IDNumerico","Anio"), 
+                    model="pooling", 
+                    data=Data_Etapa3_v2)
+summary(reg.aut.pool)
+
+# Modelo con efectos aleatorios.
+reg.aut.re <- plm(Modelo.Aut,
+                  index=c("IDNumerico","Anio"),
+                  model="random",
+                  data=Data_Etapa3_v2 )
+summary(reg.aut.re)
+
+# Modelo con efectos fijos: Two ways fixedd effects:
+reg.aut.feTW <- plm(Modelo.Aut,
+                    index=c("IDNumerico","Anio"), 
+                    model="within",
+                    effect = "twoways", 
+                    data=Data_Etapa3_v2 )
+summary(reg.aut.feTW)
+
+# Modelo con efectos fijos sobre los individuos
+reg.aut.feInd <- plm(Modelo.Aut,
+                     index=c("IDNumerico"), 
+                     model="within", 
+                     data=Data_Etapa3_v2 )
+summary(reg.aut.feInd)
+
+# Modelo con efectos fijos sobre el tiempo:
+reg.aut.feTim <- plm(Modelo.Aut,
+                     index=c("Anio"),
+                     model="within",
+                     data=Data_Etapa3_v2)
+summary(reg.aut.feTim)
+```
 
 
 
