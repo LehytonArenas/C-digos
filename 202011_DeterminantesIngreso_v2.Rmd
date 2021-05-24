@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Resumen de estadísticos descriptivos
 
-Con la data procesada en el código anterior .R, se procede a crear un sólo DF que reuna toda la información de lostres años 2017-2019.
+Con la data procesada en el código anterior .R, se procede a crear un sólo DF que reuna toda la información de los tres años 2017-2019.
 ```{r Procesamiento de Data, echo=FALSE}
 # Directorio de trabajo
 setwd("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton")
@@ -96,140 +96,27 @@ DataAnio <- rbind(DataAnio_2017,DataAnio_2018,DataAnio_2019)
 Adultos <- DataAnio %>% 
   filter(Edad>=18)
 ```
-En la siguiente tabla se encuentra el resúmen estadístico (a modo de prueba) para el año 2017, utilizando la técnica Survey, que nos permite usar el factor de expansión de las encuestas. La tabla contiene en las columnas los estadísticos de: cuantil al 25%, mediana, cuantil al 75%, media y desviación estandar; mientras que en cada fila se encuentra cada una de las variables disponibles en la data construida. Evidentemente todas estas variables son cuantitativas, algunas de orden dummy y otras de orden continuo. Tal y como se puede evidenciar a continuación.
-```{r Descriptivos con Survey Package, echo=FALSE}
-# Data 2017
+Con la data procesada se puede hacer un resumen estadístico simple, y un análiis de corrleación del tipo:
+```{r Descriptivos, echo=FALSE}
+summary(Adultos$Autoempleado)
 
-# Adultos
-Adultos_2017 <- DataAnio_2017 %>% 
-  filter(Edad>=18)
+round(mean(Adultos$Autoempleado),4)
+round(sd(Adultos$Autoempleado),4)
+round(min(Adultos$Autoempleado),4)
+round(max(Adultos$Autoempleado),4)
 
-# dividimos el Fex en 12:
-Adultos_2017 <- Adultos_2017 %>% 
-  mutate(FExp=fex_c_2011/12) %>% 
-  select(.,-c(fex_c_2011))
+# Correlaciones entre las variables del modelo dicotómico:
+Correlacion1 <- Adultos %>% 
+  dplyr::select(c("GeneradorEmpleo","Autoempleado","IngresoLaboral_Mes","AutonomiaFiscal","PosesionComputador","ImpuestosEmpresa","Sexo","Edad","CargaEconomica","Desempleo_Dane","DiversifCanasta"))
+Correlacion1Tabla <- round(cor(Correlacion1,use = "pairwise.complete.obs"),3)
 
-# Aplicamos el Survey:
-AdutosSvy_2017 <- svydesign(ids=~0,weights=~FExp,
-                                  data=Adultos_2017)
+Correlacion2 <- Adultos %>% 
+  dplyr::select(c("IngresoLaboral_Mes","GeneradorEmpleo","Autoempleado","NivelEducativo","ExperienciaPotencial","Poblacion_Dane","Homicidios","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario"))
+Correlacion2Tabla <- round(cor(Correlacion2,use = "pairwise.complete.obs"),3)
 
-# Medias: Aplicamos svymean a cada variable.
-# Se hace una a una, de lo contrario los valores cambiarán debido a la eliminación causada por na.rm=T
-# Haremos tres vbles a modo de prueba para 2017, en caso de más se puede intentar un FOR.
-# Se apilan en un DF y se eliminan Means individuales
-MeanSexo <- data.frame(svymean(~Sexo, AdutosSvy_2017, na.rm=T)) %>% 
-  select(.,c("mean"))
-MeanEdad <- data.frame(svymean(~Edad, AdutosSvy_2017, na.rm=T)) %>% 
-  select(.,c("mean"))
-MeanNivelEducativo <- data.frame(svymean(~NivelEducativo, AdutosSvy_2017,
-                                         na.rm=T)) %>% 
-  select(.,c("mean"))
-
-Means_2017 <- rbind(MeanSexo,MeanEdad,MeanNivelEducativo) %>% 
-  dplyr::rename(.,Mean=mean)
-rm(MeanSexo,MeanEdad,MeanNivelEducativo)
-
-# SD: Se aplica Svysd a cada variable.
-# Se aplica el mismo procedimiento que en Means explicado anteriormente
-SD_Sexo <- svysd(~Sexo,design = AdutosSvy_2017, na.rm = TRUE)
-SD_Edad <- svysd(~Edad,design = AdutosSvy_2017, na.rm = TRUE)
-SD_NivelEducativo <- svysd(~NivelEducativo,design = AdutosSvy_2017, 
-                           na.rm = TRUE)
-SD_2017 <- data.frame(rbind(SD_Sexo,SD_Edad,SD_NivelEducativo)) %>% 
-  dplyr::rename(.,SD = "Sexo")
-rm(SD_Sexo,SD_Edad,SD_NivelEducativo)
-
-# Cuartiles: Se encuentran con svyquantile
-# Se aplica el mismo procedimiento que en Means explicado anteriormente
-Q_Sexo <- data.frame(svyquantile(~Sexo, design =AdutosSvy_2017, na = TRUE,
-                                 c(.25,.5,.75))) %>% 
-  dplyr::rename(.,Q25="X0.25",Median="X0.5",Q75="X0.75")
-Q_Edad <- data.frame(svyquantile(~Edad, design =AdutosSvy_2017, na = TRUE,
-                                 c(.25,.5,.75))) %>% 
-  dplyr::rename(.,Q25="X0.25",Median="X0.5",Q75="X0.75")
-Q_NivelEducativo <- data.frame(svyquantile(~NivelEducativo, 
-                                           design =AdutosSvy_2017, na = TRUE,
-                                 c(.25,.5,.75))) %>% 
-  dplyr::rename(.,Q25="X0.25",Median="X0.5",Q75="X0.75")
-Q_2017 <- data.frame(rbind(Q_Sexo,Q_Edad,Q_NivelEducativo))
-rm(Q_Sexo,Q_Edad,Q_NivelEducativo)
-
-# Se apila todo en un solo DF y se eliminan los anteriores pasos
-Descriptivos_2017 <- cbind(Q_2017,Means_2017,SD_2017)
-rm(Q_2017,Means_2017,SD_2017)
-
-knitr::kable(
-  Descriptivos_2017,
-  caption = "Resumen estadístico Año 2017"
-)
-```
-
-## Estadísticas por ciudad
-
-La data recopilada se ha agrupado por ciudad y se han encontrado algunos resultados que vale la pena exponer. Es interesante observar como el ingreso medio de la población denominada Autoempleada es sustancialmente inferior a los ingresos medios de la ciudad; mientras que la población denominada Generadores de empleo exponen ingresos medios sustancialmente superiores.
-```{r Estadísticas por Ciudad con Survey, echo=FALSE}
-# Se puede mejorar con los subgrupos explicados en el Seminario (Justo antes de modelos)
-# Solo se hace para Medellin en 2017.
-# En caso de mas se puede crear una función.
-
-# Primero debemos filtrar por ciudad: Población Gral, Autoempleados y Generadores.
-# Aplicamos el survey correspondiente
-Medellin_2017 <- Adultos_2017 %>% 
-  dplyr::filter(AREA=="Medellin")
-MedellinSvy_2017 <- svydesign(ids=~0,weights=~FExp,
-                                  data=Medellin_2017)
-
-MedellinAutoem_2017 <- Adultos_2017 %>% 
-  dplyr::filter(AREA=="Medellin"& Autoempleado==1)
-MedellinAutoSvy_2017 <- svydesign(ids=~0,weights=~FExp,
-                                  data=MedellinAutoem_2017)
-
-MedellinGener_2017 <- Adultos_2017 %>% 
-  dplyr::filter(AREA=="Medellin"& GeneradorEmpleo==1)
-MedellinGenerSvy_2017 <- svydesign(ids=~0,weights=~FExp,
-                                  data=MedellinGener_2017)
-
-# Se sacan las medias correspondientes, recordar que es una a una.
-# Se apilan en un solo DF.
-# se eliminan intermedios
-Medellin_MeanEduca <- data.frame(svymean(~AniosEscolaridad, 
-                                         MedellinSvy_2017, na.rm=T)) %>%
-                          select(.,c("mean")) %>% 
-  dplyr::rename(.,Medellin="mean")
-
-Medellin_MeanIngreso <- data.frame(svymean(~IngresoLaboral_Mes, 
-                                         MedellinSvy_2017, na.rm=T)) %>% 
-  select(.,c("mean")) %>% 
-  dplyr::rename(.,Medellin="mean")
-
-Medellin_MeanIngAuto <- data.frame(svymean(~IngresoLaboral_Mes, 
-                                         MedellinAutoSvy_2017, na.rm=T)) %>% 
-  select(.,c("mean")) %>% 
-  dplyr::rename(.,Medellin="mean")
-
-Medellin_MeanIngGener <- data.frame(svymean(~IngresoLaboral_Mes, 
-                                         MedellinGenerSvy_2017, na.rm=T)) %>% 
-  select(.,c("mean")) %>% 
-  dplyr::rename(.,Medellin="mean")
-
-Medellin_Means <- data.frame(t(rbind(Medellin_MeanEduca,
-                                            Medellin_MeanIngreso,
-                                 Medellin_MeanIngAuto,
-                                 Medellin_MeanIngGener))) %>% 
-  dplyr::rename(.,"Años de escolaridad"="AniosEscolaridad",
-                "Ingreso"="IngresoLaboral_Mes",
-                "Ingreso de Autoempleadores"="IngresoLaboral_Mes1",
-                "Ingreso de Generadores"="IngresoLaboral_Mes2")
-
-rm(Medellin_2017,MedellinSvy_2017,MedellinAutoem_2017,MedellinAutoSvy_2017,
-   MedellinGener_2017,MedellinGenerSvy_2017,Medellin_MeanEduca,
-   Medellin_MeanIngreso,Medellin_MeanIngAuto,Medellin_MeanIngGener)
-
-# Creamos la tabla.
-knitr::kable(
-  Medellin_Means,
-  caption = "Estadísticas Ciudad Año 2017"
-)
+Correlacion3 <- Data_Etapa3_v2 %>% 
+  dplyr::select(c("PIB","IngresosGeneradores_Svy","IngresosAutoempleados_Svy","TransfSubsidios_Anio","GastoAfiliacion","TOC","CapFinanciero_Anio","CapFinanciero_Mes","AniosEscolaridad","Lectoescritura"))
+Correlacion3Tabla <- round(cor(Correlacion3,use = "pairwise.complete.obs"),3)
 ```
 
 ## Modelos
@@ -247,34 +134,14 @@ Variable dependiente: Ingreso del individuo empresario.
 Variables independientes: La probabilidad estimada en la etapa1, el sector económico, nivel educativo, experiencia potencial.
 Controles: Se usarán aquí características institucionales. Es decir variables asociadas con el capital financiero, Ciudad:tamaño(población), Ciudad: tasa de delicuencia.
 
-Para lo anterior se empleará la técnica 2spls simultanea. Sin embargo, inicialmente se hará un análisis de correlación de variables:
-```{r Correlación de vbles, echo=FALSE}
-# Correlaciones entre las variables del modelo continuo:
-Data_Corr_ModCont <- Adultos_2017 %>% 
-  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad","NivelEducativo","ExperienciaPotencial","CapFinanciero_Mes","CapFinanciero_Anio","Poblacion_2017_Dane","Homicidios_2018_base2018","Hurtos_2018_base2018","Extorsion_2018_base2018","EficJusticia_2018_base2017","ProducJueces_2018_base2017","Sector_NR","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario","Sector_Domestico"))
+Para lo anterior se empleará la técnica 2spls simultanea.
 
-Corr_ModCont <- round(cor(Data_Corr_ModCont,use = "pairwise.complete.obs"),3)
-
-# Correlaciones entre variables del modelo discreto:
-# Usando la variable de Autoempleados
-Data_Corr_ModDisc <- Adultos_2017 %>% 
-  dplyr::select(c("Autoempleado","AutonomiaFiscal_2018_base2017","CapacidadRecaudo_2018_base2017","FacilidadEmpresa_2018","ImpuestosEmpresa_2018","ComplejidadProductiva_2018", "DiversifCanasta_2018_base2018","Sexo","Edad","PosesionComputador","PosesionInternet","CargaEconomica","PIB_PC2017_Dane","Desempleo_2018","Desempleo_2017_Dane"))
-
-Corr_ModDisc <- round(cor(Data_Corr_ModDisc,use = "pairwise.complete.obs"),3)
-
-# Usando la variable de Autoempleados
-Data_Corr_ModDisc2 <- Adultos_2017 %>% 
-  dplyr::select(c("GeneradorEmpleo","AutonomiaFiscal_2018_base2017","CapacidadRecaudo_2018_base2017","FacilidadEmpresa_2018","ImpuestosEmpresa_2018","ComplejidadProductiva_2018", "DiversifCanasta_2018_base2018","Sexo","Edad","PosesionComputador","PosesionInternet","CargaEconomica","PIB_PC2017_Dane","Desempleo_2018","Desempleo_2017_Dane"))
-
-Corr_ModDisc2 <- round(cor(Data_Corr_ModDisc2,use = "pairwise.complete.obs"),3)
-```
-A continuación se realizarán algunas pruebas de los modelos simultaneos para la popblación de Autoempleados y Generadores:
 ```{r Etapas 1y2 Simultaneas, echo=FALSE}
-# Creamos la edad cuadratica, como varriable alternativa de Edad:
+# Creamos la edad cuadratica, como variable alternativa de Edad:
 Adultos <- Adultos %>% 
   dplyr::mutate(EdadCuadratica=round(Edad^2,2))
 
-# Técnica de 2spls:
+# Función para 2spls:
 tspls <- function(formula1, formula2, data) {
     # The Continous model
     mf1 <- model.frame(formula1, data)
@@ -357,12 +224,11 @@ tspls <- function(formula1, formula2, data) {
     return(c(ans1,ans2))
 }
 
-# Para Data completa:
+# Aplicación del 2spls:
 
 # GeneradorEmpleo:
 Data_Prueba <- Adultos %>% 
-  dplyr::select(c("IngresoLaboral_Mes","NivelEducativo","ExperienciaPotencial","Poblacion_Dane","Homicidios","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario",
-                  "GeneradorEmpleo","AutonomiaFiscal","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
+  dplyr::select(c("IngresoLaboral_Mes","NivelEducativo","ExperienciaPotencial","Poblacion_Dane","Homicidios","Sector_Agricultura","Sector_Pesca","Sector_Minas","Sector_Industria","Sector_Electricidad","Sector_Comercio","Sector_Educacion","Sector_Transporte","Sector_Financiero","Sector_Construccion","Sector_Administracion","Sector_Extraterritorial","Sector_Inmobiliario","Sector_Salud","Sector_Hotel","Sector_Comunitario","GeneradorEmpleo","AutonomiaFiscal","CargaEconomica","Sexo","Edad","PosesionComputador","Desempleo_Dane")) %>% 
   drop_na(.)
 
 tspls(IngresoLaboral_Mes~NivelEducativo+ExperienciaPotencial+Poblacion_Dane+Homicidios+Sector_Agricultura+Sector_Pesca+Sector_Minas+Sector_Industria+Sector_Electricidad+Sector_Comercio+Sector_Educacion+Sector_Transporte+Sector_Financiero+Sector_Construccion+Sector_Administracion+Sector_Extraterritorial+Sector_Inmobiliario+Sector_Salud+Sector_Hotel+Sector_Comunitario,
