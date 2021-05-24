@@ -140,8 +140,7 @@ while (carros<10){ # Aplico el while poniendo la condición
 
 
 
-##### Otros #####
-# Ordenando datos
+#### Ordenando datos ####
 prueba <- c(2,4,6,3,1)
 prueba_ordenada <- sort(prueba)
 
@@ -155,3 +154,111 @@ ggplot(data=dplyr::filter(ECV2019_Ant,Eje_v2=="Cauca" | Eje_v2=="Antioquia"),
             size=4, vjust=0.5, hjust=0 ,col="black")+
   theme (axis.text.x = element_text(size=rel(1.5)),
          axis.text.y = element_text(size=rel(1.5)))
+
+#### Ejemplo de Muestreo ####
+Muestreo <- function(z,p,q,N,e){
+  M=round(((z^2)*p*q*N)/(((e^2)*(N-1))+((z^2)*p*q)),0)
+  print(M)
+}
+Prueba1=Muestreo(z=1.96,
+                 p=0.5,
+                 q=0.5,
+                 N=5000,
+                 e=0.03)
+
+#### Regresiones ####
+# Se tomará la data de Adultos_2017 del proyecto de Determinantes del ingreso:
+
+# regresión simple entre ingresos mensuales vs educación
+regresion <- lm(IngresoLaboral_Mes~AniosEscolaridad,data = Adultos)
+summary(regresion)
+
+# Regresión 2spls para:
+Data_Prueba <- Adultos %>% 
+  dplyr::select(c("IngresoLaboral_Mes","AniosEscolaridad",
+                  "GeneradorEmpleo","AutonomiaFiscal")) %>% 
+  drop_na(.)
+
+tspls(IngresoLaboral_Mes~AniosEscolaridad,
+      GeneradorEmpleo~AutonomiaFiscal,
+      data = Data_Prueba)
+
+
+#### ECSIM: Ocupados en Salud 2019 ####
+# Data original: Importamos data GEIH 2019:
+GEIH_Ocu_201901 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/1_Enero.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201902 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/2_Febrero.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201903 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/3_Marzo.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201904 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/4_Abril.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201905 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/5_Mayo.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201906 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/6_Junio.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201907 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/7_Julio.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201908 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/8_Agosto.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201909 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/9_Septiembre.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201910 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/10_Octubre.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201911 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/11_Noviembre.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+GEIH_Ocu_201912 <- read.csv("/Volumes/Respaldo/Google Drive (lehyton.arenas@ucn.cl)-Actualizado/Lehyton Windows/Empleo/Data_Original/Data_GEIH_Original/GEIH 2019/12_Diciembre.csv/Area - Ocupados.csv",sep = ";", header = TRUE, dec = ",") 
+
+# Creamos funciones de interés:
+# Funciones para seleccionar vbles de interés
+FuncionVblesMin <- function(Data){
+  Data_v2 <- Data %>% 
+    dplyr::select(.,c(Rama2d,P6430,Fex_c_2011))
+  return(Data_v2)
+}
+FuncionVblesMay <- function(Data){
+  Data_v2 <- Data %>% 
+    dplyr::select(.,c(RAMA2D,P6430,fex_c_2011)) %>% 
+    dplyr::rename(.,Rama2d=RAMA2D,Fex_c_2011=fex_c_2011)
+  return(Data_v2)
+}
+
+# Seleccionamos variables de interés
+GEIH_Ocu_201901_v2 <- FuncionVblesMin(Data=GEIH_Ocu_201901)
+GEIH_Ocu_201902_v2 <- FuncionVblesMin(Data=GEIH_Ocu_201902)
+GEIH_Ocu_201903_v2 <- FuncionVblesMin(Data=GEIH_Ocu_201903)
+GEIH_Ocu_201904_v2 <- FuncionVblesMin(Data=GEIH_Ocu_201904)
+GEIH_Ocu_201905_v2 <- FuncionVblesMin(Data=GEIH_Ocu_201905)
+GEIH_Ocu_201906_v2 <- FuncionVblesMin(Data=GEIH_Ocu_201906)
+GEIH_Ocu_201907_v2 <- FuncionVblesMay(Data=GEIH_Ocu_201907)
+GEIH_Ocu_201908_v2 <- FuncionVblesMay(Data=GEIH_Ocu_201908)
+GEIH_Ocu_201909_v2 <- FuncionVblesMay(Data=GEIH_Ocu_201909)
+GEIH_Ocu_201910_v2 <- FuncionVblesMay(Data=GEIH_Ocu_201910)
+GEIH_Ocu_201911_v2 <- FuncionVblesMay(Data=GEIH_Ocu_201911)
+GEIH_Ocu_201912_v2 <- FuncionVblesMay(Data=GEIH_Ocu_201912)
+
+# Concatenamos y así tenemos un DF anual 
+GEIH2019Anio <- rbind(GEIH_Ocu_201901_v2,GEIH_Ocu_201902_v2,GEIH_Ocu_201903_v2,GEIH_Ocu_201904_v2,
+                      GEIH_Ocu_201905_v2,GEIH_Ocu_201906_v2,GEIH_Ocu_201907_v2,GEIH_Ocu_201908_v2,
+                      GEIH_Ocu_201909_v2,GEIH_Ocu_201910_v2,GEIH_Ocu_201911_v2,GEIH_Ocu_201912_v2)
+
+# Eliminamos puntos medios:
+rm(GEIH_Ocu_201901,GEIH_Ocu_201902,GEIH_Ocu_201903,GEIH_Ocu_201904,GEIH_Ocu_201905,GEIH_Ocu_201906,
+   GEIH_Ocu_201907,GEIH_Ocu_201908,GEIH_Ocu_201909,GEIH_Ocu_201910,GEIH_Ocu_201911,GEIH_Ocu_201912,
+   GEIH_Ocu_201901_v2,GEIH_Ocu_201902_v2,GEIH_Ocu_201903_v2,GEIH_Ocu_201904_v2,GEIH_Ocu_201905_v2,
+   GEIH_Ocu_201906_v2,GEIH_Ocu_201907_v2,GEIH_Ocu_201908_v2,GEIH_Ocu_201909_v2,GEIH_Ocu_201910_v2,
+   GEIH_Ocu_201911_v2,GEIH_Ocu_201912_v2,FuncionVblesMin,FuncionVblesMay)
+
+# Renombramos y recodificamos P6430:
+# dividimos Fexp en 12
+GEIH2019Anio <- GEIH2019Anio %>% 
+  dplyr::rename(., PosicionOcupacional=P6430) %>% 
+  dplyr::mutate(PosicionOcupacional=ifelse(PosicionOcupacional==1,"Empleado_Empresa_Particular",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==2,"Empleado_Gobierno",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==3,"Empleado_Domestico",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==4,"CuentaPropia",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==5,"Empleador",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==6,"Trabajador_Familiar",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==7,"Trabajador_SinRemuneracion",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==8,"Jornalero",PosicionOcupacional),
+                PosicionOcupacional=ifelse(PosicionOcupacional==9,"Otro",PosicionOcupacional)) %>% 
+  mutate(FExp=Fex_c_2011/12) %>% 
+  select(.,-c(Fex_c_2011))
+
+# Encontramos estadísticas de interés
+OcuSalud <- GEIH2019Anio %>% 
+  dplyr::filter(.,Rama2d==85) %>% 
+  dplyr::group_by(PosicionOcupacional) %>% 
+  dplyr::summarise(OcupadosSalud = round(sum(FExp,na.rm = TRUE),0))
+
+#### Pruebas ####
