@@ -1,3 +1,4 @@
+# Este código tiene como objetivo manipular y transformar la data antes del modelado.
 # Directorio de trabajo
 setwd("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/Proyecto Agosto/3_Entregables Lehyton")
 
