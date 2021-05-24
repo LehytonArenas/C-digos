@@ -1,0 +1,1184 @@
+---
+title: "Caracterización Jericó"
+author: "Lehyton Arenas"
+date: "3/5/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Inicio, include=FALSE}
+setwd("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/1_EntregablesLehyton")
+
+# Paquetes a usar
+library(tidyverse)
+library(plyr); library(dplyr)
+library(readxl)
+library(survey)
+
+# Datas iniciales:
+# ECV Antioquia 2019, leemos data:
+ECVPersonas <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_BaseAnonimizada.xlsx", sheet="Personas")
+
+ECVViviendas <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_BaseAnonimizada.xlsx", sheet="Viviendas")
+
+ECVHogares <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_BaseAnonimizada.xlsx", sheet="Hogares")
+
+# Traemos solo población de la Provincia del Cartama
+# Renombramos
+CartamaPersonas <- ECVPersonas %>% 
+  dplyr::filter(.,NomMpio=="CARAMANTA" | NomMpio=="CONCORDIA" | NomMpio=="FREDONIA" | NomMpio=="HISPANIA"
+                  | NomMpio=="JERICÓ" | NomMpio=="LA PINTADA" | NomMpio=="PUEBLORRICO" | NomMpio=="SALGAR"
+                  | NomMpio=="TÁMESIS" | NomMpio=="TARSO" | NomMpio=="VALPARAÍSO" | NomMpio=="VENECIA") %>% 
+  dplyr::mutate(NomMpio=ifelse(NomMpio=="CARAMANTA","Caramanta",NomMpio),
+              NomMpio=ifelse(NomMpio=="CONCORDIA","Concordia",NomMpio),
+              NomMpio=ifelse(NomMpio=="FREDONIA","Fredonia",NomMpio),
+              NomMpio=ifelse(NomMpio=="HISPANIA","Hispania",NomMpio),
+              NomMpio=ifelse(NomMpio=="JERICÓ","Jericó",NomMpio),
+              NomMpio=ifelse(NomMpio=="LA PINTADA","La Pintada",NomMpio),
+              NomMpio=ifelse(NomMpio=="PUEBLORRICO","Pueblorrico",NomMpio),
+              NomMpio=ifelse(NomMpio=="SALGAR","Salgar",NomMpio),
+              NomMpio=ifelse(NomMpio=="TÁMESIS","Támesis",NomMpio),
+              NomMpio=ifelse(NomMpio=="TARSO","Tarso",NomMpio),
+              NomMpio=ifelse(NomMpio=="VALPARAÍSO","Valparaíso",NomMpio),
+              NomMpio=ifelse(NomMpio=="VENECIA","Venecia",NomMpio))
+
+CartamaHogares <- ECVHogares %>% 
+  dplyr::filter(.,NomMpio=="CARAMANTA" | NomMpio=="CONCORDIA" | NomMpio=="FREDONIA" | NomMpio=="HISPANIA"
+                  | NomMpio=="JERICÓ" | NomMpio=="LA PINTADA" | NomMpio=="PUEBLORRICO" | NomMpio=="SALGAR"
+                  | NomMpio=="TÁMESIS" | NomMpio=="TARSO" | NomMpio=="VALPARAÍSO" | NomMpio=="VENECIA") %>% 
+  dplyr::mutate(NomMpio=ifelse(NomMpio=="CARAMANTA","Caramanta",NomMpio),
+              NomMpio=ifelse(NomMpio=="CONCORDIA","Concordia",NomMpio),
+              NomMpio=ifelse(NomMpio=="FREDONIA","Fredonia",NomMpio),
+              NomMpio=ifelse(NomMpio=="HISPANIA","Hispania",NomMpio),
+              NomMpio=ifelse(NomMpio=="JERICÓ","Jericó",NomMpio),
+              NomMpio=ifelse(NomMpio=="LA PINTADA","La Pintada",NomMpio),
+              NomMpio=ifelse(NomMpio=="PUEBLORRICO","Pueblorrico",NomMpio),
+              NomMpio=ifelse(NomMpio=="SALGAR","Salgar",NomMpio),
+              NomMpio=ifelse(NomMpio=="TÁMESIS","Támesis",NomMpio),
+              NomMpio=ifelse(NomMpio=="TARSO","Tarso",NomMpio),
+              NomMpio=ifelse(NomMpio=="VALPARAÍSO","Valparaíso",NomMpio),
+              NomMpio=ifelse(NomMpio=="VENECIA","Venecia",NomMpio))
+
+CartamaViviendas <- ECVViviendas %>% 
+  dplyr::filter(.,NomMpio=="CARAMANTA" | NomMpio=="CONCORDIA" | NomMpio=="FREDONIA" | NomMpio=="HISPANIA"
+                  | NomMpio=="JERICÓ" | NomMpio=="LA PINTADA" | NomMpio=="PUEBLORRICO" | NomMpio=="SALGAR"
+                  | NomMpio=="TÁMESIS" | NomMpio=="TARSO" | NomMpio=="VALPARAÍSO" | NomMpio=="VENECIA") %>% 
+  dplyr::mutate(NomMpio=ifelse(NomMpio=="CARAMANTA","Caramanta",NomMpio),
+              NomMpio=ifelse(NomMpio=="CONCORDIA","Concordia",NomMpio),
+              NomMpio=ifelse(NomMpio=="FREDONIA","Fredonia",NomMpio),
+              NomMpio=ifelse(NomMpio=="HISPANIA","Hispania",NomMpio),
+              NomMpio=ifelse(NomMpio=="JERICÓ","Jericó",NomMpio),
+              NomMpio=ifelse(NomMpio=="LA PINTADA","La Pintada",NomMpio),
+              NomMpio=ifelse(NomMpio=="PUEBLORRICO","Pueblorrico",NomMpio),
+              NomMpio=ifelse(NomMpio=="SALGAR","Salgar",NomMpio),
+              NomMpio=ifelse(NomMpio=="TÁMESIS","Támesis",NomMpio),
+              NomMpio=ifelse(NomMpio=="TARSO","Tarso",NomMpio),
+              NomMpio=ifelse(NomMpio=="VALPARAÍSO","Valparaíso",NomMpio),
+              NomMpio=ifelse(NomMpio=="VENECIA","Venecia",NomMpio))
+```
+
+## Caracterización con FExp
+```{r Sexo con FExp}
+# Creamos una data para hombres y otra para mujeres, y luego las transformamos en Svy
+# Transformamos datas a tipo Svy.
+
+Hombres <- CartamaPersonas %>% 
+  dplyr::filter(P_018==1)
+
+Mujeres <- CartamaPersonas %>% 
+  dplyr::filter(P_018==2)
+
+CartamaPersonas_Svy <- svydesign(ids=~0,weights=~FexpPer4,
+                         data=CartamaPersonas)
+
+Hombres_Svy <- svydesign(ids=~0,weights=~FexpPer4,
+                                 data=Hombres)
+
+Mujeres_Svy <- svydesign(ids=~0,weights=~FexpPer4,
+                         data=Mujeres)
+  
+# Se encuentran los totales por municipio:
+
+HombresTotal <- svyby(~P_018, ~NomMpio, 
+      Hombres_Svy, svytotal) %>% 
+  dplyr::select(.,-c(se)) %>% 
+  dplyr::rename(.,Hombres=P_018)
+
+MujeresTotal <- svyby(~P_018, ~NomMpio, 
+                      Mujeres_Svy, svytotal) %>% 
+  dplyr::select(.,-c(se))%>% 
+  dplyr::rename(.,Mujeres=P_018)
+
+Total <- svyby(~P_018, ~NomMpio, 
+               CartamaPersonas_Svy, svytotal)%>% 
+  dplyr::select(.,-c(se))%>% 
+  dplyr::rename(.,Total=P_018)
+
+# Concatenamos y calculamos:
+
+Sexo_Svy <- join_all(list(HombresTotal,MujeresTotal,Total), by=c("NomMpio"),type = "full")
+
+Sexo_Svy <- Sexo_Svy %>% 
+  dplyr::mutate(HombresPorc=round((Hombres/Total)*100,2),
+                MujeresPorc=round((Mujeres/Total)*100,2))
+
+# pasamos data a formato largo
+Sexo_Svy2 <- Sexo_Svy %>% 
+  gather("Sexo", value= "Porcentaje",c("HombresPorc","MujeresPorc")) %>% 
+  dplyr::select(.,-c("Hombres","Mujeres","Total"))
+
+# Graficamos:
+ggplot(Sexo_Svy2, aes(x = Porcentaje, y = NomMpio, fill=Sexo))+
+  geom_col()+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  ylab("Municipios")+
+  theme (axis.text.x = element_text(size=rel(1.5)),
+         axis.text.y = element_text(size=rel(1.5)))
+```
+
+```{r Ingresos con FExp, echo=FALSE}
+# data tipo Svy
+CartamaPersonas_Svy <- svydesign(ids=~0,weights=~FexpPer3,
+                         data=CartamaPersonas)
+
+# Encontramos media de ingresos
+Ingresos <- svyby(~P_121, ~NomMpio, 
+      CartamaPersonas_Svy, svymean)
+```
+
+```{r Prueba Ingresos con Ficha técnica, echo=FALSE}
+# Valor del indicador: 862,300
+
+# Datas iniciales:
+# ECV Antioquia 2019, leemos data:
+ECVPersonas <- read.csv("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_v2_Planeacion/ECV2019_Personas_Anonimizada.csv",sep = ";", header = TRUE, dec = ",")
+
+#### Calculo sin FExp #### 
+
+# Filtramos según nos interese:
+# Traemos solo la población de Jericó
+# Traemos solo las variables acordesal indicador
+IngresosJerico <- ECVPersonas %>% 
+  dplyr::filter(.,NomMpio=="JERICÓ") %>% 
+  dplyr::select(.,Zona,P_021,P_077,P_080,P_081,P_082,P_121,P_122,P_123,FexpPer_EQ)
+
+# Seguimos indicaciones según ficha:
+
+# Numerador:
+Numerador <- IngresosJerico %>% 
+  dplyr::filter((Zona==1 & P_021>=12) | (Zona==2 & P_021>=10)) %>% 
+  dplyr::filter(P_077==1 | P_080==1 | P_081==1 | P_082==1) %>%
+  dplyr::mutate(P_121=ifelse(P_121<0,0,P_121),
+                P_122=ifelse(P_122<0,0,P_122),
+                P_123=ifelse(P_123<0,0,P_123)) %>% 
+  dplyr::mutate(Ingresos=P_121+P_122+P_123) %>% 
+  dplyr::filter(Ingresos>0)
+
+# Intento 1: media sin ponderar
+Numerador2 <- sum(Numerador$Ingresos)
+
+# Denominador:
+Denominador <- nrow(Numerador)
+
+# Indicador:
+Indicador=Numerador2/Denominador
+Indicador
+
+# Intento 2: Media con ponderación según FExp
+# Calculamos el WiXi: Ingresos*FExp
+Numerador <- Numerador %>% 
+  dplyr::mutate(WiXi=FexpPer_EQ*Ingresos)
+
+# Numerador:
+SumWiXi <- sum(Numerador$WiXi)
+
+# Denominador:
+SumWi <- sum(Numerador$FexpPer_EQ)
+
+# Indicador:
+SumWiXi/SumWi # Valor: 871.215
+
+#### Calculo con FExp ####
+# Transformamos el objeto Numerador en tipo Svy:
+Numerador_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=Numerador)
+
+# Intento 3: Calculando la media directamente
+svymean(~Ingresos, Numerador_Svy)
+
+# Intento 4:
+# calculamos total de ingresos (numerador):
+Numerador2_Svy <- svytotal(~Ingresos, design = Numerador_Svy, na = TRUE) # estos nos da un valor de 3536163896
+
+# veamos el total del FExp:
+TotalFExp <- sum(Numerador$FexpPer_EQ) # Esto nos da un valor de 4058.888
+
+# calculamos indicador (denominador):
+3536163896/4058.888
+
+# PLT:El intento2=intento3=intento4=871.215. Todos los valores son cercanos al valor brindado de 862.300. Es deci que la data se ha manejado apropiadamente
+```
+
+## Caracterización sin FExp
+
+```{r Sexo, echo=FALSE}
+# Creamos los grupos de población.
+# Concatenamos y calculamos los %.
+Hombres <- CartamaPersonas %>% 
+  dplyr::filter(P_018==1) %>%
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Hombres = n())
+
+Mujeres <- CartamaPersonas %>% 
+  dplyr::filter(P_018==2) %>%
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Mujeres = n())
+
+Total <- CartamaPersonas %>% 
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Total = n())
+
+Sexo <- join_all(list(Hombres,Mujeres,Total), by=c("NomMpio"),type = "full")
+
+Sexo <- Sexo %>% 
+  dplyr::mutate(HombresPorc=round((Hombres/Total)*100,2),
+                MujeresPorc=round((Mujeres/Total)*100,2))
+
+# pasamos data a formato largo
+Sexo_2 <- Sexo %>% 
+  gather("Sexo", value= "Porcentaje",c("HombresPorc","MujeresPorc")) %>% 
+  dplyr::select(.,-c("Hombres","Mujeres","Total")) %>%
+  dplyr::mutate(Sexo=ifelse(Sexo=="HombresPorc","Hombres",Sexo),
+                Sexo=ifelse(Sexo=="MujeresPorc","Mujeres",Sexo))
+
+
+# Graficamos:
+ggplot(Sexo_2, aes(x = Porcentaje, y = NomMpio, fill=Sexo))+
+  geom_col()+
+  labs(x="Porcentaje",y="Municipios",fill="Sexo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=0.5, hjust=0 ,col="black")
+```
+
+```{r Identidad sexual, echo=FALSE}
+# Creamos un total por municipio:
+TotalMcipio <- CartamaPersonas %>% 
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Poblacion_n = n())
+
+# Creamos total de identidades por municipio:
+IdentidadSexual <- CartamaPersonas %>% 
+  dplyr::group_by(NomMpio, P_019) %>%
+  dplyr::summarise(
+    identidad = n())
+
+# Concatenamos:
+IdentidadSexual_v2 <- join_all(list(TotalMcipio,IdentidadSexual), by=c("NomMpio"),type = "full")
+
+# Encntramos proporciones:
+# Eliminamos y recodificamos variables
+IdentidadSexual_v3 <- IdentidadSexual_v2 %>% 
+  dplyr::mutate(Identidad_Pct=round((identidad/Poblacion_n)*100,2)) %>% 
+  dplyr::select(.,-c("Poblacion_n","identidad")) %>% 
+  dplyr::mutate(P_019=ifelse(P_019==-88,"No aplica",P_019),
+                P_019=ifelse(P_019==-99,"No responde",P_019),
+              P_019=ifelse(P_019==-98,"No sabe",P_019),
+              P_019=ifelse(P_019==1,"Heterosexual",P_019),
+              P_019=ifelse(P_019==2,"Gay",P_019),
+              P_019=ifelse(P_019==3,"Lesbiana",P_019),
+              P_019=ifelse(P_019==4,"Bisexual",P_019),
+              P_019=ifelse(P_019==5,"Travesti",P_019),
+              P_019=ifelse(P_019==6,"Transexual",P_019),
+              P_019=ifelse(P_019==7,"Transformista",P_019),
+              P_019=ifelse(P_019==8,"Intersexual",P_019))
+              
+# Graficamos:
+ggplot(IdentidadSexual_v3, aes(x = Identidad_Pct, y = NomMpio, fill=P_019))+
+  geom_col()+
+  labs(x="Municipios",y="Porcentaje",fill="Identidad sexual")
+```
+
+```{r Afiliaciones, echo=FALSE}
+# Identificamos solo los ocupados por municipio
+Ocupados <- CartamaPersonas %>% 
+  dplyr::filter(P_077==1) %>%
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Ocupados = n())
+
+# Afiliación a pensiones
+Pensiones <- CartamaPersonas %>% 
+  dplyr::filter(P_075==1) %>%
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Pensiones = n())
+
+# Afiliaciones a ARL
+ARL <- CartamaPersonas %>% 
+  dplyr::filter(P_076==1) %>%
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    ARL = n())
+
+# Concatenamos
+Afiliaciones <- join_all(list(TotalMcipio,Pensiones,ARL), by=c("NomMpio"),type = "full") %>% 
+  dplyr::mutate(Pensiones=round((Pensiones/Poblacion_n)*100,2),
+                ARL=round((ARL/Poblacion_n)*100,2)) %>% 
+  dplyr::select(.,c("NomMpio","Pensiones","ARL"))
+
+# Pasamos a formato largo
+Afiliaciones2 <- Afiliaciones %>% 
+  gather("Afiliacion", value= "Porcentaje",c("Pensiones","ARL"))
+
+# Graficamos:
+ggplot(Afiliaciones2, aes(x = Porcentaje, y = NomMpio, fill=Afiliacion))+
+  geom_col(position="dodge")+
+  labs(x="Porcentaje",y="Municipios",fill="Afiliación")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
+            size=4, vjust=0.5, hjust=0 ,col="black")
+```
+
+```{r Educación, echo=FALSE}
+#### Tema: Estudia acualmente: P:043 ####
+
+# Creamos total de opciones por municipio:
+EstudioActual <- CartamaPersonas %>% 
+  dplyr::group_by(NomMpio, P_043) %>%
+  dplyr::summarise(
+    EstudioActual = n())
+
+# Concatenamos:
+EstudioActual_v2 <- join_all(list(TotalMcipio,EstudioActual), by=c("NomMpio"),type = "full")
+
+# Encontramos proporciones:
+# Eliminamos y recodificamos variables
+EstudioActual_v3 <- EstudioActual_v2 %>% 
+  dplyr::mutate(Porcentaje=round((EstudioActual/Poblacion_n)*100,2)) %>% 
+  dplyr::select(.,-c("Poblacion_n","EstudioActual"))%>% 
+  dplyr::mutate(P_043=ifelse(P_043==1,"Presencial",P_043),
+                P_043=ifelse(P_043==2,"Virtual",P_043),
+                P_043=ifelse(P_043==3,"No estudia",P_043))
+              
+# Graficamos:
+ggplot(EstudioActual_v3, aes(x = Porcentaje, y = NomMpio, fill=P_043))+
+  geom_col()+
+  labs(x="Porcentaje",y="Municipios",fill="Condición de estudio")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.8),
+            size=3, vjust=0.5, hjust=0 ,col="black")
+
+#### Tema: Estudio el año anterior: P:045 ####
+# Creamos total de opciones por municipio:
+EstudioAnterior <- CartamaPersonas %>% 
+  dplyr::group_by(NomMpio, P_045) %>%
+  dplyr::summarise(
+    EstudioAnterior = n())
+
+# Concatenamos:
+EstudioAnterior_v2 <- join_all(list(TotalMcipio,EstudioAnterior), by=c("NomMpio"),type = "full")
+
+# Encontramos proporciones:
+# Eliminamos y recodificamos variables
+EstudioAnterior_v3 <- EstudioAnterior_v2 %>% 
+  dplyr::mutate(Porcentaje=round((EstudioAnterior/Poblacion_n)*100,2)) %>% 
+  dplyr::select(.,-c("Poblacion_n","EstudioAnterior"))%>% 
+  dplyr::mutate(P_045=ifelse(P_045==1,"Presencial",P_045),
+                P_045=ifelse(P_045==2,"Virtual",P_045),
+                P_045=ifelse(P_045==3,"No estudió",P_045),
+                P_045=ifelse(P_045==-88,"No aplica",P_045))
+              
+# Graficamos:
+ggplot(EstudioAnterior_v3, aes(x = Porcentaje, y = NomMpio, fill=P_045))+
+  geom_col()+
+  labs(x="Porcentaje",y="Municipios",fill="Condición de estudio anterior")
+
+#### Tema: Causa para no continuar estudios: P:046 ####
+
+# Creamos total de opciones por municipio:
+CausaNoEstudio <- CartamaPersonas %>% 
+  dplyr::filter(.,P_046>=0) %>% 
+  dplyr::group_by(NomMpio, P_046) %>%
+  dplyr::summarise(
+    CausaNoEstudio = n())
+
+# Subtotal por municipio, solo para quienes no estudian
+Subtotal <- CausaNoEstudio %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(CausaNoEstudio))
+
+# Creamos la data de interés:
+CausaNoEstudio_v2 <- join_all(list(Subtotal,CausaNoEstudio), by=c("NomMpio"),type = "full")
+
+CausaNoEstudio_v3 <- CausaNoEstudio_v2 %>% 
+  dplyr::mutate(Porcentaje=round((CausaNoEstudio/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","CausaNoEstudio")) %>% 
+  dplyr::mutate(P_046=ifelse(P_046==1,"No está en edad",P_046),
+                P_046=ifelse(P_046==2,"Ya terminó",P_046),
+                P_046=ifelse(P_046==3,"Costos educativos",P_046),
+                P_046=ifelse(P_046==4,"Oficios del hogar",P_046),
+                P_046=ifelse(P_046==5,"Falta de tiempo",P_046),
+                P_046=ifelse(P_046==6,"Embarazo",P_046),
+                P_046=ifelse(P_046==7,"Inseguridad",P_046),
+                P_046=ifelse(P_046==8,"Falta de cupos",P_046),
+                P_046=ifelse(P_046==9,"No hay centro educativo",P_046),
+                P_046=ifelse(P_046==10,"Necesita trabajar",P_046),
+                P_046=ifelse(P_046==11,"No le gusta estudiar",P_046),
+                P_046=ifelse(P_046==12,"Enfermedad",P_046),
+                P_046=ifelse(P_046==13,"Educación especial",P_046),
+                P_046=ifelse(P_046==14,"Malos tratos",P_046),
+                P_046=ifelse(P_046==15,"Se casó",P_046),
+                P_046=ifelse(P_046==16,"Abandono de residencia",P_046),
+                P_046=ifelse(P_046==17,"Bajo rendimiento",P_046),
+                P_046=ifelse(P_046==18,"Documentación",P_046),
+                P_046=ifelse(P_046==19,"Razones familiares",P_046),
+                P_046=ifelse(P_046==20,"Servicio militar",P_046))
+
+# Graficamos Cartama 
+ggplot(CausaNoEstudio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_046))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Causas de no estudiar")
+
+# Graficamos Jericó 
+ggplot(CausaNoEstudio_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje, x = NomMpio, fill=P_046))+
+  geom_col(color="white")+
+  labs(x="",y="Porcentaje",fill="Causas de no estudiar")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Ultimo nivel de estudios ####
+# Creamos total de opciones por municipio:
+NivelEstudio <- CartamaPersonas %>% 
+  dplyr::filter(.,P_049>=0) %>% 
+  dplyr::group_by(NomMpio, P_049) %>%
+  dplyr::summarise(
+    NivelEstudio = n())
+
+# Subtotal por municipio, solo para quienes tienen nivel
+Subtotal <- NivelEstudio %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(NivelEstudio))
+
+# Creamos la data de interés:
+NivelEstudio_v2 <- join_all(list(Subtotal,NivelEstudio), by=c("NomMpio"),type = "full")
+
+NivelEstudio_v3 <- NivelEstudio_v2 %>% 
+  dplyr::mutate(Porcentaje=round((NivelEstudio/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","NivelEstudio")) %>% 
+  dplyr::mutate(P_049=ifelse(P_049==0,"Ninguno",P_049),
+                P_049=ifelse(P_049==1,"Preescolar",P_049),
+                P_049=ifelse(P_049==2,"Primaria",P_049),
+                P_049=ifelse(P_049==3,"Secundaria",P_049),
+                P_049=ifelse(P_049==4,"Media",P_049),
+                P_049=ifelse(P_049==5,"Técnico",P_049),
+                P_049=ifelse(P_049==6,"Tecnológico",P_049),
+                P_049=ifelse(P_049==7,"Universidad",P_049),
+                P_049=ifelse(P_049==8,"Especialización",P_049),
+                P_049=ifelse(P_049==9,"Maestría",P_049)
+                )
+
+# Graficamos Cartama
+ggplot(NivelEstudio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_049))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Nivel educativo")
+
+# Graficamos solo Jericó
+ggplot(NivelEstudio_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje, x = NomMpio, fill=P_049))+
+  geom_col(color="white")+
+  labs(x="",y="Porcenntaje",fill="Nivel educativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Area del conocimiento ####
+
+# Creamos total de opciones por municipio:
+AreaEstudio <- CartamaPersonas %>% 
+  dplyr::filter(.,P_052>=0) %>% 
+  dplyr::group_by(NomMpio, P_052) %>%
+  dplyr::summarise(
+    AreaEstudio = n())
+
+# Subtotal por municipio, solo para quienes tienen area de conocimiento
+Subtotal <- AreaEstudio %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(AreaEstudio))
+
+# Creamos la data de interés:
+AreaEstudio_v2 <- join_all(list(Subtotal,AreaEstudio), by=c("NomMpio"),type = "full")
+
+AreaEstudio_v3 <- AreaEstudio_v2 %>% 
+  dplyr::mutate(Porcentaje=round((AreaEstudio/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","AreaEstudio")) %>% 
+  dplyr::mutate(P_052=ifelse(P_052==1,"Agronomia y afines",P_052),
+                P_052=ifelse(P_052==2,"Bellas Artes",P_052),
+                P_052=ifelse(P_052==3,"Ciencias de la Educación",P_052),
+                P_052=ifelse(P_052==4,"Ciencias de la Salud",P_052),
+                P_052=ifelse(P_052==5,"Ciencias Sociales y afines",P_052),
+                P_052=ifelse(P_052==6,"Economia y afines",P_052),
+                P_052=ifelse(P_052==7,"Humanidades y religiosas",P_052),
+                P_052=ifelse(P_052==8,"Ing. Sistemas y afines",P_052),
+                P_052=ifelse(P_052==9,"Ing. Industrial y afines",P_052),
+                P_052=ifelse(P_052==10,"Ing. Electrónica y afines",P_052),
+                P_052=ifelse(P_052==11,"Ing. Mecánica y afines",P_052),
+                P_052=ifelse(P_052==12,"Ing. Ambiental y afines",P_052),
+                P_052=ifelse(P_052==13,"Ing. Química y afines ",P_052),
+                P_052=ifelse(P_052==14,"Ing. Civil y afines",P_052),
+                P_052=ifelse(P_052==15,"Matemáticas y C. Naturales",P_052),
+                P_052=ifelse(P_052==16,"Otras",P_052),
+                )
+
+# Graficamos todo cartama
+ggplot(AreaEstudio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_052))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Area de conocimiento")
+
+# Graficamos solo Jericó
+ggplot(AreaEstudio_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje, x = NomMpio, fill=P_052))+
+  geom_col(color="white")+
+  labs(x="",y="",fill="Area de conocimiento")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Cáracter del establecimiento educativo ####
+
+# Creamos total de opciones por municipio:
+Establecimiento <- CartamaPersonas %>% 
+  dplyr::filter(.,P_053>=0) %>% 
+  dplyr::group_by(NomMpio, P_053) %>%
+  dplyr::summarise(
+    Establecimiento = n())
+
+# Subtotal por municipio, solo para quienes tienen establecimiento
+Subtotal <- Establecimiento %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(Establecimiento))
+
+# Creamos la data de interés:
+Establecimiento_v2 <- join_all(list(Subtotal,Establecimiento), by=c("NomMpio"),type = "full")
+
+Establecimiento_v3 <- Establecimiento_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Establecimiento/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","Establecimiento")) %>% 
+  dplyr::mutate(P_053=ifelse(P_053==0,"Ninguno, No estudió",P_053),
+                P_053=ifelse(P_053==1,"Público",P_053),
+                P_053=ifelse(P_053==2,"Privado",P_053)
+                )
+
+# Graficamos todo cartama
+ggplot(Establecimiento_v3, aes(x = Porcentaje, y = NomMpio, fill=P_053))+
+  geom_col(color="white",position="dodge")+
+  labs(x="Porcentaje",y="Municipios",fill="Cáracter del establecimiento")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
+            size=3, vjust=0.5, hjust=0.5 ,col="black")
+```
+
+```{r Recreación, echo=FALSE}
+# Creamos total de opciones por municipio:
+Recreacion <- CartamaPersonas %>% 
+  dplyr::filter(.,P_035>=0) %>% 
+  dplyr::group_by(NomMpio, P_035) %>%
+  dplyr::summarise(
+    Recreacion = n())
+
+# Subtotal por municipio, solo para quienes tienen recreación
+Subtotal <- Recreacion %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(Recreacion))
+
+# Creamos la data de interés:
+Recreacion_v2 <- join_all(list(Subtotal,Recreacion), by=c("NomMpio"),type = "full")
+
+Recreacion_v3 <- Recreacion_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Recreacion/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","Recreacion")) %>% 
+  dplyr::mutate(P_035=ifelse(P_035==1,"Asoc. Padres Familia",P_035),
+                P_035=ifelse(P_035==2,"Corporaciones",P_035),
+                P_035=ifelse(P_035==3,"Juntas Admon Locales",P_035),
+                P_035=ifelse(P_035==4,"Asociaciones de mujeres",P_035),
+                P_035=ifelse(P_035==5,"Grupos juveniles",P_035),
+                P_035=ifelse(P_035==6,"Veedurías ciudadanas",P_035),
+                P_035=ifelse(P_035==7,"Junta acción comunal",P_035),
+                P_035=ifelse(P_035==8,"Clubes del adulto mayor",P_035),
+                P_035=ifelse(P_035==9,"Asambleas barriales",P_035),
+                P_035=ifelse(P_035==10,"Consejos comunales",P_035),
+                P_035=ifelse(P_035==11,"Comités comunitarios salud",P_035),
+                P_035=ifelse(P_035==12,"Organización de victimas",P_035),
+                P_035=ifelse(P_035==13,"Asociación de usuarios",P_035),
+                P_035=ifelse(P_035==14,"Sindicatos",P_035),
+                P_035=ifelse(P_035==15,"Organización de base",P_035),
+                P_035=ifelse(P_035==16,"Partido político",P_035),
+                P_035=ifelse(P_035==17,"Asociación cáracter ambiental",P_035),
+                P_035=ifelse(P_035==18,"Otro",P_035),
+                P_035=ifelse(P_035==19,"Ninguno",P_035),
+                )
+# Graficamos todo cartama
+ggplot(Recreacion_v3, aes(x = Porcentaje, y = NomMpio, fill=P_035))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Participación en")
+
+# Graficamos solo Jericó
+ggplot(Recreacion_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje, x = NomMpio, fill=P_035))+
+  geom_col(color="white")+
+  labs(x="",y="Porcentaje",fill="Participación en")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=0, hjust=0.5 ,col="black")
+```
+
+```{r Laboral e ingresos, echo=FALSE}
+#### Tema: Actividad semana pasada ####
+# Creamos total de opciones por municipio:
+Actividad <- CartamaPersonas %>% 
+  dplyr::filter(.,P_077>=0) %>% 
+  dplyr::group_by(NomMpio, P_077) %>%
+  dplyr::summarise(
+    Actividad = n())
+
+# Subtotal por municipio, solo para quienes tienen recreación
+Subtotal <- Actividad %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(Actividad))
+
+# Creamos la data de interés:
+Actividad_v2 <- join_all(list(Subtotal,Actividad), by=c("NomMpio"),type = "full")
+
+Actividad_v3 <- Actividad_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Actividad/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","Actividad")) %>% 
+  dplyr::mutate(P_077=ifelse(P_077==1,"Trabajando",P_077),
+                P_077=ifelse(P_077==2,"Buscando trabajo",P_077),
+                P_077=ifelse(P_077==3,"Estudiando",P_077),
+                P_077=ifelse(P_077==4,"Oficios del hogar",P_077),
+                P_077=ifelse(P_077==5,"Rentista",P_077),
+                P_077=ifelse(P_077==6,"Jubilado",P_077),
+                P_077=ifelse(P_077==7,"Otra actividad",P_077),
+                P_077=ifelse(P_077==8,"Incapacitado para trabajar",P_077)
+                )
+# Graficamos todo cartama
+ggplot(Actividad_v3, aes(x = Porcentaje, y = NomMpio, fill=P_077))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Actividad última semana")
+
+# Graficamos solo Jericó
+ggplot(Actividad_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje, x = NomMpio, fill=P_077))+
+  geom_col(color="white")+
+  labs(x="",y="Porcentaje",fill="Actividad última semana")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Sector económico empresa ####
+
+# Creamos total de opciones por municipio:
+Sector <- CartamaPersonas %>% 
+  dplyr::filter(.,P_096>=0) %>% 
+  dplyr::group_by(NomMpio, P_096) %>%
+  dplyr::summarise(
+    Sector = n())
+
+# Subtotal por municipio
+Subtotal <- Sector %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(Sector))
+
+# Creamos la data de interés:
+Sector_v2 <- join_all(list(Subtotal,Sector), by=c("NomMpio"),type = "full")
+
+Sector_v3 <- Sector_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Sector/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","Sector")) %>% 
+  dplyr::mutate(P_096=ifelse(P_096==1,"Agropecuaria, silvicultura y pesca",P_096),
+                P_096=ifelse(P_096==2,"Minería",P_096),
+                P_096=ifelse(P_096==3,"Electricidad, gas, agua",P_096),
+                P_096=ifelse(P_096==4,"Industria",P_096),
+                P_096=ifelse(P_096==5,"Construcción",P_096),
+                P_096=ifelse(P_096==6,"Comercio, hotel, restaurantes",P_096),
+                P_096=ifelse(P_096==7,"Transporte, almacenamiento y comunicaciones",P_096),
+                P_096=ifelse(P_096==8,"Estab. Financieros, inmuebles y otros",P_096),
+                P_096=ifelse(P_096==9,"Servicios sociales, comunales y personales",P_096)
+                )
+
+# Graficamos todo cartama
+ggplot(Sector_v3, aes(x = Porcentaje, y = NomMpio, fill=P_096))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Sector económico")
+
+# Graficamos solo Jericó
+ggplot(Sector_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(x = Porcentaje, y = reorder(P_096,-Porcentaje)))+
+  geom_col(position="dodge",fill="cyan4")+
+  labs(x="Porcentaje",y="Sector económico", title="Jericó" )+
+  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=0.7 ,col="black")
+
+#reorder(P_099,-Porcentaje)
+#### Tema: Posición ocupacional####
+
+# Creamos total de opciones por municipio:
+PosicionOcupa <- CartamaPersonas %>% 
+  dplyr::filter(.,P_099>=0) %>% 
+  dplyr::group_by(NomMpio, P_099) %>%
+  dplyr::summarise(
+    PosicionOcupa = n())
+
+# Subtotal por municipio
+Subtotal <- PosicionOcupa %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(PosicionOcupa))
+
+# Creamos la data de interés:
+PosicionOcupa_v2 <- join_all(list(Subtotal,PosicionOcupa), by=c("NomMpio"),type = "full")
+
+PosicionOcupa_v3 <- PosicionOcupa_v2 %>% 
+  dplyr::mutate(Porcentaje=round((PosicionOcupa/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","PosicionOcupa")) %>% 
+  dplyr::mutate(P_099=ifelse(P_099==1,"Empleado de empresa particular",P_099),
+                P_099=ifelse(P_099==2,"Empleado del gobierno",P_099),
+                P_099=ifelse(P_099==3,"Empleado doméstico",P_099),
+                P_099=ifelse(P_099==4,"Cuenta propia",P_099),
+                P_099=ifelse(P_099==5,"Empleador",P_099),
+                P_099=ifelse(P_099==6,"Trabajador fliar sin remuneración",P_099),
+                P_099=ifelse(P_099==7,"Trabajador sin remuneración",P_099),
+                P_099=ifelse(P_099==8,"Jornalero",P_099)
+                )
+
+# Graficamos todo cartama
+ggplot(PosicionOcupa_v3, aes(x = Porcentaje, y = NomMpio, fill=P_099))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Posición ocupacional")
+
+# Gráfico solo para Jericó
+ggplot(PosicionOcupa_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(x = Porcentaje, y = reorder(P_099,-Porcentaje)))+
+  geom_col(position="dodge",fill="cyan4")+
+  labs(x="Porcentaje",y="Posición ocupacional", title="Jericó" )+
+  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Ingreso por arriendos ####
+
+# Creamos total por municipio:
+Arriendos <- CartamaPersonas %>% 
+  dplyr::filter(.,P_125>0) %>% # No se toman los valores de 0 porque halan mucho la data
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Arriendos = round(mean(P_125),0))
+
+# Graficamos todo cartama
+ggplot(Arriendos, aes(x = Arriendos, y = NomMpio))+
+  geom_col(fill="brown1")+
+  labs(x="Ingresos por arriendos",y="Municipios")+
+  geom_text(aes(label = Arriendos),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=1 ,col="black")
+
+#### Tema: Ingresos por pensiones ####
+
+# Creamos total por municipio:
+Pensiones <- CartamaPersonas %>% 
+  dplyr::filter(.,P_126>0) %>% # No se toman los valores de 0 porque halan mucho la data
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Pensiones = round(mean(P_126),0))
+
+# Graficamos todo cartama
+ggplot(Pensiones, aes(x = Pensiones, y = NomMpio))+
+  geom_col(fill="deepskyblue")+
+  labs(x="Ingresos por pensiones",y="Municipios")+
+  geom_text(aes(label = Pensiones),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=1 ,col="black")
+
+#### Tema: Ingresos Subsidios ####
+
+# Creamos total por municipio:
+Subsidios <- CartamaPersonas %>% 
+  dplyr::filter(.,P_127>0) %>% # No se toman los valores de 0 porque halan mucho la data
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Subsidios = round(mean(P_127),0))
+
+# Graficamos todo cartama
+ggplot(Subsidios, aes(x = Subsidios, y = NomMpio))+
+  geom_col(fill="aquamarine")+
+  labs(x="Ingresos por subsidios",y="Municipios")+
+  geom_text(aes(label = Subsidios),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=1 ,col="black")
+#### Tema: Ingresos Giros Exterior ####
+
+# Creamos total por municipio:
+GirosExterior <- CartamaPersonas %>% 
+  dplyr::filter(.,P_128>0) %>% # No se toman los valores de 0 porque halan mucho la data
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    GirosExterior = round(mean(P_128),0))
+
+# Graficamos todo cartama
+ggplot(GirosExterior, aes(x = GirosExterior, y = NomMpio))+
+  geom_col(fill="coral")+
+  labs(x="Ingresos por giros del exterior",y="Municipios")+
+  geom_text(aes(label = GirosExterior),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=0.6 ,col="black")
+
+#### Tema: Ingresos Giros Interior ####
+
+# Creamos total por municipio:
+Dividendos <- CartamaPersonas %>% 
+  dplyr::filter(.,P_129>0) %>% # No se toman los valores de 0 porque halan mucho la data
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Dividendos = round(mean(P_129),0))
+
+# Graficamos todo cartama
+ggplot(Dividendos, aes(x = Dividendos, y = NomMpio))+
+  geom_col(fill="cyan3")+
+  labs(x="Ingresos por dividendos",y="Municipios")+
+  geom_text(aes(label = Dividendos),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+```
+
+```{r Movilidad, echo=FALSE}
+#### Tema: Medio de transporte al centro educativo ####
+
+# Creamos total de opciones por municipio:
+TransEduca <- CartamaPersonas %>% 
+  dplyr::filter(.,P_047>=0) %>% 
+  dplyr::group_by(NomMpio, P_047) %>%
+  dplyr::summarise(
+    TransEduca = n())
+
+# Subtotal por municipio, solo para quienes tienen transporte
+Subtotal <- TransEduca %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(TransEduca))
+
+# Creamos la data de interés:
+TransEduca_v2 <- join_all(list(Subtotal,TransEduca), by=c("NomMpio"),type = "full")
+
+TransEduca_v3 <- TransEduca_v2 %>% 
+  dplyr::mutate(Porcentaje=round((TransEduca/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","TransEduca")) %>% 
+  dplyr::mutate(P_047=ifelse(P_047==1,"Caminando",P_047),
+                P_047=ifelse(P_047==2,"Bicicleta",P_047),
+                P_047=ifelse(P_047==3,"Moto",P_047),
+                P_047=ifelse(P_047==4,"Bus/Buseta",P_047),
+                P_047=ifelse(P_047==5,"Transporte informal",P_047),
+                P_047=ifelse(P_047==6,"Taxi/Colectivo",P_047),
+                P_047=ifelse(P_047==7,"Transporte privado",P_047),
+                P_047=ifelse(P_047==8,"Metro/Cable",P_047),
+                P_047=ifelse(P_047==9,"Sistema Integrado Transporte",P_047)
+                )
+
+# Graficamos todo cartama
+ggplot(TransEduca_v3, aes(x=Porcentaje, y=NomMpio, fill=P_047))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Transporte al centro educativo")
+
+# Graficamos solo Jericó
+ggplot(TransEduca_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje,x=NomMpio,fill=P_047))+
+  geom_col(color="white")+
+  labs(x="",y="Porcentaje",fill="Transporte al centro educativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=-0.5, hjust=0.5 ,col="black")
+
+#### Tema: Tiempo al centro educativo #### 
+
+# Creamos total de opciones por municipio:
+TransEduca <- CartamaPersonas %>% 
+  dplyr::filter(.,P_048>=0) %>% 
+  dplyr::group_by(NomMpio, P_048) %>%
+  dplyr::summarise(
+    TransEduca = n())
+
+# Subtotal por municipio, solo para quienes tienen transporte
+Subtotal <- TransEduca %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(TransEduca))
+
+# Creamos la data de interés:
+TransEduca_v2 <- join_all(list(Subtotal,TransEduca), by=c("NomMpio"),type = "full")
+
+TransEduca_v3 <- TransEduca_v2 %>% 
+  dplyr::mutate(Porcentaje=round((TransEduca/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","TransEduca")) %>% 
+  dplyr::mutate(P_048=ifelse(P_048==1,"Entre 0-20 minutos",P_048),
+                P_048=ifelse(P_048==2,"Entre 21-40 minutos",P_048),
+                P_048=ifelse(P_048==3,"Entre 41-60 minutos",P_048),
+                P_048=ifelse(P_048==4,"Entre 61-80 minutos",P_048),
+                P_048=ifelse(P_048==5,"Más de 81 minutos",P_048)
+                )
+
+# Graficamos todo cartama
+ggplot(TransEduca_v3, aes(x=Porcentaje, y=NomMpio, fill=P_048))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Demora al centro educativo")
+
+# Graficamos solo Jericó
+ggplot(TransEduca_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje,x=NomMpio,fill=P_048))+
+  geom_col(color="white")+
+  labs(x="",y="Porcentaje",fill="Demora al centro educativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=-0.5, hjust=0.5 ,col="black")
+#### Tema: Medio de transporte al sitio de trabajo ####
+
+# Creamos total de opciones por municipio:
+TransLabor <- CartamaPersonas %>% 
+  dplyr::filter(.,P_094>=0) %>% 
+  dplyr::group_by(NomMpio, P_094) %>%
+  dplyr::summarise(
+    TransLabor = n())
+
+# Subtotal por municipio, solo para quienes tienen transporte
+Subtotal <- TransLabor %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(TransLabor))
+
+# Creamos la data de interés:
+TransLabor_v2 <- join_all(list(Subtotal,TransLabor), by=c("NomMpio"),type = "full")
+
+TransLabor_v3 <- TransLabor_v2 %>% 
+  dplyr::mutate(Porcentaje=round((TransLabor/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","TransLabor")) %>% 
+  dplyr::mutate(P_094=ifelse(P_094==1,"Caminando",P_094),
+                P_094=ifelse(P_094==2,"Bicicleta",P_094),
+                P_094=ifelse(P_094==3,"Moto",P_094),
+                P_094=ifelse(P_094==4,"Bus/Buseta",P_094),
+                P_094=ifelse(P_094==5,"Transporte informal",P_094),
+                P_094=ifelse(P_094==6,"Taxi/Colectivo",P_094),
+                P_094=ifelse(P_094==7,"Transporte privado",P_094),
+                P_094=ifelse(P_094==8,"Metro/Cable",P_094),
+                P_094=ifelse(P_094==9,"Sistema Integrado Transporte",P_094),
+                P_094=ifelse(P_094==10,"Caballo",P_094)
+                )
+
+# Graficamos todo cartama
+ggplot(TransLabor_v3, aes(x=Porcentaje, y=NomMpio, fill=P_094))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Transporte al sitio laboral")
+
+# Graficamos solo Jericó
+ggplot(TransLabor_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje,x=NomMpio,fill=P_094))+
+  geom_col(color="white")+
+  labs(x="",y="Porcentaje",fill="Transporte al sitio laboral")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=0.5, hjust=0.5 ,col="black")
+#### Tema: Tiempo al sitio de trabajo ####
+
+# Creamos total de opciones por municipio:
+TransLabor <- CartamaPersonas %>% 
+  dplyr::filter(.,P_095>=0) %>% 
+  dplyr::group_by(NomMpio, P_095) %>%
+  dplyr::summarise(
+    TransLabor = n())
+
+# Subtotal por municipio, solo para quienes tienen transporte
+Subtotal <- TransLabor %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(TransLabor))
+
+# Creamos la data de interés:
+TransLabor_v2 <- join_all(list(Subtotal,TransLabor), by=c("NomMpio"),type = "full")
+
+TransLabor_v3 <- TransLabor_v2 %>% 
+  dplyr::mutate(Porcentaje=round((TransLabor/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","TransLabor")) %>% 
+  dplyr::mutate(P_095=ifelse(P_095==1,"Entre 0-20 minutos",P_095),
+                P_095=ifelse(P_095==2,"Entre 21-40 minutos",P_095),
+                P_095=ifelse(P_095==3,"Entre 41-60 minutos",P_095),
+                P_095=ifelse(P_095==4,"Entre 61-80 minutos",P_095),
+                P_095=ifelse(P_095==5,"Más de 81 minutos",P_095)
+                )
+
+# Graficamos todo cartama
+ggplot(TransLabor_v3, aes(x=Porcentaje, y=NomMpio, fill=P_095))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Demora al sitio de trabajo")
+
+# Graficamos solo Jericó
+ggplot(TransLabor_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(y = Porcentaje,x=NomMpio,fill=P_095))+
+  geom_col(color="white")+
+  labs(x="",y="Porcentaje",fill="Demora al sitio de trabajo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=3, vjust=-0.5, hjust=0.5 ,col="black")
+#### Tema: Valoración transporte público (Hogares) ####
+
+# Creamos total de opciones por municipio:
+Vias <- CartamaHogares %>% 
+  dplyr::filter(.,P_345>=0) %>% 
+  dplyr::group_by(NomMpio, P_345) %>%
+  dplyr::summarise(
+    Vias = n())
+
+# Subtotal por municipio, solo para quienes tienen transporte
+Subtotal <- Vias %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(Vias))
+
+# Creamos la data de interés:
+Vias_v2 <- join_all(list(Subtotal,Vias), by=c("NomMpio"),type = "full")
+
+Vias_v3 <- Vias_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Vias/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","Vias")) %>% 
+  dplyr::mutate(P_345=ifelse(P_345==0,"No hay transporte público",P_345),
+                P_345=ifelse(P_345==1,"Muy mala",P_345),
+                P_345=ifelse(P_345==2,"Mala",P_345),
+                P_345=ifelse(P_345==3,"Aceptable",P_345),
+                P_345=ifelse(P_345==4,"Buena",P_345),
+                P_345=ifelse(P_345==5,"Muy buena",P_345)
+                )
+
+# Graficamos todo cartama
+ggplot(Vias_v3, aes(x=Porcentaje, y=NomMpio, fill=P_345))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Calificación transporte público")
+
+# Graficamos solo Jericó
+ggplot(Vias_v3 %>% 
+         dplyr::filter(.,NomMpio=="Jericó"),
+       aes(x = Porcentaje, y = reorder(P_345,-Porcentaje)))+
+  geom_col(position="dodge",fill="cyan4")+
+  labs(x="Porcentaje",y="Calificación transporte público", title="Jericó" )+
+  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=0.7 ,col="black")
+```
+
+```{r Proyectos productivos, echo=FALSE}
+#### Tema: Ganancias del negocio ####
+
+# Creamos total por municipio:
+Ganancias <- CartamaPersonas %>% 
+  dplyr::filter(.,P_124>0) %>% # No se toman los valores de 0 porque halan mucho la data
+  dplyr::group_by(NomMpio) %>%
+  dplyr::summarise(
+    Ganancias = round(mean(P_124),0))
+
+# Graficamos todo cartama
+ggplot(Ganancias, aes(x=Ganancias,y=NomMpio))+
+  geom_col(fill="cyan3")+
+  labs(x="Ganancias del negocio",y="Municipios")+
+  geom_text(aes(label = Ganancias),position = position_dodge(0.9),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Tenencia de negocio ####
+
+# Creamos total de opciones por municipio:
+Negocio <- CartamaHogares %>% 
+  dplyr::group_by(NomMpio, P_290) %>%
+  dplyr::summarise(
+    Negocio = n())
+
+# Subtotal por municipio, 
+Subtotal <- Negocio %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(Negocio))
+
+# Creamos la data de interés:
+Negocio_v2 <- join_all(list(Subtotal,Negocio), by=c("NomMpio"),type = "full")
+
+Negocio_v3 <- Negocio_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Negocio/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","Negocio")) %>% 
+  dplyr::mutate(P_290=ifelse(P_290==1,"Si",P_290),
+                P_290=ifelse(P_290==2,"No",P_290)
+                )
+# Graficamos todo cartama
+ggplot(Negocio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_290))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Tiene negocio")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.8),
+            size=3, vjust=0.5, hjust=0 ,col="black")
+#### Tema: Actividad del negocio ####
+
+# Creamos total de opciones por municipio:
+Negocio <- CartamaHogares %>% 
+  dplyr::filter(.,P_291>=0) %>% 
+  dplyr::group_by(NomMpio, P_291) %>%
+  dplyr::summarise(
+    Negocio = n())
+
+# Subtotal por municipio, 
+Subtotal <- Negocio %>% 
+  dplyr::group_by(NomMpio) %>% 
+  dplyr::summarise(
+    Subtotal = sum(Negocio))
+
+# Creamos la data de interés:
+Negocio_v2 <- join_all(list(Subtotal,Negocio), by=c("NomMpio"),type = "full")
+
+Negocio_v3 <- Negocio_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Negocio/Subtotal)*100,2)) %>% 
+  dplyr::select(.,-c("Subtotal","Negocio")) %>%
+  dplyr::mutate(P_291=ifelse(P_291==1,"Agropecuaria, silvicultura y pesca",P_291),
+                P_291=ifelse(P_291==2,"Minería",P_291),
+                P_291=ifelse(P_291==3,"Electricidad, gas, agua",P_291),
+                P_291=ifelse(P_291==4,"Industria",P_291),
+                P_291=ifelse(P_291==5,"Construcción",P_291),
+                P_291=ifelse(P_291==6,"Comercio, hotel, restaurantes",P_291),
+                P_291=ifelse(P_291==7,"Transporte, almacenamiento y comunicaciones",P_291),
+                P_291=ifelse(P_291==8,"Estab. Financieros, inmuebles y otros",P_291),
+                P_291=ifelse(P_291==9,"Servicios sociales, comunales y personales",P_291)
+                )
+
+# Graficamos todo cartama
+ggplot(Negocio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_291))+
+  geom_col(color="white")+
+  labs(x="Porcentaje",y="Municipios",fill="Sector del negocio")
+```
+
+## Eliminación de intermedios
+```{r pruebas, include=FALSE}
+rm(TransEduca,Subtotal,TransEduca_v2,TransEduca_v3)
+# Evitemos la notación científica:
+ options(scipen=999)
+# Para volver a notación cientifica:
+# options(scipen=0)
+urbano <-IngresosJerico %>% 
+  dplyr::filter(.,Zona==1 & P_021>=12)
+rural <-  IngresosJerico %>% 
+  dplyr::filter(.,Zona==2 & P_021>=10)
+ 
+```
+
+
+
+
+
+
+
+
+
