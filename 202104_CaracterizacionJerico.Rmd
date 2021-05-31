@@ -9,7 +9,7 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r Inicio, include=FALSE}
+```{r Inicio}
 setwd("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/1_EntregablesLehyton")
 
 # Paquetes a usar
@@ -80,7 +80,7 @@ CartamaViviendas <- ECVViviendas %>%
               NomMpio=ifelse(NomMpio=="VENECIA","Venecia",NomMpio))
 ```
 
-## Caracterización con FExp
+## Caracterización Microdata ECVD2019: con FExp
 ```{r Sexo con FExp}
 # Creamos una data para hombres y otra para mujeres, y luego las transformamos en Svy
 # Transformamos datas a tipo Svy.
@@ -140,7 +140,7 @@ ggplot(Sexo_Svy2, aes(x = Porcentaje, y = NomMpio, fill=Sexo))+
          axis.text.y = element_text(size=rel(1.5)))
 ```
 
-```{r Ingresos con FExp, echo=FALSE}
+```{r Ingresos con FExp}
 # data tipo Svy
 CartamaPersonas_Svy <- svydesign(ids=~0,weights=~FexpPer3,
                          data=CartamaPersonas)
@@ -150,7 +150,7 @@ Ingresos <- svyby(~P_121, ~NomMpio,
       CartamaPersonas_Svy, svymean)
 ```
 
-```{r Prueba Ingresos con Ficha técnica, echo=FALSE}
+```{r Prueba Ingresos con Ficha técnica}
 # Valor del indicador: 862,300
 
 # Datas iniciales:
@@ -223,946 +223,1794 @@ TotalFExp <- sum(Numerador$FexpPer_EQ) # Esto nos da un valor de 4058.888
 # PLT:El intento2=intento3=intento4=871.215. Todos los valores son cercanos al valor brindado de 862.300. Es deci que la data se ha manejado apropiadamente
 ```
 
-## Caracterización sin FExp
+## Caracterización Piloto: sin FExp
+```{r Data}
+# Datas piloto:
+PilotoIndividuos <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/1_EntregablesLehyton/3_Piloto/3_DataPiloto_v1.xlsx",sheet="p_039")
 
-```{r Sexo, echo=FALSE}
-# Creamos los grupos de población.
-# Concatenamos y calculamos los %.
-Hombres <- CartamaPersonas %>% 
-  dplyr::filter(P_018==1) %>%
-  dplyr::group_by(NomMpio) %>%
+PilotoHogares <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/1_EntregablesLehyton/3_Piloto/3_DataPiloto_v1.xlsx",sheet="Encuesta sociodemográfica Je...")
+
+PilotoProyectos <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/1_EntregablesLehyton/3_Piloto/3_DataPiloto_v1.xlsx",sheet="p_103_2")
+
+#### Funciones ####
+# Función agrupa: toma una data, la agrupa según la columna y calcula los %
+Agrupa <- function(Data,Columna){
+  Data_v2 <- Data %>%
+  dplyr::group_by({{Columna}}) %>%
   dplyr::summarise(
-    Hombres = n())
+    Subtotal = n())
+  
+Data_v2$Total <- colSums(Data_v2[,2])
 
-Mujeres <- CartamaPersonas %>% 
-  dplyr::filter(P_018==2) %>%
-  dplyr::group_by(NomMpio) %>%
+Data_v2 <- Data_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2))
+
+return(Data_v2)
+}
+
+```
+
+```{r Modulo Características del hogar}
+#### Tema: Sexo ####
+# Pregunta data: "Sexo de ${p_040}:"
+Sexo <- PilotoIndividuos %>%
+  dplyr::select(.,"Sexo de ${p_040}:") %>%
+  dplyr::rename(SexoCol="Sexo de ${p_040}:")
+
+Sexo_v2 <- Sexo %>%
+  dplyr::group_by(SexoCol) %>%
   dplyr::summarise(
-    Mujeres = n())
+    Sexo = n())
 
-Total <- CartamaPersonas %>% 
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Total = n())
+Sexo_v2$Total <- colSums(Sexo_v2[,2])
 
-Sexo <- join_all(list(Hombres,Mujeres,Total), by=c("NomMpio"),type = "full")
-
-Sexo <- Sexo %>% 
-  dplyr::mutate(HombresPorc=round((Hombres/Total)*100,2),
-                MujeresPorc=round((Mujeres/Total)*100,2))
-
-# pasamos data a formato largo
-Sexo_2 <- Sexo %>% 
-  gather("Sexo", value= "Porcentaje",c("HombresPorc","MujeresPorc")) %>% 
-  dplyr::select(.,-c("Hombres","Mujeres","Total")) %>%
-  dplyr::mutate(Sexo=ifelse(Sexo=="HombresPorc","Hombres",Sexo),
-                Sexo=ifelse(Sexo=="MujeresPorc","Mujeres",Sexo))
-
+Sexo_v2 <- Sexo_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Sexo/Total)*100,2))
 
 # Graficamos:
-ggplot(Sexo_2, aes(x = Porcentaje, y = NomMpio, fill=Sexo))+
+ggplot(Sexo_v2, aes(x=Porcentaje,y=SexoCol, fill=SexoCol))+
   geom_col()+
-  labs(x="Porcentaje",y="Municipios",fill="Sexo")+
+  labs(x="Porcentaje",y="Vereda La Estrella",fill="Sexo")+
   geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=4, vjust=0.5, hjust=0 ,col="black")
-```
+            size=4, vjust=0.5, hjust=-2.5 ,col="black")
+#### Tema: Identidad sexual ####
+Identidad <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040} se identifica como:") %>%
+  dplyr::rename(IdentidadCol="${p_040} se identifica como:")
 
-```{r Identidad sexual, echo=FALSE}
-# Creamos un total por municipio:
-TotalMcipio <- CartamaPersonas %>% 
-  dplyr::group_by(NomMpio) %>%
+Identidad_v2 <- Identidad %>%
+  dplyr::group_by(IdentidadCol) %>%
   dplyr::summarise(
-    Poblacion_n = n())
+    Identidad = n()) %>% 
+  drop_na()
 
-# Creamos total de identidades por municipio:
-IdentidadSexual <- CartamaPersonas %>% 
-  dplyr::group_by(NomMpio, P_019) %>%
-  dplyr::summarise(
-    identidad = n())
+Identidad_v2$Total <- colSums(Identidad_v2[,2])
 
-# Concatenamos:
-IdentidadSexual_v2 <- join_all(list(TotalMcipio,IdentidadSexual), by=c("NomMpio"),type = "full")
+Identidad_v2 <- Identidad_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Identidad/Total)*100,2))
 
-# Encntramos proporciones:
-# Eliminamos y recodificamos variables
-IdentidadSexual_v3 <- IdentidadSexual_v2 %>% 
-  dplyr::mutate(Identidad_Pct=round((identidad/Poblacion_n)*100,2)) %>% 
-  dplyr::select(.,-c("Poblacion_n","identidad")) %>% 
-  dplyr::mutate(P_019=ifelse(P_019==-88,"No aplica",P_019),
-                P_019=ifelse(P_019==-99,"No responde",P_019),
-              P_019=ifelse(P_019==-98,"No sabe",P_019),
-              P_019=ifelse(P_019==1,"Heterosexual",P_019),
-              P_019=ifelse(P_019==2,"Gay",P_019),
-              P_019=ifelse(P_019==3,"Lesbiana",P_019),
-              P_019=ifelse(P_019==4,"Bisexual",P_019),
-              P_019=ifelse(P_019==5,"Travesti",P_019),
-              P_019=ifelse(P_019==6,"Transexual",P_019),
-              P_019=ifelse(P_019==7,"Transformista",P_019),
-              P_019=ifelse(P_019==8,"Intersexual",P_019))
-              
 # Graficamos:
-ggplot(IdentidadSexual_v3, aes(x = Identidad_Pct, y = NomMpio, fill=P_019))+
+ggplot(Identidad_v2, aes(x=Porcentaje,y=IdentidadCol, fill=IdentidadCol))+
   geom_col()+
-  labs(x="Municipios",y="Porcentaje",fill="Identidad sexual")
-```
+  labs(x="Porcentaje",y="Vereda La Estrella",fill="Identidad sexual")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=1, hjust=-0.5 ,col="black")
+#### Tema: Medios de información ####
+# Preguntas data: 
+#"${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador de escritorio"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador portátil"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Tableta"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Telefono celular"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Televisor"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Periódico"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Revistas"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Ninguno"
 
-```{r Afiliaciones, echo=FALSE}
-# Identificamos solo los ocupados por municipio
-Ocupados <- CartamaPersonas %>% 
-  dplyr::filter(P_077==1) %>%
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Ocupados = n())
+Informacion <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador de escritorio","${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador portátil", "${p_040}. ¿Qué medios usa principalmente para estar informado?/Tableta","${p_040}. ¿Qué medios usa principalmente para estar informado?/Telefono celular","${p_040}. ¿Qué medios usa principalmente para estar informado?/Televisor","${p_040}. ¿Qué medios usa principalmente para estar informado?/Periódico","${p_040}. ¿Qué medios usa principalmente para estar informado?/Revistas","${p_040}. ¿Qué medios usa principalmente para estar informado?/Ninguno")) %>%
+  dplyr::rename(Computador="${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador de escritorio",Portatil="${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador portátil",Tablet="${p_040}. ¿Qué medios usa principalmente para estar informado?/Tableta",Celular="${p_040}. ¿Qué medios usa principalmente para estar informado?/Telefono celular",Televisor="${p_040}. ¿Qué medios usa principalmente para estar informado?/Televisor",Periodico="${p_040}. ¿Qué medios usa principalmente para estar informado?/Periódico",Revistas="${p_040}. ¿Qué medios usa principalmente para estar informado?/Revistas",Ninguno="${p_040}. ¿Qué medios usa principalmente para estar informado?/Ninguno")
 
-# Afiliación a pensiones
-Pensiones <- CartamaPersonas %>% 
-  dplyr::filter(P_075==1) %>%
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Pensiones = n())
+# Volvemos todas las columnaas en tipo numéricas:
+Informacion$Computador <- as.numeric(Informacion$Computador)
+Informacion$Portatil <- as.numeric(Informacion$Portatil)
+Informacion$Tablet <- as.numeric(Informacion$Tablet)
+Informacion$Celular <- as.numeric(Informacion$Celular)
+Informacion$Televisor <- as.numeric(Informacion$Televisor)
+Informacion$Periodico <- as.numeric(Informacion$Periodico)
+Informacion$Revistas <- as.numeric(Informacion$Revistas)
+Informacion$Ninguno <- as.numeric(Informacion$Ninguno)
 
-# Afiliaciones a ARL
-ARL <- CartamaPersonas %>% 
-  dplyr::filter(P_076==1) %>%
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    ARL = n())
+# Creamos el DF acorde:
+Informacion_v2 <- data.frame("Medio"=c("Computador","Portatil","Tablet","Celular","Televisor","Periodico","Revistas","Ninguno"),
+                        "Subtotal"=colSums(Informacion[,1:8], na.rm=T)
+                        )
 
-# Concatenamos
-Afiliaciones <- join_all(list(TotalMcipio,Pensiones,ARL), by=c("NomMpio"),type = "full") %>% 
-  dplyr::mutate(Pensiones=round((Pensiones/Poblacion_n)*100,2),
-                ARL=round((ARL/Poblacion_n)*100,2)) %>% 
-  dplyr::select(.,c("NomMpio","Pensiones","ARL"))
+Informacion_v2$Total <- sum(Informacion_v2$Subtotal)
 
-# Pasamos a formato largo
-Afiliaciones2 <- Afiliaciones %>% 
-  gather("Afiliacion", value= "Porcentaje",c("Pensiones","ARL"))
+Informacion_v2 <- Informacion_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)) %>%
+  dplyr::filter(Porcentaje!=0)
+
+
+# Graficamos: 
+ggplot(Informacion_v2, aes(y=Porcentaje,x=reorder(Medio,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Medios de información")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+
+#### Tema: Frecuencia de Medios de información ####
+# Pregunta data: "${p_040}. ¿Con qué frecuencia usa este medio?"
+
+Frecuencia <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Con qué frecuencia usa este medio?") %>%
+  dplyr::rename(FrecuenciaCol="${p_040}. ¿Con qué frecuencia usa este medio?") %>%
+  drop_na() 
+
+Frecuencia_v2 <- Agrupa(Data=Frecuencia,
+                 Columna=FrecuenciaCol)
 
 # Graficamos:
-ggplot(Afiliaciones2, aes(x = Porcentaje, y = NomMpio, fill=Afiliacion))+
-  geom_col(position="dodge")+
-  labs(x="Porcentaje",y="Municipios",fill="Afiliación")+
-  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
-            size=4, vjust=0.5, hjust=0 ,col="black")
-```
-
-```{r Educación, echo=FALSE}
-#### Tema: Estudia acualmente: P:043 ####
-
-# Creamos total de opciones por municipio:
-EstudioActual <- CartamaPersonas %>% 
-  dplyr::group_by(NomMpio, P_043) %>%
-  dplyr::summarise(
-    EstudioActual = n())
-
-# Concatenamos:
-EstudioActual_v2 <- join_all(list(TotalMcipio,EstudioActual), by=c("NomMpio"),type = "full")
-
-# Encontramos proporciones:
-# Eliminamos y recodificamos variables
-EstudioActual_v3 <- EstudioActual_v2 %>% 
-  dplyr::mutate(Porcentaje=round((EstudioActual/Poblacion_n)*100,2)) %>% 
-  dplyr::select(.,-c("Poblacion_n","EstudioActual"))%>% 
-  dplyr::mutate(P_043=ifelse(P_043==1,"Presencial",P_043),
-                P_043=ifelse(P_043==2,"Virtual",P_043),
-                P_043=ifelse(P_043==3,"No estudia",P_043))
-              
-# Graficamos:
-ggplot(EstudioActual_v3, aes(x = Porcentaje, y = NomMpio, fill=P_043))+
-  geom_col()+
-  labs(x="Porcentaje",y="Municipios",fill="Condición de estudio")+
+ggplot(Frecuencia_v2, aes(x=Porcentaje,y=reorder(FrecuenciaCol,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Frecuencia en uso de medios de información")+
   geom_text(aes(label = Porcentaje),position = position_stack(0.8),
-            size=3, vjust=0.5, hjust=0 ,col="black")
+            size=4, vjust=0, hjust=0 ,col="black")
 
-#### Tema: Estudio el año anterior: P:045 ####
-# Creamos total de opciones por municipio:
-EstudioAnterior <- CartamaPersonas %>% 
-  dplyr::group_by(NomMpio, P_045) %>%
+#### Tema: Productos financieros  ####
+# Preguntas data: 
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta corriente"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta de ahorros"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/CDT"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vivienda"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vehículo"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para libre inversión"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Tarjeta de crédito"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Ninguno"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Otro"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No sabe"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No responde"
+
+Informacion <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta corriente","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta de ahorros","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/CDT","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vivienda","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vehículo","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para libre inversión","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Tarjeta de crédito","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Ninguno","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Otro","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No sabe","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No responde")) %>%
+  dplyr::rename(CtaCorriente="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta corriente",CtaAhorros="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta de ahorros",CDT="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/CDT",PrestamoVivienda="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vivienda",PrestamoCarro="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vehículo",PrestamoLibre="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para libre inversión",TarjetaCredito="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Tarjeta de crédito",Ninguno="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Ninguno",Otro="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Otro",NoSabe="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No sabe",NoResponde="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No responde")
+
+# Volvemos todas las columnaas en tipo numéricas:
+Informacion$CtaCorriente <- as.numeric(Informacion$CtaCorriente)
+Informacion$CtaAhorros <- as.numeric(Informacion$CtaAhorros)
+Informacion$CDT <- as.numeric(Informacion$CDT)
+Informacion$PrestamoVivienda <- as.numeric(Informacion$PrestamoVivienda)
+Informacion$PrestamoCarro <- as.numeric(Informacion$PrestamoCarro)
+Informacion$PrestamoLibre <- as.numeric(Informacion$PrestamoLibre)
+Informacion$TarjetaCredito <- as.numeric(Informacion$TarjetaCredito)
+Informacion$Ninguno <- as.numeric(Informacion$Ninguno)
+Informacion$Otro <- as.numeric(Informacion$Otro)
+Informacion$NoSabe <- as.numeric(Informacion$NoSabe)
+Informacion$NoResponde <- as.numeric(Informacion$NoResponde)
+
+# Creamos el DF acorde:
+Informacion_v2 <- data.frame("Medio"=c("CtaCorriente","CtaAhorros","CDT","PrestamoVivienda","PrestamoCarro","PrestamoLibre","TarjetaCredito","Ninguno","Otro","NoSabe",
+                                       "NoResponde"),
+                        "Subtotal"=colSums(Informacion[,1:11], na.rm=T)
+                        )
+
+Informacion_v2$Total <- sum(Informacion_v2$Subtotal)
+
+Informacion_v2 <- Informacion_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)) %>%
+  dplyr::filter(Porcentaje!=0)
+
+
+# Graficamos: 
+ggplot(Informacion_v2, aes(y=Porcentaje,x=reorder(Medio,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Porcentaje",x="Producto financiero")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+
+
+```
+
+```{r Modulo Seguridad Social}
+#### Tema: Afiliación al SSS ####
+
+#"${p_040}. Afiliación al Sistema de Seguridad Social en Salud."
+AfiliacionSSS <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. Afiliación al Sistema de Seguridad Social en Salud.") %>%
+  dplyr::rename(AfiliacionCol="${p_040}. Afiliación al Sistema de Seguridad Social en Salud.") %>% 
+  drop_na() %>% 
+  dplyr::filter(.,AfiliacionCol!="No responde")
+
+AfiliacionSSS_v2 <- AfiliacionSSS %>%
+  dplyr::group_by(AfiliacionCol) %>%
   dplyr::summarise(
-    EstudioAnterior = n())
+    Afiliacion = n())
+  
+AfiliacionSSS_v2$Total <- colSums(AfiliacionSSS_v2[,2])
 
-# Concatenamos:
-EstudioAnterior_v2 <- join_all(list(TotalMcipio,EstudioAnterior), by=c("NomMpio"),type = "full")
+AfiliacionSSS_v2 <- AfiliacionSSS_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Afiliacion/Total)*100,2))
 
-# Encontramos proporciones:
-# Eliminamos y recodificamos variables
-EstudioAnterior_v3 <- EstudioAnterior_v2 %>% 
-  dplyr::mutate(Porcentaje=round((EstudioAnterior/Poblacion_n)*100,2)) %>% 
-  dplyr::select(.,-c("Poblacion_n","EstudioAnterior"))%>% 
-  dplyr::mutate(P_045=ifelse(P_045==1,"Presencial",P_045),
-                P_045=ifelse(P_045==2,"Virtual",P_045),
-                P_045=ifelse(P_045==3,"No estudió",P_045),
-                P_045=ifelse(P_045==-88,"No aplica",P_045))
-              
 # Graficamos:
-ggplot(EstudioAnterior_v3, aes(x = Porcentaje, y = NomMpio, fill=P_045))+
-  geom_col()+
-  labs(x="Porcentaje",y="Municipios",fill="Condición de estudio anterior")
-
-#### Tema: Causa para no continuar estudios: P:046 ####
-
-# Creamos total de opciones por municipio:
-CausaNoEstudio <- CartamaPersonas %>% 
-  dplyr::filter(.,P_046>=0) %>% 
-  dplyr::group_by(NomMpio, P_046) %>%
-  dplyr::summarise(
-    CausaNoEstudio = n())
-
-# Subtotal por municipio, solo para quienes no estudian
-Subtotal <- CausaNoEstudio %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(CausaNoEstudio))
-
-# Creamos la data de interés:
-CausaNoEstudio_v2 <- join_all(list(Subtotal,CausaNoEstudio), by=c("NomMpio"),type = "full")
-
-CausaNoEstudio_v3 <- CausaNoEstudio_v2 %>% 
-  dplyr::mutate(Porcentaje=round((CausaNoEstudio/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","CausaNoEstudio")) %>% 
-  dplyr::mutate(P_046=ifelse(P_046==1,"No está en edad",P_046),
-                P_046=ifelse(P_046==2,"Ya terminó",P_046),
-                P_046=ifelse(P_046==3,"Costos educativos",P_046),
-                P_046=ifelse(P_046==4,"Oficios del hogar",P_046),
-                P_046=ifelse(P_046==5,"Falta de tiempo",P_046),
-                P_046=ifelse(P_046==6,"Embarazo",P_046),
-                P_046=ifelse(P_046==7,"Inseguridad",P_046),
-                P_046=ifelse(P_046==8,"Falta de cupos",P_046),
-                P_046=ifelse(P_046==9,"No hay centro educativo",P_046),
-                P_046=ifelse(P_046==10,"Necesita trabajar",P_046),
-                P_046=ifelse(P_046==11,"No le gusta estudiar",P_046),
-                P_046=ifelse(P_046==12,"Enfermedad",P_046),
-                P_046=ifelse(P_046==13,"Educación especial",P_046),
-                P_046=ifelse(P_046==14,"Malos tratos",P_046),
-                P_046=ifelse(P_046==15,"Se casó",P_046),
-                P_046=ifelse(P_046==16,"Abandono de residencia",P_046),
-                P_046=ifelse(P_046==17,"Bajo rendimiento",P_046),
-                P_046=ifelse(P_046==18,"Documentación",P_046),
-                P_046=ifelse(P_046==19,"Razones familiares",P_046),
-                P_046=ifelse(P_046==20,"Servicio militar",P_046))
-
-# Graficamos Cartama 
-ggplot(CausaNoEstudio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_046))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Causas de no estudiar")
-
-# Graficamos Jericó 
-ggplot(CausaNoEstudio_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje, x = NomMpio, fill=P_046))+
-  geom_col(color="white")+
-  labs(x="",y="Porcentaje",fill="Causas de no estudiar")+
+ggplot(AfiliacionSSS_v2, aes(x=Porcentaje,y=reorder(AfiliacionCol,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Afiliación a Seguridad Social en Salud")+
   geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=0, hjust=0.5 ,col="black")
+            size=4, vjust=1, hjust=-0.8 ,col="black")
+#### Tema: Calificación: Servicios Salud  ####
+# Pregunta data: "${p_040}. Según su opinión, ¿cómo califica la calidad de los servicios de salud?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. Según su opinión, ¿cómo califica la calidad de los servicios de salud?")) %>%
+  dplyr::rename(Calificacion="${p_040}. Según su opinión, ¿cómo califica la calidad de los servicios de salud?") %>% 
+  drop_na() %>% 
+  dplyr::filter(Calificacion!="No se encuentra en casa")
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Calificacion)
+
+# Graficamos:
+ggplot(Salud_v2, aes(y=Porcentaje,x=reorder(Calificacion,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Porcentaje",x="Calificación servicios de salud")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+#### Tema: Cotiza para pensión  ####
+# Pregunta data: "${p_040}. ¿Cotiza para pensión?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿Cotiza para pensión?")) %>%
+  dplyr::rename(Cotiza="${p_040}. ¿Cotiza para pensión?") %>% 
+  drop_na()
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Cotiza)
+
+# Graficamos:
+ggplot(Salud_v2, aes(y=Porcentaje,x=reorder(Cotiza,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Cotización al sistema de pensiones")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+#### Tema: Fondo de pensión que cotiza  ####
+# Pregunta data: "${p_040}. ¿A cuál de los siguientes fondos de pensiones cotiza?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿A cuál de los siguientes fondos de pensiones cotiza?")) %>%
+  dplyr::rename(Cotiza="${p_040}. ¿A cuál de los siguientes fondos de pensiones cotiza?") %>% 
+  drop_na() %>% 
+  dplyr::filter(Cotiza!="No sabe")
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Cotiza)
+
+# Graficamos:
+ggplot(Salud_v2, aes(y=Porcentaje,x=reorder(Cotiza,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Fondo de pensiones")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+
+#### Tema: Está afiliado a ARL  ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Tiene Afiliación a una Administradora de Riesgos Laborales (ARL)?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. ¿Tiene Afiliación a una Administradora de Riesgos Laborales (ARL)?")) %>%
+  dplyr::rename(Ocupacion="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Cotiza="${p_040}. ¿Tiene Afiliación a una Administradora de Riesgos Laborales (ARL)?") %>% 
+  dplyr::filter(Ocupacion=="Trabajando")
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Cotiza)
+
+# Graficamos:
+ggplot(Salud_v2, aes(y=Porcentaje,x=reorder(Cotiza,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Porcentaje",x="Afiliación a ARL")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+#### Tema: Está afiliado a Caja compensación  ####
+# Pregunta data: "${p_040}. ¿Está afiliado a una caja de compensación?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿Está afiliado a una caja de compensación?")) %>%
+  dplyr::rename(Cotiza="${p_040}. ¿Está afiliado a una caja de compensación?") %>% 
+  dplyr::filter(Cotiza!="No sabe") %>% 
+  drop_na()
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Cotiza)
+
+# Graficamos:
+ggplot(Salud_v2, aes(y=Porcentaje,x=reorder(Cotiza,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Afiliación a caja de compensación")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+#### Tema: Caja de compensación donde está  ####
+# Pregunta data: "${p_040}. ¿A cuál caja de compensación está afiliado?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿A cuál caja de compensación está afiliado?")) %>%
+  dplyr::rename(Cotiza="${p_040}. ¿A cuál caja de compensación está afiliado?") %>% 
+  drop_na()
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Cotiza)
+
+# Graficamos:
+ggplot(Salud_v2, aes(y=Porcentaje,x=reorder(Cotiza,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Caja de compensación")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+
+
+```
+
+```{r Modulo Educación}
+#### Tema: Condición educativa actual ####
+# Pregunta de data: "${p_040}. ¿Cuál es su condición educativa actualmente?"
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Cuál es su condición educativa actualmente?") %>%
+  dplyr::rename(CondicionEduca="${p_040}. ¿Cuál es su condición educativa actualmente?") %>% 
+  drop_na() %>% 
+  dplyr::filter(.,CondicionEduca!="No sabe")
+
+Educacion_v2 <- Educacion %>%
+  dplyr::group_by(CondicionEduca) %>%
+  dplyr::summarise(
+    Condicion = n())
+  
+Educacion_v2$Total <- colSums(Educacion_v2[,2])
+
+Educacion_v2 <- Educacion_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Condicion/Total)*100,2))
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=reorder(CondicionEduca,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Condición educativa actual")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=1, hjust=-0.45 ,col="black")
+
+#### Tema: Causa para no continuar estudios: ####
+# Pregunta de data: "${p_040}. ¿Cuál fue la principal causa por la que no pudo continuar sus estudios?"
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Cuál fue la principal causa por la que no pudo continuar sus estudios?") %>%
+  dplyr::rename(CausaNoEstudio="${p_040}. ¿Cuál fue la principal causa por la que no pudo continuar sus estudios?") %>% 
+  drop_na() 
+
+Educacion$CausaCol <- c("Causa")
+
+Educacion <- Educacion %>% 
+  dplyr::mutate(CausaCol=ifelse(CausaNoEstudio=="Porque se casó o formó pareja",
+                                "Vida en pareja",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="No le gusta o no le interesa el estudio, aburrición","No le interesa",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Costos educativos elevados o falta de dinero","Razones económicas",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Debe encargarse de los oficios del hogar (cuidado de los niños, ancianos, personas con discapacidad, etc)","Oficios del hogar",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="No existe centro educativo cercano, está muy lejano","Lejanía del centro educativo",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Por inseguridad en el establecimiento educativo, en el entorno del establecimiento o en el lugar de residencia","Inseguridad",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Necesita trabajar","Necesita trabajar",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Razones familiares","Razones familiares",CausaCol)
+                )
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=CausaCol)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=reorder(CausaCol,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Causas para no estudiar")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=1, hjust=-0.45 ,col="black")
+
+#### Tema: Nivel de estudios que cursa actual ####
+# Pregunta data: ${p_040}. ¿Cuál es el nivel de estudio que está estudiando actualmente?"
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Cuál es el nivel de estudio que está estudiando actualmente?") %>%
+  dplyr::rename(NivelEstudio="${p_040}. ¿Cuál es el nivel de estudio que está estudiando actualmente?") %>% 
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=NivelEstudio)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=reorder(NivelEstudio,-Porcentaje)))+
+  geom_col(fill="cyan")+
+  labs(x="Porcentaje",y="Nivel de estudio que cursa actualmente")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=1, hjust=-0.45 ,col="black")
+
+#### Tema: Area del conocimiento que cursa actualmente ####
+# Pregunta de data: "${p_040}. Área de conocimiento de lo que está estudiando actualmente"
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. Área de conocimiento de lo que está estudiando actualmente") %>%
+  dplyr::rename(AreaEstudio="${p_040}. Área de conocimiento de lo que está estudiando actualmente") %>% 
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=AreaEstudio)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=reorder(AreaEstudio,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Area del conocimiento que cursa actualmente")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=1, hjust=-0.45 ,col="black")
 
 #### Tema: Ultimo nivel de estudios ####
-# Creamos total de opciones por municipio:
-NivelEstudio <- CartamaPersonas %>% 
-  dplyr::filter(.,P_049>=0) %>% 
-  dplyr::group_by(NomMpio, P_049) %>%
-  dplyr::summarise(
-    NivelEstudio = n())
+# Pregunta data: "${p_040}. Último NIVEL de estudio que estudió."
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. Último NIVEL de estudio que estudió.") %>%
+  dplyr::rename(NivelEstudio="${p_040}. Último NIVEL de estudio que estudió.") %>% 
+  drop_na() 
 
-# Subtotal por municipio, solo para quienes tienen nivel
-Subtotal <- NivelEstudio %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(NivelEstudio))
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=NivelEstudio)
 
-# Creamos la data de interés:
-NivelEstudio_v2 <- join_all(list(Subtotal,NivelEstudio), by=c("NomMpio"),type = "full")
-
-NivelEstudio_v3 <- NivelEstudio_v2 %>% 
-  dplyr::mutate(Porcentaje=round((NivelEstudio/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","NivelEstudio")) %>% 
-  dplyr::mutate(P_049=ifelse(P_049==0,"Ninguno",P_049),
-                P_049=ifelse(P_049==1,"Preescolar",P_049),
-                P_049=ifelse(P_049==2,"Primaria",P_049),
-                P_049=ifelse(P_049==3,"Secundaria",P_049),
-                P_049=ifelse(P_049==4,"Media",P_049),
-                P_049=ifelse(P_049==5,"Técnico",P_049),
-                P_049=ifelse(P_049==6,"Tecnológico",P_049),
-                P_049=ifelse(P_049==7,"Universidad",P_049),
-                P_049=ifelse(P_049==8,"Especialización",P_049),
-                P_049=ifelse(P_049==9,"Maestría",P_049)
-                )
-
-# Graficamos Cartama
-ggplot(NivelEstudio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_049))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Nivel educativo")
-
-# Graficamos solo Jericó
-ggplot(NivelEstudio_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje, x = NomMpio, fill=P_049))+
-  geom_col(color="white")+
-  labs(x="",y="Porcenntaje",fill="Nivel educativo")+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=reorder(NivelEstudio,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Último nivel de estudio")+
   geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=0, hjust=0.5 ,col="black")
+            size=4, vjust=1, hjust=-0.45 ,col="black")
 
-#### Tema: Area del conocimiento ####
+#### Tema: Ultimo título aprobado ####
+# Pregunta data: "${p_040}. Último título de estudio aprobado."
 
-# Creamos total de opciones por municipio:
-AreaEstudio <- CartamaPersonas %>% 
-  dplyr::filter(.,P_052>=0) %>% 
-  dplyr::group_by(NomMpio, P_052) %>%
-  dplyr::summarise(
-    AreaEstudio = n())
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. Último título de estudio aprobado.") %>%
+  dplyr::rename(Titulo="${p_040}. Último título de estudio aprobado.") %>% 
+  drop_na() 
 
-# Subtotal por municipio, solo para quienes tienen area de conocimiento
-Subtotal <- AreaEstudio %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(AreaEstudio))
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=Titulo)
 
-# Creamos la data de interés:
-AreaEstudio_v2 <- join_all(list(Subtotal,AreaEstudio), by=c("NomMpio"),type = "full")
-
-AreaEstudio_v3 <- AreaEstudio_v2 %>% 
-  dplyr::mutate(Porcentaje=round((AreaEstudio/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","AreaEstudio")) %>% 
-  dplyr::mutate(P_052=ifelse(P_052==1,"Agronomia y afines",P_052),
-                P_052=ifelse(P_052==2,"Bellas Artes",P_052),
-                P_052=ifelse(P_052==3,"Ciencias de la Educación",P_052),
-                P_052=ifelse(P_052==4,"Ciencias de la Salud",P_052),
-                P_052=ifelse(P_052==5,"Ciencias Sociales y afines",P_052),
-                P_052=ifelse(P_052==6,"Economia y afines",P_052),
-                P_052=ifelse(P_052==7,"Humanidades y religiosas",P_052),
-                P_052=ifelse(P_052==8,"Ing. Sistemas y afines",P_052),
-                P_052=ifelse(P_052==9,"Ing. Industrial y afines",P_052),
-                P_052=ifelse(P_052==10,"Ing. Electrónica y afines",P_052),
-                P_052=ifelse(P_052==11,"Ing. Mecánica y afines",P_052),
-                P_052=ifelse(P_052==12,"Ing. Ambiental y afines",P_052),
-                P_052=ifelse(P_052==13,"Ing. Química y afines ",P_052),
-                P_052=ifelse(P_052==14,"Ing. Civil y afines",P_052),
-                P_052=ifelse(P_052==15,"Matemáticas y C. Naturales",P_052),
-                P_052=ifelse(P_052==16,"Otras",P_052),
-                )
-
-# Graficamos todo cartama
-ggplot(AreaEstudio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_052))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Area de conocimiento")
-
-# Graficamos solo Jericó
-ggplot(AreaEstudio_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje, x = NomMpio, fill=P_052))+
-  geom_col(color="white")+
-  labs(x="",y="",fill="Area de conocimiento")+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=0, hjust=0.5 ,col="black")
-
-#### Tema: Cáracter del establecimiento educativo ####
-
-# Creamos total de opciones por municipio:
-Establecimiento <- CartamaPersonas %>% 
-  dplyr::filter(.,P_053>=0) %>% 
-  dplyr::group_by(NomMpio, P_053) %>%
-  dplyr::summarise(
-    Establecimiento = n())
-
-# Subtotal por municipio, solo para quienes tienen establecimiento
-Subtotal <- Establecimiento %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(Establecimiento))
-
-# Creamos la data de interés:
-Establecimiento_v2 <- join_all(list(Subtotal,Establecimiento), by=c("NomMpio"),type = "full")
-
-Establecimiento_v3 <- Establecimiento_v2 %>% 
-  dplyr::mutate(Porcentaje=round((Establecimiento/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","Establecimiento")) %>% 
-  dplyr::mutate(P_053=ifelse(P_053==0,"Ninguno, No estudió",P_053),
-                P_053=ifelse(P_053==1,"Público",P_053),
-                P_053=ifelse(P_053==2,"Privado",P_053)
-                )
-
-# Graficamos todo cartama
-ggplot(Establecimiento_v3, aes(x = Porcentaje, y = NomMpio, fill=P_053))+
-  geom_col(color="white",position="dodge")+
-  labs(x="Porcentaje",y="Municipios",fill="Cáracter del establecimiento")+
-  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
-            size=3, vjust=0.5, hjust=0.5 ,col="black")
-```
-
-```{r Recreación, echo=FALSE}
-# Creamos total de opciones por municipio:
-Recreacion <- CartamaPersonas %>% 
-  dplyr::filter(.,P_035>=0) %>% 
-  dplyr::group_by(NomMpio, P_035) %>%
-  dplyr::summarise(
-    Recreacion = n())
-
-# Subtotal por municipio, solo para quienes tienen recreación
-Subtotal <- Recreacion %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(Recreacion))
-
-# Creamos la data de interés:
-Recreacion_v2 <- join_all(list(Subtotal,Recreacion), by=c("NomMpio"),type = "full")
-
-Recreacion_v3 <- Recreacion_v2 %>% 
-  dplyr::mutate(Porcentaje=round((Recreacion/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","Recreacion")) %>% 
-  dplyr::mutate(P_035=ifelse(P_035==1,"Asoc. Padres Familia",P_035),
-                P_035=ifelse(P_035==2,"Corporaciones",P_035),
-                P_035=ifelse(P_035==3,"Juntas Admon Locales",P_035),
-                P_035=ifelse(P_035==4,"Asociaciones de mujeres",P_035),
-                P_035=ifelse(P_035==5,"Grupos juveniles",P_035),
-                P_035=ifelse(P_035==6,"Veedurías ciudadanas",P_035),
-                P_035=ifelse(P_035==7,"Junta acción comunal",P_035),
-                P_035=ifelse(P_035==8,"Clubes del adulto mayor",P_035),
-                P_035=ifelse(P_035==9,"Asambleas barriales",P_035),
-                P_035=ifelse(P_035==10,"Consejos comunales",P_035),
-                P_035=ifelse(P_035==11,"Comités comunitarios salud",P_035),
-                P_035=ifelse(P_035==12,"Organización de victimas",P_035),
-                P_035=ifelse(P_035==13,"Asociación de usuarios",P_035),
-                P_035=ifelse(P_035==14,"Sindicatos",P_035),
-                P_035=ifelse(P_035==15,"Organización de base",P_035),
-                P_035=ifelse(P_035==16,"Partido político",P_035),
-                P_035=ifelse(P_035==17,"Asociación cáracter ambiental",P_035),
-                P_035=ifelse(P_035==18,"Otro",P_035),
-                P_035=ifelse(P_035==19,"Ninguno",P_035),
-                )
-# Graficamos todo cartama
-ggplot(Recreacion_v3, aes(x = Porcentaje, y = NomMpio, fill=P_035))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Participación en")
-
-# Graficamos solo Jericó
-ggplot(Recreacion_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje, x = NomMpio, fill=P_035))+
-  geom_col(color="white")+
-  labs(x="",y="Porcentaje",fill="Participación en")+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=0, hjust=0.5 ,col="black")
-```
-
-```{r Laboral e ingresos, echo=FALSE}
-#### Tema: Actividad semana pasada ####
-# Creamos total de opciones por municipio:
-Actividad <- CartamaPersonas %>% 
-  dplyr::filter(.,P_077>=0) %>% 
-  dplyr::group_by(NomMpio, P_077) %>%
-  dplyr::summarise(
-    Actividad = n())
-
-# Subtotal por municipio, solo para quienes tienen recreación
-Subtotal <- Actividad %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(Actividad))
-
-# Creamos la data de interés:
-Actividad_v2 <- join_all(list(Subtotal,Actividad), by=c("NomMpio"),type = "full")
-
-Actividad_v3 <- Actividad_v2 %>% 
-  dplyr::mutate(Porcentaje=round((Actividad/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","Actividad")) %>% 
-  dplyr::mutate(P_077=ifelse(P_077==1,"Trabajando",P_077),
-                P_077=ifelse(P_077==2,"Buscando trabajo",P_077),
-                P_077=ifelse(P_077==3,"Estudiando",P_077),
-                P_077=ifelse(P_077==4,"Oficios del hogar",P_077),
-                P_077=ifelse(P_077==5,"Rentista",P_077),
-                P_077=ifelse(P_077==6,"Jubilado",P_077),
-                P_077=ifelse(P_077==7,"Otra actividad",P_077),
-                P_077=ifelse(P_077==8,"Incapacitado para trabajar",P_077)
-                )
-# Graficamos todo cartama
-ggplot(Actividad_v3, aes(x = Porcentaje, y = NomMpio, fill=P_077))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Actividad última semana")
-
-# Graficamos solo Jericó
-ggplot(Actividad_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje, x = NomMpio, fill=P_077))+
-  geom_col(color="white")+
-  labs(x="",y="Porcentaje",fill="Actividad última semana")+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=0, hjust=0.5 ,col="black")
-#### Tema: Sector económico empresa ####
-
-# Creamos total de opciones por municipio:
-Sector <- CartamaPersonas %>% 
-  dplyr::filter(.,P_096>=0) %>% 
-  dplyr::group_by(NomMpio, P_096) %>%
-  dplyr::summarise(
-    Sector = n())
-
-# Subtotal por municipio
-Subtotal <- Sector %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(Sector))
-
-# Creamos la data de interés:
-Sector_v2 <- join_all(list(Subtotal,Sector), by=c("NomMpio"),type = "full")
-
-Sector_v3 <- Sector_v2 %>% 
-  dplyr::mutate(Porcentaje=round((Sector/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","Sector")) %>% 
-  dplyr::mutate(P_096=ifelse(P_096==1,"Agropecuaria, silvicultura y pesca",P_096),
-                P_096=ifelse(P_096==2,"Minería",P_096),
-                P_096=ifelse(P_096==3,"Electricidad, gas, agua",P_096),
-                P_096=ifelse(P_096==4,"Industria",P_096),
-                P_096=ifelse(P_096==5,"Construcción",P_096),
-                P_096=ifelse(P_096==6,"Comercio, hotel, restaurantes",P_096),
-                P_096=ifelse(P_096==7,"Transporte, almacenamiento y comunicaciones",P_096),
-                P_096=ifelse(P_096==8,"Estab. Financieros, inmuebles y otros",P_096),
-                P_096=ifelse(P_096==9,"Servicios sociales, comunales y personales",P_096)
-                )
-
-# Graficamos todo cartama
-ggplot(Sector_v3, aes(x = Porcentaje, y = NomMpio, fill=P_096))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Sector económico")
-
-# Graficamos solo Jericó
-ggplot(Sector_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(x = Porcentaje, y = reorder(P_096,-Porcentaje)))+
-  geom_col(position="dodge",fill="cyan4")+
-  labs(x="Porcentaje",y="Sector económico", title="Jericó" )+
-  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
-            size=4, vjust=0, hjust=0.7 ,col="black")
-
-#reorder(P_099,-Porcentaje)
-#### Tema: Posición ocupacional####
-
-# Creamos total de opciones por municipio:
-PosicionOcupa <- CartamaPersonas %>% 
-  dplyr::filter(.,P_099>=0) %>% 
-  dplyr::group_by(NomMpio, P_099) %>%
-  dplyr::summarise(
-    PosicionOcupa = n())
-
-# Subtotal por municipio
-Subtotal <- PosicionOcupa %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(PosicionOcupa))
-
-# Creamos la data de interés:
-PosicionOcupa_v2 <- join_all(list(Subtotal,PosicionOcupa), by=c("NomMpio"),type = "full")
-
-PosicionOcupa_v3 <- PosicionOcupa_v2 %>% 
-  dplyr::mutate(Porcentaje=round((PosicionOcupa/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","PosicionOcupa")) %>% 
-  dplyr::mutate(P_099=ifelse(P_099==1,"Empleado de empresa particular",P_099),
-                P_099=ifelse(P_099==2,"Empleado del gobierno",P_099),
-                P_099=ifelse(P_099==3,"Empleado doméstico",P_099),
-                P_099=ifelse(P_099==4,"Cuenta propia",P_099),
-                P_099=ifelse(P_099==5,"Empleador",P_099),
-                P_099=ifelse(P_099==6,"Trabajador fliar sin remuneración",P_099),
-                P_099=ifelse(P_099==7,"Trabajador sin remuneración",P_099),
-                P_099=ifelse(P_099==8,"Jornalero",P_099)
-                )
-
-# Graficamos todo cartama
-ggplot(PosicionOcupa_v3, aes(x = Porcentaje, y = NomMpio, fill=P_099))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Posición ocupacional")
-
-# Gráfico solo para Jericó
-ggplot(PosicionOcupa_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(x = Porcentaje, y = reorder(P_099,-Porcentaje)))+
-  geom_col(position="dodge",fill="cyan4")+
-  labs(x="Porcentaje",y="Posición ocupacional", title="Jericó" )+
-  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
-            size=4, vjust=0, hjust=0.5 ,col="black")
-
-#### Tema: Ingreso por arriendos ####
-
-# Creamos total por municipio:
-Arriendos <- CartamaPersonas %>% 
-  dplyr::filter(.,P_125>0) %>% # No se toman los valores de 0 porque halan mucho la data
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Arriendos = round(mean(P_125),0))
-
-# Graficamos todo cartama
-ggplot(Arriendos, aes(x = Arriendos, y = NomMpio))+
-  geom_col(fill="brown1")+
-  labs(x="Ingresos por arriendos",y="Municipios")+
-  geom_text(aes(label = Arriendos),position = position_dodge(0.9),
-            size=4, vjust=0, hjust=1 ,col="black")
-
-#### Tema: Ingresos por pensiones ####
-
-# Creamos total por municipio:
-Pensiones <- CartamaPersonas %>% 
-  dplyr::filter(.,P_126>0) %>% # No se toman los valores de 0 porque halan mucho la data
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Pensiones = round(mean(P_126),0))
-
-# Graficamos todo cartama
-ggplot(Pensiones, aes(x = Pensiones, y = NomMpio))+
-  geom_col(fill="deepskyblue")+
-  labs(x="Ingresos por pensiones",y="Municipios")+
-  geom_text(aes(label = Pensiones),position = position_dodge(0.9),
-            size=4, vjust=0, hjust=1 ,col="black")
-
-#### Tema: Ingresos Subsidios ####
-
-# Creamos total por municipio:
-Subsidios <- CartamaPersonas %>% 
-  dplyr::filter(.,P_127>0) %>% # No se toman los valores de 0 porque halan mucho la data
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Subsidios = round(mean(P_127),0))
-
-# Graficamos todo cartama
-ggplot(Subsidios, aes(x = Subsidios, y = NomMpio))+
-  geom_col(fill="aquamarine")+
-  labs(x="Ingresos por subsidios",y="Municipios")+
-  geom_text(aes(label = Subsidios),position = position_dodge(0.9),
-            size=4, vjust=0, hjust=1 ,col="black")
-#### Tema: Ingresos Giros Exterior ####
-
-# Creamos total por municipio:
-GirosExterior <- CartamaPersonas %>% 
-  dplyr::filter(.,P_128>0) %>% # No se toman los valores de 0 porque halan mucho la data
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    GirosExterior = round(mean(P_128),0))
-
-# Graficamos todo cartama
-ggplot(GirosExterior, aes(x = GirosExterior, y = NomMpio))+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=reorder(Titulo,-Porcentaje)))+
   geom_col(fill="coral")+
-  labs(x="Ingresos por giros del exterior",y="Municipios")+
-  geom_text(aes(label = GirosExterior),position = position_dodge(0.9),
-            size=4, vjust=0, hjust=0.6 ,col="black")
+  labs(x="Porcentaje",y="Último título aprobado")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=1, hjust=-0.45 ,col="black")
 
-#### Tema: Ingresos Giros Interior ####
 
-# Creamos total por municipio:
-Dividendos <- CartamaPersonas %>% 
-  dplyr::filter(.,P_129>0) %>% # No se toman los valores de 0 porque halan mucho la data
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Dividendos = round(mean(P_129),0))
+#### Tema: Año del último título####
+# Pregunta data: "anotitulo"
+# Pregunta data: "${p_040}. Último título de estudio aprobado."
 
-# Graficamos todo cartama
-ggplot(Dividendos, aes(x = Dividendos, y = NomMpio))+
-  geom_col(fill="cyan3")+
-  labs(x="Ingresos por dividendos",y="Municipios")+
-  geom_text(aes(label = Dividendos),position = position_dodge(0.9),
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. Último título de estudio aprobado.","anotitulo")) %>%
+  dplyr::rename(Titulo="${p_040}. Último título de estudio aprobado.") %>% 
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=anotitulo)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(y=Porcentaje,x=reorder(anotitulo,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Año título aprobado")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=5, hjust=0.45 ,col="black")
+#### Tema: Puede certificarlo####
+# Pregunta data: "${p_040}. ¿Puede certificarlo?"
+# Pregunta data: "${p_040}. Último título de estudio aprobado."
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. Último título de estudio aprobado.","${p_040}. ¿Puede certificarlo?")) %>%
+  dplyr::rename(Titulo="${p_040}. Último título de estudio aprobado.", Certificado="${p_040}. ¿Puede certificarlo?") %>% 
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=Certificado)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(y=Porcentaje,x=reorder(Certificado,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Certificado")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.1),
+            size=4, vjust=5, hjust=0.45 ,col="black")
+
+#### Tema: Intereses académicos a futuro ####
+# Pregunta data: "${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)"
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)") %>%
+  dplyr::rename(InteresEstudiar="${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)") %>% 
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=InteresEstudiar)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=reorder(InteresEstudiar,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Intereses académicos a futuro")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=0, hjust=0 ,col="black")
+
+
+#### Tema: Necesidades Educativas Especiales ####
+# Pregunta data: "${p_040}. ¿Posee Necesidades educativas especiales?"
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Posee Necesidades educativas especiales?") %>%
+  dplyr::rename(Necesidades="${p_040}. ¿Posee Necesidades educativas especiales?") %>% 
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=Necesidades)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(y=Porcentaje,x=reorder(Necesidades,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Necesidades educativas especiales")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0 ,col="black")
+
+#### Tema: Tipo de Necesidades Educativas ####
+# Pregunta data: "${p_040}. Necesidad educativa especial asociada a:"
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. Necesidad educativa especial asociada a:") %>%
+  dplyr::rename(Necesidades="${p_040}. Necesidad educativa especial asociada a:") %>%
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=Necesidades)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(y=Porcentaje,x=reorder(Necesidades,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Clasificación de necesidad educativa")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0 ,col="black")
+#### Tema: Diagnostic de Necesidades Educativas ####
+# Pregunta data: "${p_040}. ¿La enfermedad está diagnosticada?"
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿La enfermedad está diagnosticada?") %>%
+  dplyr::rename(Necesidades="${p_040}. ¿La enfermedad está diagnosticada?") %>%
+  drop_na() 
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=Necesidades)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(y=Porcentaje,x=reorder(Necesidades,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Diagnóstico de necesidad educativa")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
             size=4, vjust=0, hjust=0.5 ,col="black")
+
 ```
 
-```{r Movilidad, echo=FALSE}
-#### Tema: Medio de transporte al centro educativo ####
+```{r Modulo Recreación}
+#### Tema: Participación política ####
+# Pregunta data: "${p_040}. ¿Usted participa en alguna de las siguientes organizaciones o instancias de participación?"
 
-# Creamos total de opciones por municipio:
-TransEduca <- CartamaPersonas %>% 
-  dplyr::filter(.,P_047>=0) %>% 
-  dplyr::group_by(NomMpio, P_047) %>%
-  dplyr::summarise(
-    TransEduca = n())
+Recreacion <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Usted participa en alguna de las siguientes organizaciones o instancias de participación?") %>%
+  dplyr::rename(RecreacionCol="${p_040}. ¿Usted participa en alguna de las siguientes organizaciones o instancias de participación?") %>%
+  drop_na() %>% 
+  dplyr::filter(RecreacionCol!="Ninguno")
 
-# Subtotal por municipio, solo para quienes tienen transporte
-Subtotal <- TransEduca %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(TransEduca))
+Recreacion_v2 <- Agrupa(Data=Recreacion,
+                 Columna=RecreacionCol)
 
-# Creamos la data de interés:
-TransEduca_v2 <- join_all(list(Subtotal,TransEduca), by=c("NomMpio"),type = "full")
+# Graficamos:
+ggplot(Recreacion_v2, aes(y=Porcentaje,x=reorder(RecreacionCol,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Porcentaje",x="Instancias de participación")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Hobbies ####
+# Preguntas data: 
+# "${p_040}. ¿Cuáles son sus hobbies?/Cocina"
+# "${p_040}. ¿Cuáles son sus hobbies?/Contactar y conversar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Escuchar música"
+# "${p_040}. ¿Cuáles son sus hobbies?/Hacer deporte"
+# "${p_040}. ¿Cuáles son sus hobbies?/Informarse"
+# "${p_040}. ¿Cuáles son sus hobbies?/Jardinería"
+# "${p_040}. ¿Cuáles son sus hobbies?/Juegos de mesa o azar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Leer"
+# "${p_040}. ¿Cuáles son sus hobbies?/Manualidades"
 
-TransEduca_v3 <- TransEduca_v2 %>% 
-  dplyr::mutate(Porcentaje=round((TransEduca/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","TransEduca")) %>% 
-  dplyr::mutate(P_047=ifelse(P_047==1,"Caminando",P_047),
-                P_047=ifelse(P_047==2,"Bicicleta",P_047),
-                P_047=ifelse(P_047==3,"Moto",P_047),
-                P_047=ifelse(P_047==4,"Bus/Buseta",P_047),
-                P_047=ifelse(P_047==5,"Transporte informal",P_047),
-                P_047=ifelse(P_047==6,"Taxi/Colectivo",P_047),
-                P_047=ifelse(P_047==7,"Transporte privado",P_047),
-                P_047=ifelse(P_047==8,"Metro/Cable",P_047),
-                P_047=ifelse(P_047==9,"Sistema Integrado Transporte",P_047)
-                )
+Hobbies <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿Cuáles son sus hobbies?/Cocina",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Contactar y conversar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Escuchar música",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Hacer deporte",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Informarse",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Jardinería",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Juegos de mesa o azar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Leer",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Manualidades"
+                    )) %>%
+  dplyr::rename(Cocina="${p_040}. ¿Cuáles son sus hobbies?/Cocina",
+                Conversar="${p_040}. ¿Cuáles son sus hobbies?/Contactar y conversar",
+                EscucharMusica="${p_040}. ¿Cuáles son sus hobbies?/Escuchar música",
+                Deporte="${p_040}. ¿Cuáles son sus hobbies?/Hacer deporte",
+                Informarse="${p_040}. ¿Cuáles son sus hobbies?/Informarse",
+                Jardinería="${p_040}. ¿Cuáles son sus hobbies?/Jardinería",
+                JuegosAzar="${p_040}. ¿Cuáles son sus hobbies?/Juegos de mesa o azar",
+                Leer="${p_040}. ¿Cuáles son sus hobbies?/Leer",
+                Manualidades="${p_040}. ¿Cuáles son sus hobbies?/Manualidades")
 
-# Graficamos todo cartama
-ggplot(TransEduca_v3, aes(x=Porcentaje, y=NomMpio, fill=P_047))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Transporte al centro educativo")
+# Volvemos todas las columnaas en tipo numéricas:
+Hobbies$Cocina <- as.numeric(Hobbies$Cocina)
+Hobbies$Conversar <- as.numeric(Hobbies$Conversar)
+Hobbies$EscucharMusica <- as.numeric(Hobbies$EscucharMusica)
+Hobbies$Deporte <- as.numeric(Hobbies$Deporte)
+Hobbies$Informarse <- as.numeric(Hobbies$Informarse)
+Hobbies$Jardinería <- as.numeric(Hobbies$Jardinería)
+Hobbies$JuegosAzar <- as.numeric(Hobbies$JuegosAzar)
+Hobbies$Leer <- as.numeric(Hobbies$Leer)
+Hobbies$Manualidades <- as.numeric(Hobbies$Manualidades)
 
-# Graficamos solo Jericó
-ggplot(TransEduca_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje,x=NomMpio,fill=P_047))+
-  geom_col(color="white")+
-  labs(x="",y="Porcentaje",fill="Transporte al centro educativo")+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=-0.5, hjust=0.5 ,col="black")
+# Creamos el DF acorde:
+Hobbies_v2 <- data.frame("HobbieCol"=c("Cocinar","Conversar","Escuchar música",
+                                           "Deporte","Informarse","Jardinería",
+                                           "Juegos de azar","Leer","Manualidades"),
+                        "Subtotal"=colSums(Hobbies[,1:9], na.rm=T)
+                        )
 
-#### Tema: Tiempo al centro educativo #### 
+Hobbies_v2$Total <- sum(Hobbies_v2$Subtotal)
 
-# Creamos total de opciones por municipio:
-TransEduca <- CartamaPersonas %>% 
-  dplyr::filter(.,P_048>=0) %>% 
-  dplyr::group_by(NomMpio, P_048) %>%
-  dplyr::summarise(
-    TransEduca = n())
+Hobbies_v2 <- Hobbies_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)) %>%
+  dplyr::filter(Porcentaje!=0)
 
-# Subtotal por municipio, solo para quienes tienen transporte
-Subtotal <- TransEduca %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(TransEduca))
 
-# Creamos la data de interés:
-TransEduca_v2 <- join_all(list(Subtotal,TransEduca), by=c("NomMpio"),type = "full")
+# Graficamos: 
+ggplot(Hobbies_v2, aes(x=Porcentaje,y=reorder(HobbieCol,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Hobbies")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.7),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
 
-TransEduca_v3 <- TransEduca_v2 %>% 
-  dplyr::mutate(Porcentaje=round((TransEduca/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","TransEduca")) %>% 
-  dplyr::mutate(P_048=ifelse(P_048==1,"Entre 0-20 minutos",P_048),
-                P_048=ifelse(P_048==2,"Entre 21-40 minutos",P_048),
-                P_048=ifelse(P_048==3,"Entre 41-60 minutos",P_048),
-                P_048=ifelse(P_048==4,"Entre 61-80 minutos",P_048),
-                P_048=ifelse(P_048==5,"Más de 81 minutos",P_048)
-                )
 
-# Graficamos todo cartama
-ggplot(TransEduca_v3, aes(x=Porcentaje, y=NomMpio, fill=P_048))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Demora al centro educativo")
-
-# Graficamos solo Jericó
-ggplot(TransEduca_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje,x=NomMpio,fill=P_048))+
-  geom_col(color="white")+
-  labs(x="",y="Porcentaje",fill="Demora al centro educativo")+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=-0.5, hjust=0.5 ,col="black")
-#### Tema: Medio de transporte al sitio de trabajo ####
-
-# Creamos total de opciones por municipio:
-TransLabor <- CartamaPersonas %>% 
-  dplyr::filter(.,P_094>=0) %>% 
-  dplyr::group_by(NomMpio, P_094) %>%
-  dplyr::summarise(
-    TransLabor = n())
-
-# Subtotal por municipio, solo para quienes tienen transporte
-Subtotal <- TransLabor %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(TransLabor))
-
-# Creamos la data de interés:
-TransLabor_v2 <- join_all(list(Subtotal,TransLabor), by=c("NomMpio"),type = "full")
-
-TransLabor_v3 <- TransLabor_v2 %>% 
-  dplyr::mutate(Porcentaje=round((TransLabor/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","TransLabor")) %>% 
-  dplyr::mutate(P_094=ifelse(P_094==1,"Caminando",P_094),
-                P_094=ifelse(P_094==2,"Bicicleta",P_094),
-                P_094=ifelse(P_094==3,"Moto",P_094),
-                P_094=ifelse(P_094==4,"Bus/Buseta",P_094),
-                P_094=ifelse(P_094==5,"Transporte informal",P_094),
-                P_094=ifelse(P_094==6,"Taxi/Colectivo",P_094),
-                P_094=ifelse(P_094==7,"Transporte privado",P_094),
-                P_094=ifelse(P_094==8,"Metro/Cable",P_094),
-                P_094=ifelse(P_094==9,"Sistema Integrado Transporte",P_094),
-                P_094=ifelse(P_094==10,"Caballo",P_094)
-                )
-
-# Graficamos todo cartama
-ggplot(TransLabor_v3, aes(x=Porcentaje, y=NomMpio, fill=P_094))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Transporte al sitio laboral")
-
-# Graficamos solo Jericó
-ggplot(TransLabor_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje,x=NomMpio,fill=P_094))+
-  geom_col(color="white")+
-  labs(x="",y="Porcentaje",fill="Transporte al sitio laboral")+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=0.5, hjust=0.5 ,col="black")
-#### Tema: Tiempo al sitio de trabajo ####
-
-# Creamos total de opciones por municipio:
-TransLabor <- CartamaPersonas %>% 
-  dplyr::filter(.,P_095>=0) %>% 
-  dplyr::group_by(NomMpio, P_095) %>%
-  dplyr::summarise(
-    TransLabor = n())
-
-# Subtotal por municipio, solo para quienes tienen transporte
-Subtotal <- TransLabor %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(TransLabor))
-
-# Creamos la data de interés:
-TransLabor_v2 <- join_all(list(Subtotal,TransLabor), by=c("NomMpio"),type = "full")
-
-TransLabor_v3 <- TransLabor_v2 %>% 
-  dplyr::mutate(Porcentaje=round((TransLabor/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","TransLabor")) %>% 
-  dplyr::mutate(P_095=ifelse(P_095==1,"Entre 0-20 minutos",P_095),
-                P_095=ifelse(P_095==2,"Entre 21-40 minutos",P_095),
-                P_095=ifelse(P_095==3,"Entre 41-60 minutos",P_095),
-                P_095=ifelse(P_095==4,"Entre 61-80 minutos",P_095),
-                P_095=ifelse(P_095==5,"Más de 81 minutos",P_095)
-                )
-
-# Graficamos todo cartama
-ggplot(TransLabor_v3, aes(x=Porcentaje, y=NomMpio, fill=P_095))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Demora al sitio de trabajo")
-
-# Graficamos solo Jericó
-ggplot(TransLabor_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(y = Porcentaje,x=NomMpio,fill=P_095))+
-  geom_col(color="white")+
-  labs(x="",y="Porcentaje",fill="Demora al sitio de trabajo")+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
-            size=3, vjust=-0.5, hjust=0.5 ,col="black")
-#### Tema: Valoración transporte público (Hogares) ####
-
-# Creamos total de opciones por municipio:
-Vias <- CartamaHogares %>% 
-  dplyr::filter(.,P_345>=0) %>% 
-  dplyr::group_by(NomMpio, P_345) %>%
-  dplyr::summarise(
-    Vias = n())
-
-# Subtotal por municipio, solo para quienes tienen transporte
-Subtotal <- Vias %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(Vias))
-
-# Creamos la data de interés:
-Vias_v2 <- join_all(list(Subtotal,Vias), by=c("NomMpio"),type = "full")
-
-Vias_v3 <- Vias_v2 %>% 
-  dplyr::mutate(Porcentaje=round((Vias/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","Vias")) %>% 
-  dplyr::mutate(P_345=ifelse(P_345==0,"No hay transporte público",P_345),
-                P_345=ifelse(P_345==1,"Muy mala",P_345),
-                P_345=ifelse(P_345==2,"Mala",P_345),
-                P_345=ifelse(P_345==3,"Aceptable",P_345),
-                P_345=ifelse(P_345==4,"Buena",P_345),
-                P_345=ifelse(P_345==5,"Muy buena",P_345)
-                )
-
-# Graficamos todo cartama
-ggplot(Vias_v3, aes(x=Porcentaje, y=NomMpio, fill=P_345))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Calificación transporte público")
-
-# Graficamos solo Jericó
-ggplot(Vias_v3 %>% 
-         dplyr::filter(.,NomMpio=="Jericó"),
-       aes(x = Porcentaje, y = reorder(P_345,-Porcentaje)))+
-  geom_col(position="dodge",fill="cyan4")+
-  labs(x="Porcentaje",y="Calificación transporte público", title="Jericó" )+
-  geom_text(aes(label = Porcentaje),position = position_dodge(0.9),
-            size=4, vjust=0, hjust=0.7 ,col="black")
 ```
 
-```{r Proyectos productivos, echo=FALSE}
-#### Tema: Ganancias del negocio ####
+```{r Modulo Laboral e ingresos}
+#### Tema: Actividad semana pasada ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
 
-# Creamos total por municipio:
-Ganancias <- CartamaPersonas %>% 
-  dplyr::filter(.,P_124>0) %>% # No se toman los valores de 0 porque halan mucho la data
-  dplyr::group_by(NomMpio) %>%
-  dplyr::summarise(
-    Ganancias = round(mean(P_124),0))
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]") %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]") %>%
+  drop_na() 
 
-# Graficamos todo cartama
-ggplot(Ganancias, aes(x=Ganancias,y=NomMpio))+
-  geom_col(fill="cyan3")+
-  labs(x="Ganancias del negocio",y="Municipios")+
-  geom_text(aes(label = Ganancias),position = position_dodge(0.9),
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=ActividadCol)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(x=Porcentaje,y=reorder(ActividadCol,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Actividad durante la última semana")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.1),
             size=4, vjust=0, hjust=0.5 ,col="black")
-#### Tema: Tenencia de negocio ####
+#### Tema: Localización empleo ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Municipio donde está ubicado su empleo principal?"
 
-# Creamos total de opciones por municipio:
-Negocio <- CartamaHogares %>% 
-  dplyr::group_by(NomMpio, P_290) %>%
-  dplyr::summarise(
-    Negocio = n())
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. ¿Municipio donde está ubicado su empleo principal?")) %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Localizacion="${p_040}. ¿Municipio donde está ubicado su empleo principal?") %>%
+  dplyr::filter(ActividadCol=="Trabajando") 
 
-# Subtotal por municipio, 
-Subtotal <- Negocio %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(Negocio))
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Localizacion)
 
-# Creamos la data de interés:
-Negocio_v2 <- join_all(list(Subtotal,Negocio), by=c("NomMpio"),type = "full")
+# Graficamos:
+ggplot(Actividad_v2, aes(y=Porcentaje,x=reorder(Localizacion,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Localización empleo principal",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Sector económico empresa ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?"
 
-Negocio_v3 <- Negocio_v2 %>% 
-  dplyr::mutate(Porcentaje=round((Negocio/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","Negocio")) %>% 
-  dplyr::mutate(P_290=ifelse(P_290==1,"Si",P_290),
-                P_290=ifelse(P_290==2,"No",P_290)
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. ¿A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?")) %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Sector="${p_040}. ¿A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?") %>%
+  dplyr::filter(ActividadCol=="Trabajando") 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Sector)
+
+Actividad_v2$SectorShort <- c("Sector")
+
+Actividad_v2 <- Actividad_v2 %>% 
+  dplyr::mutate(SectorShort=ifelse(Sector=="A-Agricultura, Ganadería, Caza, Silvicultura y Pesca","A-Agricultura",SectorShort),
+                SectorShort=ifelse(Sector=="G-Comercio al por mayor y por menor; reparación de vehículos y motos","G-Comercio",SectorShort)
                 )
-# Graficamos todo cartama
-ggplot(Negocio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_290))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Tiene negocio")+
+# Graficamos:
+ggplot(Actividad_v2, aes(y=Porcentaje,x=reorder(SectorShort,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Sector económico empleo principal",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Posición ocupacional ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. En este trabajo es:"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. En este trabajo es:")) %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Posicion="${p_040}. En este trabajo es:") %>%
+  dplyr::filter(ActividadCol=="Trabajando") 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Posicion)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(x=Porcentaje,y=reorder(Posicion,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Posición ocupacional",x="Porcentaje")+
   geom_text(aes(label = Porcentaje),position = position_stack(0.8),
-            size=3, vjust=0.5, hjust=0 ,col="black")
-#### Tema: Actividad del negocio ####
+            size=4, vjust=0, hjust=0.5 ,col="black")
 
-# Creamos total de opciones por municipio:
-Negocio <- CartamaHogares %>% 
-  dplyr::filter(.,P_291>=0) %>% 
-  dplyr::group_by(NomMpio, P_291) %>%
-  dplyr::summarise(
-    Negocio = n())
+#### Tema: Horas en su empleo ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Cuántas horas a la semana trabaja normalmente en ese trabajo principal?"
 
-# Subtotal por municipio, 
-Subtotal <- Negocio %>% 
-  dplyr::group_by(NomMpio) %>% 
-  dplyr::summarise(
-    Subtotal = sum(Negocio))
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. ¿Cuántas horas a la semana trabaja normalmente en ese trabajo principal?")) %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Horas="${p_040}. ¿Cuántas horas a la semana trabaja normalmente en ese trabajo principal?") %>%
+  dplyr::filter(ActividadCol=="Trabajando") 
 
-# Creamos la data de interés:
-Negocio_v2 <- join_all(list(Subtotal,Negocio), by=c("NomMpio"),type = "full")
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Horas)
 
-Negocio_v3 <- Negocio_v2 %>% 
-  dplyr::mutate(Porcentaje=round((Negocio/Subtotal)*100,2)) %>% 
-  dplyr::select(.,-c("Subtotal","Negocio")) %>%
-  dplyr::mutate(P_291=ifelse(P_291==1,"Agropecuaria, silvicultura y pesca",P_291),
-                P_291=ifelse(P_291==2,"Minería",P_291),
-                P_291=ifelse(P_291==3,"Electricidad, gas, agua",P_291),
-                P_291=ifelse(P_291==4,"Industria",P_291),
-                P_291=ifelse(P_291==5,"Construcción",P_291),
-                P_291=ifelse(P_291==6,"Comercio, hotel, restaurantes",P_291),
-                P_291=ifelse(P_291==7,"Transporte, almacenamiento y comunicaciones",P_291),
-                P_291=ifelse(P_291==8,"Estab. Financieros, inmuebles y otros",P_291),
-                P_291=ifelse(P_291==9,"Servicios sociales, comunales y personales",P_291)
+Actividad_v2$Horas <- as.numeric(Actividad_v2$Horas)
+
+# Graficamos: ggplot(Actividad_v2, aes(y=Porcentaje,x=reorder(Horas,-Porcentaje)
+ggplot(Actividad_v2, aes(y=Porcentaje,x=Horas))+
+  geom_point(fill="coral")+
+  geom_segment( aes(x=Horas, xend=Horas, y=0, yend=Porcentaje))+
+  labs(x="Horas de dedicación en su empleo por semana",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.1),
+            size=4, vjust=0, hjust=0.5 ,col="black")+
+  scale_x_continuous(breaks=c(0,8,10,20,30,40,45,50,60,70))
+#### Tema: Tiene Contrato ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Para realizar este trabajo tiene algún contrato?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. ¿Para realizar este trabajo tiene algún contrato?")) %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Contrato="${p_040}. ¿Para realizar este trabajo tiene algún contrato?") %>%
+  dplyr::filter(ActividadCol=="Trabajando") 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Contrato)
+
+# Graficamos: 
+ggplot(Actividad_v2, aes(y=Porcentaje,x=Contrato))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Tiene un contrato laboral",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Duración Contrato ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Para realizar este trabajo tiene algún contrato?"
+# Pregunta data: "${p_040}. ¿Qué término tiene el contrato?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. ¿Para realizar este trabajo tiene algún contrato?","${p_040}. ¿Qué término tiene el contrato?")) %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Contrato="${p_040}. ¿Para realizar este trabajo tiene algún contrato?", Duracion="${p_040}. ¿Qué término tiene el contrato?") %>%
+  dplyr::filter(Contrato=="Si") 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Duracion)
+
+# Graficamos: 
+ggplot(Actividad_v2, aes(y=Porcentaje,x=Duracion))+
+  geom_col(fill="cyan4")+
+  labs(x="Duración del contrato laboral",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Ingresos laborales ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Cuánto ganó el mes pasado en este empleo? o ¿Cuánto recibio el mes pasado por concepto de trabajo?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]","${p_040}. ¿Cuánto ganó el mes pasado en este empleo? o ¿Cuánto recibio el mes pasado por concepto de trabajo?")) %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]",Ingresos="${p_040}. ¿Cuánto ganó el mes pasado en este empleo? o ¿Cuánto recibio el mes pasado por concepto de trabajo?") %>%
+  dplyr::filter(ActividadCol=="Trabajando") %>% 
+  drop_na()
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Ingresos)
+
+Actividad_v2$IngresosNum <- as.numeric(Actividad_v2$Ingresos)
+
+# Media de ingresos
+mean(Actividad_v2$IngresosNum)
+
+# Graficamos: 
+ggplot(Actividad_v2, aes(x=Porcentaje,y=reorder(Ingresos,IngresosNum)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Ingreso laboral")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Oficios ####
+# Preguntas data: 
+#"${p_040}. En general, ¿qué oficio sabe hacer?/Agricultor"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Chofer o conductor"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Cocinero"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Mecánico"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Peluquero"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Vendedor"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Vigilante"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Ninguno"
+# "${p_040}. En general, ¿qué oficio sabe hacer?/Otro"
+# "${p_040}. ¿Cuál?...164"
+
+Oficio <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. En general, ¿qué oficio sabe hacer?/Agricultor","${p_040}. En general, ¿qué oficio sabe hacer?/Chofer o conductor","${p_040}. En general, ¿qué oficio sabe hacer?/Cocinero","${p_040}. En general, ¿qué oficio sabe hacer?/Mecánico","${p_040}. En general, ¿qué oficio sabe hacer?/Peluquero","${p_040}. En general, ¿qué oficio sabe hacer?/Vendedor","${p_040}. En general, ¿qué oficio sabe hacer?/Vigilante","${p_040}. En general, ¿qué oficio sabe hacer?/Ninguno","${p_040}. En general, ¿qué oficio sabe hacer?/Otro","${p_040}. ¿Cuál?...164")) %>%
+  dplyr::rename(Agricultor="${p_040}. En general, ¿qué oficio sabe hacer?/Agricultor",
+                Conductor="${p_040}. En general, ¿qué oficio sabe hacer?/Chofer o conductor",
+                Cocinero="${p_040}. En general, ¿qué oficio sabe hacer?/Cocinero",
+                Mecanico="${p_040}. En general, ¿qué oficio sabe hacer?/Mecánico",
+                Peluquero="${p_040}. En general, ¿qué oficio sabe hacer?/Peluquero",
+                Vendedor="${p_040}. En general, ¿qué oficio sabe hacer?/Vendedor",
+                Vigilante="${p_040}. En general, ¿qué oficio sabe hacer?/Vigilante",
+                Ninguno="${p_040}. En general, ¿qué oficio sabe hacer?/Ninguno",
+                Otro="${p_040}. En general, ¿qué oficio sabe hacer?/Otro",
+                Cual="${p_040}. ¿Cuál?...164")
+
+# Volvemos todas las columnaas en tipo numéricas:
+Oficio$Agricultor <- as.numeric(Oficio$Agricultor)
+Oficio$Conductor <- as.numeric(Oficio$Conductor)
+Oficio$Cocinero <- as.numeric(Oficio$Cocinero)
+Oficio$Mecanico <- as.numeric(Oficio$Mecanico)
+Oficio$Peluquero <- as.numeric(Oficio$Peluquero)
+Oficio$Vendedor <- as.numeric(Oficio$Vendedor)
+Oficio$Vigilante <- as.numeric(Oficio$Vigilante)
+Oficio$Ninguno <- as.numeric(Oficio$Ninguno)
+Oficio$Otro <- as.numeric(Oficio$Otro)
+
+# Creamos el DF acorde:
+Oficio_v2 <- data.frame("OficioCol"=c("Agricultor","Conductor","Cocinero","Mecanico","Peluquero","Vendedor","Vigilante","Ninguno","Otro"),
+                        "Subtotal"=colSums(Oficio[,1:9], na.rm=T)
+                        )
+
+Oficio_v2$Total <- sum(Oficio_v2$Subtotal)
+
+Oficio_v2 <- Oficio_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2))
+
+
+# Graficamos: 
+ggplot(Oficio_v2, aes(x=Porcentaje,y=reorder(OficioCol,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Oficio")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.1),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+#### Tema: Recibio Otros ingresos ####
+# Preguntas data: 
+# "${p_040}. ¿Recibió el mes pasado ingresos por concepto de ARRIENDOS?"
+# "${p_040}. ¿Recibió el mes pasado ingresos por concepto de PENSIONES O JUBULACIONES?"
+# "${p_040}. ¿Recibió durante los últimos 12 meses ingresos por GIROS DE PERSONAS EN EL EXTERIOR?"
+# "${p_040}. ¿Recibió durante los últimos 12 meses ingresos por INTERESES O DIVIDENDOS?"
+# "${p_040}. ¿Recibió durante los últimos 12 meses ingresos por SUBSIDIOS DEL ESTADO?"
+
+Ingresos <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿Recibió el mes pasado ingresos por concepto de ARRIENDOS?","${p_040}. ¿Recibió el mes pasado ingresos por concepto de PENSIONES O JUBULACIONES?","${p_040}. ¿Recibió durante los últimos 12 meses ingresos por GIROS DE PERSONAS EN EL EXTERIOR?","${p_040}. ¿Recibió durante los últimos 12 meses ingresos por INTERESES O DIVIDENDOS?","${p_040}. ¿Recibió durante los últimos 12 meses ingresos por SUBSIDIOS DEL ESTADO?")) %>%
+  dplyr::rename(Arriendos="${p_040}. ¿Recibió el mes pasado ingresos por concepto de ARRIENDOS?",
+                Pensiones="${p_040}. ¿Recibió el mes pasado ingresos por concepto de PENSIONES O JUBULACIONES?",
+                Remesas="${p_040}. ¿Recibió durante los últimos 12 meses ingresos por GIROS DE PERSONAS EN EL EXTERIOR?",
+                Intereses="${p_040}. ¿Recibió durante los últimos 12 meses ingresos por INTERESES O DIVIDENDOS?",
+                Subsidios="${p_040}. ¿Recibió durante los últimos 12 meses ingresos por SUBSIDIOS DEL ESTADO?") %>% 
+  drop_na()
+
+# Creamos las datas que necesitamos
+Arriendos <- Agrupa(Data=Ingresos,
+                 Columna=Arriendos)%>% 
+  dplyr::rename(Ingreso=Arriendos)
+Arriendos$TipoIngreso <- c("Arriendos")
+
+
+Pensiones <- Agrupa(Data=Ingresos,
+                 Columna=Pensiones)%>% 
+  dplyr::rename(Ingreso=Pensiones)
+Pensiones$TipoIngreso <- c("Pensiones")
+
+Remesas <- Agrupa(Data=Ingresos,
+                 Columna=Remesas)%>% 
+  dplyr::rename(Ingreso=Remesas)
+Remesas$TipoIngreso <- c("Remesas")
+
+Intereses <- Agrupa(Data=Ingresos,
+                 Columna=Intereses)%>% 
+  dplyr::rename(Ingreso=Intereses)
+Intereses$TipoIngreso <- c("Intereses")
+
+Subsidios <- Agrupa(Data=Ingresos,
+                 Columna=Subsidios)%>% 
+  dplyr::rename(Ingreso=Subsidios)
+Subsidios$TipoIngreso <- c("Subsidios")
+
+# Concatenamos:
+Ingresos_v2 <- join_all(list(Arriendos,Pensiones,Remesas,Intereses,Subsidios), by=c("TipoIngreso"),type = "full")
+
+
+# Graficamos: 
+ggplot(Ingresos_v2, aes(x=Porcentaje, y=TipoIngreso, fill=Ingreso))+
+  geom_col()+
+  labs(x="Porcentaje",y="Tipo de Ingreso",fill="Recibe ingreso")+
+  geom_text(aes(label=Porcentaje),position = position_stack(0.4),
+            size=4, vjust=0.5, hjust=-0.3 ,col="black")
+#### Tema: Cuantia de Otros ingresos ####
+# Preguntas data: 
+# "${p_040}. ¿Cuánto recibió el mes pasado por concepto de ARRIENDOS?"
+# "${p_040}. ¿Cuánto recibió el mes pasado por concepto de PENSIONES O JUBILACIONES?"
+# "${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Giros de personas del exterior?"
+# "${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Intereses o dividendos?"
+# "${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Subsidios del estado?"
+
+Ingresos <- PilotoIndividuos %>%
+  dplyr::select("${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Subsidios del estado?") %>%
+  dplyr::rename(Subsidios="${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Subsidios del estado?") %>% 
+  drop_na()
+
+Ingresos$Subsidios <- as.numeric(Ingresos$Subsidios)
+
+Ingresos$PromedioSubs <- mean(Ingresos$Subsidios)
+Ingresos$TipoIngreso <- c("Subsidio")
+
+
+# Graficamos: Este gráfico no se aplicó
+ggplot(Ingresos, aes(y=PromedioSubs, x=TipoIngreso))+
+  geom_col()+
+  labs(x="Porcentaje",y="Tipo de Ingreso",fill="Recibe ingreso")+
+  geom_text(aes(label=PromedioSubs),position = position_stack(0.4),
+            size=4, vjust=0.5, hjust=-0.3 ,col="black")
+#### Tema: Tuvo empleo anteriormente ####
+# Pregunta data: "${p_040}. Anteriormente, ¿tuvo un empleo?"
+
+Empleo <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. Anteriormente, ¿tuvo un empleo?") %>%
+  dplyr::rename(EmpleoAnterior="${p_040}. Anteriormente, ¿tuvo un empleo?") %>% 
+  drop_na() 
+
+Empleo_v2 <- Agrupa(Data=Empleo,
+                 Columna=EmpleoAnterior)
+
+# Graficamos:
+ggplot(Empleo_v2, aes(y=Porcentaje,x=reorder(EmpleoAnterior,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Anteriormente, ¿tuvo otro empleo?")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Sector económico Empleo anterior ####
+# Pregunta data: "${p_040}. Anteriormente, ¿tuvo un empleo?"
+# Pregunta data: "${p_040}. En su anterior empleo, ¿a qué actividad específica se dedicaba la empresa o negocio?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. Anteriormente, ¿tuvo un empleo?","${p_040}. En su anterior empleo, ¿a qué actividad específica se dedicaba la empresa o negocio?")) %>%
+  dplyr::rename(Empleo="${p_040}. Anteriormente, ¿tuvo un empleo?",Sector="${p_040}. En su anterior empleo, ¿a qué actividad específica se dedicaba la empresa o negocio?") %>%
+  dplyr::filter(Empleo=="Si") 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Sector)
+
+Actividad_v2$SectorShort <- c("Sector")
+
+Actividad_v2 <- Actividad_v2 %>% 
+  dplyr::mutate(SectorShort=ifelse(Sector=="A-Agricultura, Ganadería, Caza, Silvicultura y Pesca","A-Agricultura",SectorShort),
+                SectorShort=ifelse(Sector=="B-Explotación de Minas y canteras","B-Explotación de Minas",SectorShort),
+                SectorShort=ifelse(Sector=="F-Construcción","F-Construcción",SectorShort),
+                SectorShort=ifelse(Sector=="G-Comercio al por mayor y por menor; reparación de vehículos y motos","G-Comercio",SectorShort),
+                SectorShort=ifelse(Sector=="N-Actividades de servicio administrativo y de apoyo","N-Servicio administrativo",SectorShort),
+                SectorShort=ifelse(Sector=="T-Actividades de hogares individuales.","T-Hogares",SectorShort)
+                )
+# Graficamos:
+ggplot(Actividad_v2, aes(x=Porcentaje,y=reorder(SectorShort,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Sector económico empleo anterior",x="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.8),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+#### Tema: Posición ocupacional Empleo anterior ####
+# Pregunta data: "${p_040}. Anteriormente, ¿tuvo un empleo?"
+# Pregunta data: "${p_040}. En su anterior empleo, usted era:"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. Anteriormente, ¿tuvo un empleo?","${p_040}. En su anterior empleo, usted era:")) %>%
+  dplyr::rename(Empleo="${p_040}. Anteriormente, ¿tuvo un empleo?",Posicion="${p_040}. En su anterior empleo, usted era:") %>%
+  dplyr::filter(Empleo=="Si") 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Posicion)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(x=Porcentaje,y=reorder(Posicion,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Posición ocupacional en empleo anterior",x="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.8),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+#### Tema: Intereses laborales a futuro ####
+# Pregunta data: "${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)") %>%
+  dplyr::rename(InteresLaboral="${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)") %>% 
+  drop_na() 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=InteresLaboral)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(x=Porcentaje,y=reorder(InteresLaboral,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Intereses laborales a futuro")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+            size=4, vjust=0.5, hjust=0 ,col="black")
+#### Tema: Prioridad de inversión ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál debería ser la prioridad de inversión en el municipio?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. En su opinión: ¿cuál debería ser la prioridad de inversión en el municipio?") %>%
+  dplyr::rename(Inversion="${p_040}. En su opinión: ¿cuál debería ser la prioridad de inversión en el municipio?") %>%
+  drop_na() %>% 
+  dplyr::filter(Inversion!="No responde",
+                Inversion!="No sabe")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Inversion)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(x=Porcentaje,y=reorder(Inversion,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Prioridad de inversión")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.5),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+```
+
+```{r Modulo Movilidad}
+#### Tema: Medio de transporte al centro educativo ####
+# Pregunta data: "${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro educativo?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro educativo?") %>%
+  dplyr::rename(MovilEduca="${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro educativo?") %>%
+  drop_na() 
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilEduca)
+
+# Graficamos:
+ggplot(Movilidad_v2, aes(y=Porcentaje,x=reorder(MovilEduca,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Medio de transporte al C. Educativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+#### Tema: Medio de transporte a Recreación ####
+# Pregunta data: ${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro de recreación (para realizar hobbies)?
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro de recreación (para realizar hobbies)?") %>%
+  dplyr::rename(Movil="${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro de recreación (para realizar hobbies)?") %>%
+  drop_na() 
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=Movil)
+
+# Graficamos:
+ggplot(Movilidad_v2, aes(y=Porcentaje,x=reorder(Movil,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Porcentaje",x="Medio de transporte al C. Recreativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+#### Tema: Medio de transporte al trabajo ####
+# Pregunta data: "${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse al sitio de su empleo principal?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,"${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse al sitio de su empleo principal?") %>%
+  dplyr::rename(Movil="${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse al sitio de su empleo principal?") %>%
+  drop_na() 
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=Movil)
+
+# Graficamos:
+ggplot(Movilidad_v2, aes(y=Porcentaje,x=reorder(Movil,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Medio de transporte al Trabajo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+
+#### Tema: Tiempo en transportarse ####
+# Pregunta data: "${p_040}. ¿Cuánto tiempo tarda en llegar a su centro educativo? (minutos)"
+# Pregunta data: "${p_040}. ¿Cuánto tiempo tarda en llegar a su centro de recreación (para realizar hobbies)? (minutos)"
+# Pregunta data: "${p_040}. ¿Cuánto tiempo tarda en llegar al sitio de su empleo principal? (minutos)"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. ¿Cuánto tiempo tarda en llegar a su centro educativo? (minutos)","${p_040}. ¿Cuánto tiempo tarda en llegar a su centro de recreación (para realizar hobbies)? (minutos)","${p_040}. ¿Cuánto tiempo tarda en llegar al sitio de su empleo principal? (minutos)")) %>%
+  dplyr::rename(MovilEduca="${p_040}. ¿Cuánto tiempo tarda en llegar a su centro educativo? (minutos)",MovilRecrea="${p_040}. ¿Cuánto tiempo tarda en llegar a su centro de recreación (para realizar hobbies)? (minutos)",MovilTrabajo="${p_040}. ¿Cuánto tiempo tarda en llegar al sitio de su empleo principal? (minutos)") 
+
+# Transformamos data a tipo numérico
+Movilidad$MovilEduca <- as.numeric(Movilidad$MovilEduca)
+Movilidad$MovilRecrea <- as.numeric(Movilidad$MovilRecrea)
+Movilidad$MovilTrabajo <- as.numeric(Movilidad$MovilTrabajo)
+
+# Creamos DFs:
+Movilidad_v2 <- data.frame(
+  "Educa"=mean(Movilidad$MovilEduca, na.rm=T),
+  "Recrea"=mean(Movilidad$MovilRecrea, na.rm=T),
+  "Trabajo"=mean(Movilidad$MovilTrabajo, na.rm=T)
+)
+
+Movilidad_v3 <- data.frame(
+  "TipoMovilidad"=c("Educación","Recreación","Trabajo"),
+  "Tiempo"=t(Movilidad_v2)
+)
+
+# Graficamos:
+ggplot(Movilidad_v3, aes(y=Tiempo,x=reorder(TipoMovilidad,-Tiempo)))+
+  geom_col(fill="cyan4")+
+  labs(y="Tiempo promedio de movilidad (minutos)",x="Destino del desplazamiento")+
+  geom_text(aes(label = Tiempo),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+#### Tema: Calificación vías: Educación  ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro educativo?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro educativo?")) %>%
+  dplyr::rename(MovilEduca="${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro educativo?") %>% 
+  drop_na()
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilEduca)
+
+# Graficamos:
+ggplot(Movilidad_v2, aes(y=Porcentaje,x=reorder(MovilEduca,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Porcentaje",x="Calificación vías hacía C. Educativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+#### Tema: Calificación vías: Recreación ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro de recreación"
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro de recreación (para realizar hobbies)?")) %>%
+  dplyr::rename(MovilRecrea="${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro de recreación (para realizar hobbies)?") %>% 
+  drop_na()
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilRecrea)
+
+# Graficamos:
+ggplot(Movilidad_v2, aes(y=Porcentaje,x=reorder(MovilRecrea,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Calificación vías hacía C. Recreativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+
+
+#### Tema: Calificación vías: Trabajo ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse al sitio de su empleo principal?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c("${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse al sitio de su empleo principal?")) %>%
+  dplyr::rename(MovilTrabajo="${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse al sitio de su empleo principal?") %>% 
+  dplyr::filter(MovilTrabajo!="No se encuentra en casa") %>% 
+  drop_na()
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilTrabajo)
+
+# Graficamos:
+ggplot(Movilidad_v2, aes(y=Porcentaje,x=reorder(MovilTrabajo,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Calificación vías hacía el Trabajo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")
+```
+
+```{r Modulo Proyectos productivos}
+#### Tema: Tiene proyecto productivo ####
+# Pregunta data: "¿Tiene este hogar algún tipo de negocio?"
+
+Proyecto <- PilotoHogares %>%
+  dplyr::select(.,"¿Tiene este hogar algún tipo de negocio?") %>%
+  dplyr::rename(ProyectoCol="¿Tiene este hogar algún tipo de negocio?") %>% 
+  drop_na() 
+
+Proyecto_v2 <- Agrupa(Data=Proyecto,
+                 Columna=ProyectoCol)
+
+# Graficamos:
+ggplot(Proyecto_v2, aes(y=Porcentaje,x=reorder(ProyectoCol,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Porcentaje",x="Proyectos productivos en el hogar")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: Localización del proyecto productivo ####
+# Pregunta data: "¿Dónde está ubicado el negocio?"
+
+Proyecto <- PilotoProyectos %>%
+  dplyr::select(.,"¿Dónde está ubicado el negocio?") %>%
+  dplyr::rename(ProyectoCol="¿Dónde está ubicado el negocio?") %>% 
+  drop_na() 
+
+Proyecto_v2 <- Agrupa(Data=Proyecto,
+                 Columna=ProyectoCol)
+
+# Graficamos:
+ggplot(Proyecto_v2, aes(y=Porcentaje,x=reorder(ProyectoCol,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(y="Porcentaje",x="Localización del Proyecto productivo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Sector económico del proyecto ####
+# Pregunta data: "¿Cuál es la actividad económica del negocio?"
+
+Actividad <- PilotoProyectos %>%
+  dplyr::select(.,c("¿Cuál es la actividad económica del negocio?")) %>%
+  dplyr::rename(Sector="¿Cuál es la actividad económica del negocio?")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Sector)
+
+Actividad_v2$SectorShort <- c("Sector")
+
+Actividad_v2 <- Actividad_v2 %>% 
+  dplyr::mutate(SectorShort=ifelse(Sector=="G-Comercio al por mayor y por menor; reparación de vehículos y motos","G-Comercio",SectorShort)
+                )
+# Graficamos:
+ggplot(Actividad_v2, aes(y=Porcentaje,x=reorder(SectorShort,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Sector económico proyecto del productivo",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+#### Tema: Inscrito en CC ####
+# Pregunta data: "¿Está inscrito en Cámara de Comercio?"
+
+Actividad <- PilotoProyectos %>%
+  dplyr::select(.,c("¿Está inscrito en Cámara de Comercio?")) %>%
+  dplyr::rename(Inscripcion="¿Está inscrito en Cámara de Comercio?")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Inscripcion)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(y=Porcentaje,x=reorder(Inscripcion,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Inscripción en Cámara de Comercio",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+
+#### Tema: Tiene RUT ####
+# Pregunta data: "¿Tiene Rut?"
+
+Actividad <- PilotoProyectos %>%
+  dplyr::select(.,c("¿Tiene Rut?")) %>%
+  dplyr::rename(Inscripcion="¿Tiene Rut?")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Inscripcion)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(y=Porcentaje,x=reorder(Inscripcion,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Inscripción en Registro Único Tributario",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+
+
+#### Tema: Oferta de sus productos ####
+# Pregunta data: "Ofrece sus servicios o productos a:"
+
+Actividad <- PilotoProyectos %>%
+  dplyr::select(.,c("Ofrece sus servicios o productos a:")) %>%
+  dplyr::rename(Oferta="Ofrece sus servicios o productos a:")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Oferta)
+
+# Graficamos:
+ggplot(Actividad_v2, aes(y=Porcentaje,x=reorder(Oferta,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Tipo de ventas",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1.05),
+            size=4, vjust=0.5, hjust=0.5 ,col="black")
+
+
+
+#### Tema: Promedio de ingresos ####
+# Pregunta data: "¿Cuál fue la ganancia neta en esta actividad el mes pasado?"
+
+Proyectos <- PilotoProyectos %>%
+  dplyr::select(.,c("¿Cuál fue la ganancia neta en esta actividad el mes pasado?")) %>%
+  dplyr::rename(Ingresos="¿Cuál fue la ganancia neta en esta actividad el mes pasado?") 
+
+# Transformamos data a tipo numérico
+Proyectos$Ingresos <- as.numeric(Proyectos$Ingresos)
+
+
+# Creamos DFs:
+Proyectos_v2 <- data.frame(
+  "Ingresos"=mean(Proyectos$Ingresos, na.rm=T)
+)
+
+Proyectos_v3 <- data.frame(
+  "Tipo"=c("Ganancia"),
+  "GananciaCol"=t(Proyectos_v2)
+)
+
+# Graficamos:
+ggplot(Proyectos_v3, aes(y=GananciaCol,x=Tipo))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Ganancia neta del proyecto",x="Vereda La Estrella")+
+  geom_text(aes(label = GananciaCol),position = position_stack(1.05),
+            size=4, vjust=1, hjust=0.5 ,col="black")+
+  theme(axis.text.x = element_blank())
+
+```
+
+```{r Modulo Vivienda Infraestructura}
+#### Tema: Tipo de vivienda ####
+# Pregunta data: "Tipo de vivienda"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("Tipo de vivienda")) %>%
+  dplyr::rename(Columna="Tipo de vivienda")
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Tipo de vivienda",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Material de paredes ####
+# Pregunta data: "¿Cuál es el Material predominante de las paredes exteriores?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cuál es el Material predominante de las paredes exteriores?")) %>%
+  dplyr::rename(Columna="¿Cuál es el Material predominante de las paredes exteriores?")
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+
+Vivienda_v2$ColumnaShort <- c("Columna")
+
+Vivienda_v2 <- Vivienda_v2 %>% 
+  dplyr::mutate(ColumnaShort=ifelse(Columna=="Ladrillo ranurado o revitado","Ladrillo ranurado",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="Ladrillo-bloque-adobe revocado o pintado","Ladrillo revocado",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="Ladrillo-bloque-adobe sin ranurar, sin revocar o sin revitar","Ladrillo sin revocar",ColumnaShort))
+                
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(ColumnaShort,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Material de paredes",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Material de pisos ####
+# Pregunta data: "¿Cuál es el Material predominante de los pisos?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cuál es el Material predominante de los pisos?")) %>%
+  dplyr::rename(Columna="¿Cuál es el Material predominante de los pisos?")
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+
+Vivienda_v2$ColumnaShort <- c("Columna")
+
+Vivienda_v2 <- Vivienda_v2 %>% 
+  dplyr::mutate(ColumnaShort=ifelse(Columna=="Baldosa, vinilo, tableta o ladrillo","Baldosa",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="Cemento o gravilla","Cemento",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="Madera burda, tabla, tablón u otro vegetal","Madera",ColumnaShort))
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(ColumnaShort,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Material de piso",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: De donde viene el agua ####
+# Pregunta data: "¿De dónde obtiene principalmente esta vivienda el agua para consumo humano?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿De dónde obtiene principalmente esta vivienda el agua para consumo humano?")) %>%
+  dplyr::rename(Columna="¿De dónde obtiene principalmente esta vivienda el agua para consumo humano?")
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+
+Vivienda_v2$ColumnaShort <- c("Columna")
+
+Vivienda_v2 <- Vivienda_v2 %>% 
+  dplyr::mutate(ColumnaShort=ifelse(Columna=="Acueducto veredal o comunal","Acueducto",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="Río, quebrada, manantial o nacimiento","Río o quebrada",ColumnaShort))
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(ColumnaShort,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Fuente de agua",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+
+#### Tema: Calificación Energía ####
+# Pregunta data: "¿Cómo califica este servicio (Energía)?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cómo califica este servicio (Energía)?")) %>%
+  dplyr::rename(Columna="¿Cómo califica este servicio (Energía)?")
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Calificacion: servicio de energía",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Calificación Acueducto ####
+# Pregunta data: "¿Cómo califica este servicio (Acueducto)?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cómo califica este servicio (Acueducto)?")) %>%
+  dplyr::rename(Columna="¿Cómo califica este servicio (Acueducto)?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Calificacion: servicio de acueducto",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: Cuenta con alcantarillado ####
+# Pregunta data: "¿La vivienda cuenta con servicio de ALCANTARILLADO?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿La vivienda cuenta con servicio de ALCANTARILLADO?")) %>%
+  dplyr::rename(Columna="¿La vivienda cuenta con servicio de ALCANTARILLADO?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Servicio de alcantarillado",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+
+#### Tema: Cuenta con telefonía ####
+# Pregunta data: "¿La vivienda cuenta con servicio de TELÉFONO FIJO?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿La vivienda cuenta con servicio de TELÉFONO FIJO?")) %>%
+  dplyr::rename(Columna="¿La vivienda cuenta con servicio de TELÉFONO FIJO?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Servicio de telefonía",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Cocina ####
+# Pregunta data: "¿Con qué cocinan en este hogar?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Con qué cocinan en este hogar?")) %>%
+  dplyr::rename(Columna="¿Con qué cocinan en este hogar?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Fuente de energía para cocinar",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: Calificación Cocina ####
+# Pregunta data: "¿Cómo califica este servicio?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cómo califica este servicio?")) %>%
+  dplyr::rename(Columna="¿Cómo califica este servicio?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Calificacion: servicio de gas",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+
+#### Tema: Cuenta con Aseo y recolección ####
+# Pregunta data: "¿La vivienda cuenta con servicio de ASEO RECOLECCIÓN?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿La vivienda cuenta con servicio de ASEO RECOLECCIÓN?")) %>%
+  dplyr::rename(Columna="¿La vivienda cuenta con servicio de ASEO RECOLECCIÓN?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Servicio de recolección de basuras y aseo",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: Cuenta con Internet ####
+# Pregunta data: "¿La vivienda cuenta con servicio de CONEXIÓN A INTERNET?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿La vivienda cuenta con servicio de CONEXIÓN A INTERNET?")) %>%
+  dplyr::rename(Columna="¿La vivienda cuenta con servicio de CONEXIÓN A INTERNET?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(y="Servicio de internet",x="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0 ,col="black")
+
+
+
+#### Tema: Calificación Internet ####
+# Pregunta data: "¿Cómo califica este servicio (CONEXIÓN A INTERNET)?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cómo califica este servicio (CONEXIÓN A INTERNET)?")) %>%
+  dplyr::rename(Columna="¿Cómo califica este servicio (CONEXIÓN A INTERNET)?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Calificacion: servicio de internet",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+#### Tema: Tipo de conexión Internet ####
+# Pregunta data: "Tipo de conexión a internet."
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("Tipo de conexión a internet.")) %>%
+  dplyr::rename(Columna="Tipo de conexión a internet.") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Tipo de conexión a internet",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Razones de No Internet ####
+# Pregunta data: "¿Por qué razón no posee conexión a internet?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Por qué razón no posee conexión a internet?")) %>%
+  dplyr::rename(Columna="¿Por qué razón no posee conexión a internet?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Razones de no conexión a internet",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: Cuenta con TV ####
+# Pregunta data: "¿La vivienda cuenta con servicio de TELEVISIÓN?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿La vivienda cuenta con servicio de TELEVISIÓN?")) %>%
+  dplyr::rename(Columna="¿La vivienda cuenta con servicio de TELEVISIÓN?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Servicio de televisión",x="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=1 ,col="black")
+
+
+
+
+#### Tema: Calificación TV ####
+# Pregunta data: "¿Cómo califica este servicio (TELEVISIÓN)?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cómo califica este servicio (TELEVISIÓN)?")) %>%
+  dplyr::rename(Columna="¿Cómo califica este servicio (TELEVISIÓN)?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Calificacion: servicio de televisión",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+#### Tema: Separación de residuos ####
+# Pregunta data: "¿En este hogar hacen separación de residuos sólidos?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿En este hogar hacen separación de residuos sólidos?")) %>%
+  dplyr::rename(Columna="¿En este hogar hacen separación de residuos sólidos?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+                
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Separación de residuos",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: Método de separación de residuos ####
+# Pregunta data: "¿Cómo disponen principalmente los residuos en esta unidad de vivienda?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Cómo disponen principalmente los residuos en esta unidad de vivienda?")) %>%
+  dplyr::rename(Columna="¿Cómo disponen principalmente los residuos en esta unidad de vivienda?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+
+Vivienda_v2$ColumnaShort <- c("Columna")
+
+Vivienda_v2 <- Vivienda_v2 %>% 
+  dplyr::mutate(ColumnaShort=ifelse(Columna=="La queman","La queman",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="La entierran","La entierran",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="La llevan a contenedor, basurero público","La llevan al basurero público",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="La recoge un servicio informal (Zorra, carreta, etc)","La recoge un servicio informal",ColumnaShort),
+                ColumnaShort=ifelse(Columna=="La tiran al patio, lote, zanja, baldío o vía pública","La tiran al patio",ColumnaShort)
                 )
 
-# Graficamos todo cartama
-ggplot(Negocio_v3, aes(x = Porcentaje, y = NomMpio, fill=P_291))+
-  geom_col(color="white")+
-  labs(x="Porcentaje",y="Municipios",fill="Sector del negocio")
+          
+# Graficamos:
+ggplot(Vivienda_v2, aes(x=Porcentaje,y=reorder(ColumnaShort,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(y="Tratamiento de residuos",x="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=1 ,col="black")
+
+
+
+#### Tema: Servicio sanitario ####
+# Pregunta data: "¿Con qué tipo de servicio sanitario cuenta el hogar?"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("¿Con qué tipo de servicio sanitario cuenta el hogar?")) %>%
+  dplyr::rename(Columna="¿Con qué tipo de servicio sanitario cuenta el hogar?") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+          
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Servicio sanitario",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+#### Tema: Centro de salud más cercano ####
+# Pregunta data: "El hospital o centro de salud más cercano se encuentra en:"
+
+Vivienda <- PilotoHogares %>%
+  dplyr::select(.,c("El hospital o centro de salud más cercano se encuentra en:")) %>%
+  dplyr::rename(Columna="El hospital o centro de salud más cercano se encuentra en:") %>% 
+  drop_na()
+
+
+Vivienda_v2 <- Agrupa(Data=Vivienda,
+                 Columna=Columna)
+          
+# Graficamos:
+ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Cercanía del centro de salud",y="Porcentaje")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0, hjust=0.5 ,col="black")
+
+
+
 ```
 
 ## Eliminación de intermedios
 ```{r pruebas, include=FALSE}
-rm(TransEduca,Subtotal,TransEduca_v2,TransEduca_v3)
+rm(Vivienda,Vivienda_v2)
 # Evitemos la notación científica:
  options(scipen=999)
 # Para volver a notación cientifica:
