@@ -7,26 +7,30 @@ output: word_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r Inicio}
 setwd("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/1_EntregablesLehyton")
 
 # Paquetes a usar
 library(tidyverse)
 library(plyr); library(dplyr)
 library(readxl)
+library(writexl)
 library(survey)
+```
 
-# Datas iniciales:
-# ECV Antioquia 2019, leemos data:
-ECVPersonas <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_BaseAnonimizada.xlsx", sheet="Personas")
+## Caracterización Microdata ECVD2019: con FExp
 
-ECVViviendas <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_BaseAnonimizada.xlsx", sheet="Viviendas")
+```{r Data ECVD2019}
+#### Data original ####
 
-ECVHogares <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_BaseAnonimizada.xlsx", sheet="Hogares")
+# Datas iniciales de ECV Antioquia 2019:
+ECVPersonas <- read.csv("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_v2_Planeacion/ECV2019_Personas_Anonimizada.csv",sep = ";", header = TRUE, dec = ",")
 
-# Traemos solo población de la Provincia del Cartama
+ECVHogares <- read.csv("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_v2_Planeacion/ECV2019_Hogares_Anonimizada.csv",sep = ";", header = TRUE, dec = ",")
+
+#### DFs por subpoblaciones #### 
+
+# Traemos solo población de la Provincia del Cartama: Individuos
 # Renombramos
 CartamaPersonas <- ECVPersonas %>% 
   dplyr::filter(.,NomMpio=="CARAMANTA" | NomMpio=="CONCORDIA" | NomMpio=="FREDONIA" | NomMpio=="HISPANIA"
@@ -45,7 +49,17 @@ CartamaPersonas <- ECVPersonas %>%
               NomMpio=ifelse(NomMpio=="VALPARAÍSO","Valparaíso",NomMpio),
               NomMpio=ifelse(NomMpio=="VENECIA","Venecia",NomMpio))
 
-CartamaHogares <- ECVHogares %>% 
+# Traemos solo población de Jericó: Individuos
+JericoPersonas <- CartamaPersonas %>% 
+  dplyr::filter(NomMpio=="Jericó")
+
+# Traemos solo población de Jericó: Hogares
+JericoHogares <- ECVHogares%>% 
+  dplyr::filter(.,NomMpio=="JERICÓ")%>% 
+  dplyr::mutate(NomMpio=ifelse(NomMpio=="JERICÓ","Jericó",NomMpio))
+
+# Traemos data para Cartama: Hogares
+CartamaHogares <- ECVHogares%>% 
   dplyr::filter(.,NomMpio=="CARAMANTA" | NomMpio=="CONCORDIA" | NomMpio=="FREDONIA" | NomMpio=="HISPANIA"
                   | NomMpio=="JERICÓ" | NomMpio=="LA PINTADA" | NomMpio=="PUEBLORRICO" | NomMpio=="SALGAR"
                   | NomMpio=="TÁMESIS" | NomMpio=="TARSO" | NomMpio=="VALPARAÍSO" | NomMpio=="VENECIA") %>% 
@@ -62,169 +76,1204 @@ CartamaHogares <- ECVHogares %>%
               NomMpio=ifelse(NomMpio=="VALPARAÍSO","Valparaíso",NomMpio),
               NomMpio=ifelse(NomMpio=="VENECIA","Venecia",NomMpio))
 
-CartamaViviendas <- ECVViviendas %>% 
-  dplyr::filter(.,NomMpio=="CARAMANTA" | NomMpio=="CONCORDIA" | NomMpio=="FREDONIA" | NomMpio=="HISPANIA"
-                  | NomMpio=="JERICÓ" | NomMpio=="LA PINTADA" | NomMpio=="PUEBLORRICO" | NomMpio=="SALGAR"
-                  | NomMpio=="TÁMESIS" | NomMpio=="TARSO" | NomMpio=="VALPARAÍSO" | NomMpio=="VENECIA") %>% 
-  dplyr::mutate(NomMpio=ifelse(NomMpio=="CARAMANTA","Caramanta",NomMpio),
-              NomMpio=ifelse(NomMpio=="CONCORDIA","Concordia",NomMpio),
-              NomMpio=ifelse(NomMpio=="FREDONIA","Fredonia",NomMpio),
-              NomMpio=ifelse(NomMpio=="HISPANIA","Hispania",NomMpio),
-              NomMpio=ifelse(NomMpio=="JERICÓ","Jericó",NomMpio),
-              NomMpio=ifelse(NomMpio=="LA PINTADA","La Pintada",NomMpio),
-              NomMpio=ifelse(NomMpio=="PUEBLORRICO","Pueblorrico",NomMpio),
-              NomMpio=ifelse(NomMpio=="SALGAR","Salgar",NomMpio),
-              NomMpio=ifelse(NomMpio=="TÁMESIS","Támesis",NomMpio),
-              NomMpio=ifelse(NomMpio=="TARSO","Tarso",NomMpio),
-              NomMpio=ifelse(NomMpio=="VALPARAÍSO","Valparaíso",NomMpio),
-              NomMpio=ifelse(NomMpio=="VENECIA","Venecia",NomMpio))
+#### Data Tipo Svy #### 
+
+# Creamos objeto tipo Svy para Cartama: Individuos
+Cartama_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=CartamaPersonas)
+
+CartamaHogar_Svy <- svydesign(ids=~0,weights=~FexpHog,
+                                  data=CartamaHogares)
+
+# Creamos objeto tipo Svy para Jericó: Individuos
+Jerico_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=JericoPersonas)
+
+# Creamos objeto tipo Svy para Jericó: Hogares
+JericoHogar_Svy <- svydesign(ids=~0,weights=~FexpHog,
+                                  data=JericoHogares)
+
+#### Algunos cálculos ####
+
+# Creamos el total de población en cada municipio 
+TotalMcipio <- svytotal(~NomMpio,design = Cartama_Svy, na = TRUE)
+
+TotalMcipio <- as.data.frame(TotalMcipio) %>% 
+  dplyr::select(.,-c("SE")) %>% 
+  dplyr::rename(PoblacionTotal=total)
+
+Municipios <- c("Caramanta","Concordia","Fredonia","Hispania","Jericó","La Pintada","Pueblorrico","Salgar","Támesis","Tarso","Valparaíso","Venecia")
+
+TotalMcipio_v2 <- data.frame(Municipios,TotalMcipio)
+
+# Creamos el total de hogares en cada municipio 
+TotalMcipioHogar <- svytotal(~NomMpio,design = CartamaHogar_Svy, na = TRUE)
+
+TotalMcipioHogar <- as.data.frame(TotalMcipioHogar) %>% 
+  dplyr::select(.,-c("SE")) %>% 
+  dplyr::rename(PoblacionTotal=total)
+
+Municipios <- c("Caramanta","Concordia","Fredonia","Hispania","Jericó","La Pintada","Pueblorrico","Salgar","Támesis","Tarso","Valparaíso","Venecia")
+
+TotalMcipioHog_v2 <- data.frame(Municipios,TotalMcipioHogar)
 ```
 
-## Caracterización Microdata ECVD2019: con FExp
-```{r Sexo con FExp}
-# Creamos una data para hombres y otra para mujeres, y luego las transformamos en Svy
-# Transformamos datas a tipo Svy.
+```{r Educación}
+#### Tema: Condición educativa. Cartama ####
+# Pregunta data: "P_043"
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_043, design = Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq)
 
-Hombres <- CartamaPersonas %>% 
-  dplyr::filter(P_018==1)
+# Conacatenamos
+Proporciones <- join_all(list(TotalMcipio_v2,TotalesYSubt), by=c("Municipios"),type = "full")
 
-Mujeres <- CartamaPersonas %>% 
-  dplyr::filter(P_018==2)
-
-CartamaPersonas_Svy <- svydesign(ids=~0,weights=~FexpPer4,
-                         data=CartamaPersonas)
-
-Hombres_Svy <- svydesign(ids=~0,weights=~FexpPer4,
-                                 data=Hombres)
-
-Mujeres_Svy <- svydesign(ids=~0,weights=~FexpPer4,
-                         data=Mujeres)
-  
-# Se encuentran los totales por municipio:
-
-HombresTotal <- svyby(~P_018, ~NomMpio, 
-      Hombres_Svy, svytotal) %>% 
-  dplyr::select(.,-c(se)) %>% 
-  dplyr::rename(.,Hombres=P_018)
-
-MujeresTotal <- svyby(~P_018, ~NomMpio, 
-                      Mujeres_Svy, svytotal) %>% 
-  dplyr::select(.,-c(se))%>% 
-  dplyr::rename(.,Mujeres=P_018)
-
-Total <- svyby(~P_018, ~NomMpio, 
-               CartamaPersonas_Svy, svytotal)%>% 
-  dplyr::select(.,-c(se))%>% 
-  dplyr::rename(.,Total=P_018)
-
-# Concatenamos y calculamos:
-
-Sexo_Svy <- join_all(list(HombresTotal,MujeresTotal,Total), by=c("NomMpio"),type = "full")
-
-Sexo_Svy <- Sexo_Svy %>% 
-  dplyr::mutate(HombresPorc=round((Hombres/Total)*100,2),
-                MujeresPorc=round((Mujeres/Total)*100,2))
-
-# pasamos data a formato largo
-Sexo_Svy2 <- Sexo_Svy %>% 
-  gather("Sexo", value= "Porcentaje",c("HombresPorc","MujeresPorc")) %>% 
-  dplyr::select(.,-c("Hombres","Mujeres","Total"))
+Proporciones <- Proporciones %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/PoblacionTotal)*100,2),
+                P_043=ifelse(P_043==1,"Presencial",P_043),
+                P_043=ifelse(P_043==2,"Virtual",P_043),
+                P_043=ifelse(P_043==3,"No estudia",P_043)
+                )
 
 # Graficamos:
-ggplot(Sexo_Svy2, aes(x = Porcentaje, y = NomMpio, fill=Sexo))+
+ggplot(Proporciones, aes(x = Porcentaje, y = Municipios, fill=P_043))+
   geom_col()+
-  geom_text(aes(label = Porcentaje),position = position_stack(0.2),
+  labs(x="Porcentaje",y="Municipios",fill="Condición de estudio")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.8),
             size=4, vjust=0.5, hjust=0 ,col="black")+
-  ylab("Municipios")+
-  theme (axis.text.x = element_text(size=rel(1.5)),
-         axis.text.y = element_text(size=rel(1.5)))
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.3)),
+        legend.text=element_text(size=rel(1.3)))
+
+# Paso opcional: exportamos data:
+write_xlsx(Proporciones, "Proporciones.xlsx")
+
+# Eliminamos intermedios:
+rm(TotalMcipio,TotalMcipio_v2,Municipios,TotalesYSubt,Proporciones)
+
+#### Tema: Causa para no continuar estudios. Cartama ####
+# Pregunta data: : P:046
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_046, design = Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(.,P_046!="-99",P_046!="-88")
+  
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_046=="1","No está en edad escolar",Columna),
+                Columna=ifelse(P_046=="2","Ya terminó",Columna),
+                Columna=ifelse(P_046=="3","Costos educativos",Columna),
+                Columna=ifelse(P_046=="4","Oficios del hogar",Columna),
+                Columna=ifelse(P_046=="5","Falta de tiempo",Columna),
+                Columna=ifelse(P_046=="6","Embarazo",Columna),
+                Columna=ifelse(P_046=="7","Inseguridad",Columna),
+                Columna=ifelse(P_046=="8","Falta de cupos",Columna),
+                Columna=ifelse(P_046=="9","No hay centro educativo",Columna),
+                Columna=ifelse(P_046=="10","Necesita trabajar",Columna),
+                Columna=ifelse(P_046=="11","No le gusta estudiar",Columna),
+                Columna=ifelse(P_046=="12","Enfermedad",Columna),
+                Columna=ifelse(P_046=="13","Necesita educación especial",Columna),
+                Columna=ifelse(P_046=="14","Malos tratos en colegio",Columna),
+                Columna=ifelse(P_046=="15","Se casó o formó pareja",Columna),
+                Columna=ifelse(P_046=="16","Abandono de residencia",Columna),
+                Columna=ifelse(P_046=="17","Bajo rendimiento",Columna),
+                Columna=ifelse(P_046=="18","No tiene documentos necesarios",Columna),
+                Columna=ifelse(P_046=="19","Razones familiares",Columna),
+                Columna=ifelse(P_046=="20","Servicio militar",Columna),
+                Columna=ifelse(P_046=="21","No responde",Columna)
+                )
+
+# Hallamos los totales por municipio:
+TotalesYSubt_v2 <- TotalesYSubt %>% 
+  dplyr::group_by(Municipios) %>% 
+  dplyr::summarise(
+      Total = sum(Subtotal,na.rm = TRUE))
+
+# Concatenamos:
+TotalesYSubt_v3 <- join_all(list(TotalesYSubt_v2,TotalesYSubt), by=c("Municipios"),type = "full")
+
+# Hacemos los cálculos:
+TotalesYSubt_v3 <- TotalesYSubt_v3 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)
+                )
+# hacemos una prueba para validar el caso de Jericó:
+Prueba <- TotalesYSubt_v3 %>% 
+  dplyr::filter(Municipios=="Jericó")
+
+# Graficamos:
+ggplot(Prueba,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Jericó: Causas de no estudiar")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=-0.1 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,60))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt_v3, "TotalesYSubt_v3.xlsx")
+
+# eliminamos intermedios:
+rm(TotalesYSubt,TotalesYSubt_v2,TotalesYSubt_v3,Prueba)
+
+#### Tema: Causa para no continuar estudios. jericó ####
+# Pregunta data: : P:046
+
+# Creamos totales y subtotales:
+TotalesYSubt2 <- as.data.frame(svytable(~NomMpio+P_046, design = Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(.,P_046!="-99",P_046!="-88")
+  
+TotalesYSubt2$Columna <- c("Columna")
+
+TotalesYSubt2 <- TotalesYSubt2 %>% 
+  dplyr::mutate(Columna=ifelse(P_046=="2","Ya terminó",Columna),
+                Columna=ifelse(P_046=="3","Costos educativos",Columna),
+                Columna=ifelse(P_046=="4","Oficios del hogar",Columna),
+                Columna=ifelse(P_046=="5","Falta de tiempo",Columna),
+                Columna=ifelse(P_046=="6","Embarazo",Columna),
+                Columna=ifelse(P_046=="7","Inseguridad",Columna),
+                Columna=ifelse(P_046=="8","Falta de cupos",Columna),
+                Columna=ifelse(P_046=="9","No hay centro educativo",Columna),
+                Columna=ifelse(P_046=="10","Necesita trabajar",Columna),
+                Columna=ifelse(P_046=="11","No le gusta estudiar",Columna),
+                Columna=ifelse(P_046=="12","Enfermedad",Columna),
+                Columna=ifelse(P_046=="16","Abandono de residencia",Columna),
+                Columna=ifelse(P_046=="19","Razones familiares",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Jericó: Causas de no estudiar")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=-0.1 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,60))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios:
+rm(TotalesYSubt)
+
+#### Tema: Ultimo nivel de estudios. Jericó ####
+# Pregunta data: : P:049
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_049, design = Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) 
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_049==0,"Ninguno",Columna),
+                Columna=ifelse(P_049==1,"Preescolar",Columna),
+                Columna=ifelse(P_049==2,"Primaria",Columna),
+                Columna=ifelse(P_049==3,"Secundaria",Columna),
+                Columna=ifelse(P_049==4,"Media",Columna),
+                Columna=ifelse(P_049==5,"Técnico",Columna),
+                Columna=ifelse(P_049==6,"Tecnológico",Columna),
+                Columna=ifelse(P_049==7,"Pregrado",Columna),
+                Columna=ifelse(P_049==8,"Especialización",Columna),
+                Columna=ifelse(P_049==9,"Maestría",Columna),
+                Columna=ifelse(P_049==10,"Doctorado",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Paso opcional: poner data en factores para un orden establecido:
+TotalesYSubt$Columna <- factor(TotalesYSubt$Columna, levels=c("Ninguno",         "Preescolar","Primaria","Secundaria","Media","Técnico","Tecnológico","Pregrado","Especialización","Maestría"))
+
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=Columna))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Jericó: Ultimo nivel de estudios")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=-0.1 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,35))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos:
+rm(TotalesYSubt)
+
+#### Tema: Area del conocimiento. Cartama  ####
+# Pregunta data: : P:052
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_052, design=Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(.,P_052!="-99",P_052!="-98",P_052!="-88") 
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_052==1,"Agronomia y afines",Columna),
+                Columna=ifelse(P_052==2,"Bellas Artes",Columna),
+                Columna=ifelse(P_052==3,"Ciencias de la Educación",Columna),
+                Columna=ifelse(P_052==4,"Ciencias de la Salud",Columna),
+                Columna=ifelse(P_052==5,"Ciencias Sociales y afines",Columna),
+                Columna=ifelse(P_052==6,"Economia y afines",Columna),
+                Columna=ifelse(P_052==7,"Humanidades y religiosas",Columna),
+                Columna=ifelse(P_052==8,"Ing. Sistemas y afines",Columna),
+                Columna=ifelse(P_052==9,"Ing. Industrial y afines",Columna),
+                Columna=ifelse(P_052==10,"Ing. Electrónica y afines",Columna),
+                Columna=ifelse(P_052==11,"Ing. Mecánica y afines",Columna),
+                Columna=ifelse(P_052==12,"Ing. Ambiental y afines",Columna),
+                Columna=ifelse(P_052==13,"Ing. Química y afines ",Columna),
+                Columna=ifelse(P_052==14,"Ing. Civil y afines",Columna),
+                Columna=ifelse(P_052==15,"Matemáticas y C. Naturales",Columna),
+                Columna=ifelse(P_052==16,"Otras",Columna)
+                )
+
+# Hallamos los totales por municipio:
+TotalesYSubt_v2 <- TotalesYSubt %>% 
+  dplyr::group_by(Municipios) %>% 
+  dplyr::summarise(
+      Total = sum(Subtotal,na.rm = TRUE))
+
+# Concatenamos:
+TotalesYSubt_v3 <- join_all(list(TotalesYSubt_v2,TotalesYSubt), by=c("Municipios"),type = "full")
+
+# Hacemos los cálculos:
+TotalesYSubt_v3 <- TotalesYSubt_v3 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# hacemos una prueba para validar el caso de Jericó:
+Prueba <- TotalesYSubt_v3 %>% 
+  dplyr::filter(Municipios=="Jericó")
+
+# Graficamos:
+ggplot(Prueba,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Jericó: Area de conocimiento")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=-0.1 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,40))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt_v3, "TotalesYSubt_v3.xlsx")
+
+# eliminamos:
+rm(Prueba,TotalesYSubt,TotalesYSubt_v2,TotalesYSubt_v3)
+
+#### Tema: Area del conocimiento. Jericó  ####
+# Pregunta data: : P:052
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_052, design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(.,P_052!="-98",
+                 P_052!="-88") 
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_052==1,"Agronomia y afines",Columna),
+                Columna=ifelse(P_052==2,"Bellas Artes",Columna),
+                Columna=ifelse(P_052==3,"Ciencias de la Educación",Columna),
+                Columna=ifelse(P_052==4,"Ciencias de la Salud",Columna),
+                Columna=ifelse(P_052==5,"Ciencias Sociales y afines",Columna),
+                Columna=ifelse(P_052==6,"Economia y afines",Columna),
+                Columna=ifelse(P_052==7,"Humanidades y religiosas",Columna),
+                Columna=ifelse(P_052==8,"Ing. Sistemas y afines",Columna),
+                Columna=ifelse(P_052==9,"Ing. Industrial y afines",Columna),
+                Columna=ifelse(P_052==10,"Ing. Electrónica y afines",Columna),
+                Columna=ifelse(P_052==11,"Ing. Mecánica y afines",Columna),
+                Columna=ifelse(P_052==12,"Ing. Ambiental y afines",Columna),
+                Columna=ifelse(P_052==13,"Ing. Química y afines ",Columna),
+                Columna=ifelse(P_052==14,"Ing. Civil y afines",Columna),
+                Columna=ifelse(P_052==15,"Matemáticas y C. Naturales",Columna),
+                Columna=ifelse(P_052==16,"Otras",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Jericó: Area de conocimiento")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=-0.1 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,40))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos:
+rm(prueba,TotalesYSubt)
+
 ```
 
-```{r Ingresos con FExp}
-# data tipo Svy
-CartamaPersonas_Svy <- svydesign(ids=~0,weights=~FexpPer3,
-                         data=CartamaPersonas)
+```{r Seguridad social}
+#### Tema: Afiliaciones Pensiones y ARL. Cartama ####
 
-# Encontramos media de ingresos
-Ingresos <- svyby(~P_121, ~NomMpio, 
-      CartamaPersonas_Svy, svymean)
+# Calculamos el total de Ocupados:
+# Usamos la metoddología de la ficha de Planeación
+Ocupados <- CartamaPersonas %>% 
+  dplyr::filter((Zona==1 & P_021>=12) | (Zona==2 & P_021>=10),
+                (P_077==1 | P_080==1 | P_081==1 | P_082==1)) 
+
+# Transformamos los ocupados en Svy
+Ocupados_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=Ocupados)
+
+# Calculamos total Ocupados por Municipio
+OcupadosMcipio <- svytotal(~NomMpio,design=Ocupados_Svy, na=TRUE)
+
+OcupadosMcipio <- as.data.frame(OcupadosMcipio) %>% 
+  dplyr::select(.,-c("SE")) %>% 
+  dplyr::rename(OcupadosTotal=total)
+
+Municipios <- c("Caramanta","Concordia","Fredonia","Hispania","Jericó","La Pintada","Pueblorrico","Salgar","Támesis","Tarso","Valparaíso","Venecia")
+
+OcupadosMcipio_v2 <- data.frame(Municipios,OcupadosMcipio)
+
+# Pensiones:
+# Pregunta data: "P_075"
+Pensiones <- as.data.frame(svytable(~NomMpio+P_075, design=Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,PensionesCol=Freq) %>% 
+  dplyr::filter(P_075==1)
+
+# ARL:
+# Pregunta data: "P_076"
+ARL <- as.data.frame(svytable(~NomMpio+P_076, design=Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,ARLCol=Freq) %>% 
+  dplyr::filter(P_076==1)
+
+# Concatenamos
+Afiliaciones <- join_all(list(OcupadosMcipio_v2,Pensiones,ARL), by=c("Municipios"),type = "full") %>% 
+  dplyr::mutate(PorcPensiones=round((PensionesCol/OcupadosTotal)*100,2),
+                PorcARL=round((ARLCol/OcupadosTotal)*100,2))%>% 
+  dplyr::select(.,c("Municipios","PorcPensiones","PorcARL")) %>% 
+  dplyr::rename(Pensiones=PorcPensiones,ARL=PorcARL)
+
+# Pasamos a formato largo
+Afiliaciones2 <- Afiliaciones %>% 
+  gather("Afiliacion", value= "Porcentaje",c("Pensiones","ARL"))
+
+# Graficamos:
+ggplot(Afiliaciones2, aes(x=Porcentaje,y=Municipios,fill=Afiliacion))+
+  geom_col(position="dodge")+
+  labs(x="Porcentaje",y="Municipios",fill="Afiliación:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top")+
+  scale_x_continuous(limits=c(0,45))
+
+# Paso opcional: exportamos data:
+write_xlsx(Afiliaciones2, "Afiliaciones2.xlsx")
+
+# eliminamos intermedios:
+rm(Ocupados,Ocupados_Svy,OcupadosMcipio,OcupadosMcipio_v2,Pensiones,ARL,Afiliaciones,Afiliaciones2,Municipios)
 ```
 
-```{r Prueba Ingresos con Ficha técnica}
-# Valor del indicador: 862,300
+```{r Recreación}
+#### Tema: Participación comunitaria. Jericó ####
+# Pregunta data: : P:035
 
-# Datas iniciales:
-# ECV Antioquia 2019, leemos data:
-ECVPersonas <- read.csv("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/3_InsumosDiego&Otros/ECV2019_v2_Planeacion/ECV2019_Personas_Anonimizada.csv",sep = ";", header = TRUE, dec = ",")
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_035,design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_035!=-88)
 
-#### Calculo sin FExp #### 
+TotalesYSubt$Columna <- c("Columna")
 
-# Filtramos según nos interese:
-# Traemos solo la población de Jericó
-# Traemos solo las variables acordesal indicador
-IngresosJerico <- ECVPersonas %>% 
-  dplyr::filter(.,NomMpio=="JERICÓ") %>% 
-  dplyr::select(.,Zona,P_021,P_077,P_080,P_081,P_082,P_121,P_122,P_123,FexpPer_EQ)
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_035==1,"Asoc. Padres Familia",Columna),
+                Columna=ifelse(P_035==2,"Corporaciones",Columna),
+                Columna=ifelse(P_035==3,"Juntas Admon Locales",Columna),
+                Columna=ifelse(P_035==4,"Asociaciones de mujeres",Columna),
+                Columna=ifelse(P_035==5,"Grupos juveniles",Columna),
+                Columna=ifelse(P_035==6,"Veedurías ciudadanas",Columna),
+                Columna=ifelse(P_035==7,"Junta acción comunal",Columna),
+                Columna=ifelse(P_035==8,"Clubes del adulto mayor",Columna),
+                Columna=ifelse(P_035==9,"Asambleas barriales",Columna),
+                Columna=ifelse(P_035==10,"Consejos comunales",Columna),
+                Columna=ifelse(P_035==11,"Comités comunitarios salud",Columna),
+                Columna=ifelse(P_035==12,"Organización de victimas",Columna),
+                Columna=ifelse(P_035==13,"Asociación de usuarios",Columna),
+                Columna=ifelse(P_035==14,"Sindicatos",Columna),
+                Columna=ifelse(P_035==15,"Organización de base",Columna),
+                Columna=ifelse(P_035==16,"Partido político",Columna),
+                Columna=ifelse(P_035==17,"Asociación cáracter ambiental",Columna),
+                Columna=ifelse(P_035==18,"Otro",Columna),
+                Columna=ifelse(P_035==19,"Ninguno",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
 
-# Seguimos indicaciones según ficha:
+# Graficamos:
 
-# Numerador:
-Numerador <- IngresosJerico %>% 
-  dplyr::filter((Zona==1 & P_021>=12) | (Zona==2 & P_021>=10)) %>% 
-  dplyr::filter(P_077==1 | P_080==1 | P_081==1 | P_082==1) %>%
-  dplyr::mutate(P_121=ifelse(P_121<0,0,P_121),
-                P_122=ifelse(P_122<0,0,P_122),
-                P_123=ifelse(P_123<0,0,P_123)) %>% 
-  dplyr::mutate(Ingresos=P_121+P_122+P_123) %>% 
-  dplyr::filter(Ingresos>0)
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Jericó: Participación comunitaria")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,100))
 
-# Intento 1: media sin ponderar
-Numerador2 <- sum(Numerador$Ingresos)
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
 
-# Denominador:
-Denominador <- nrow(Numerador)
+# eliminamos intermedios
+rm(TotalesYSubt)
+```
 
-# Indicador:
-Indicador=Numerador2/Denominador
-Indicador
+```{r Movilidad}
+#### Tema: Movilidad laboral. Jericó ####
+# Pregunta data: : P:094
 
-# Intento 2: Media con ponderación según FExp
-# Calculamos el WiXi: Ingresos*FExp
-Numerador <- Numerador %>% 
-  dplyr::mutate(WiXi=FexpPer_EQ*Ingresos)
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_094,design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_094!=-99,P_094!=-88,P_094!=-77)
 
-# Numerador:
-SumWiXi <- sum(Numerador$WiXi)
+TotalesYSubt$Columna <- c("Columna")
 
-# Denominador:
-SumWi <- sum(Numerador$FexpPer_EQ)
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_094==1,"Caminando",Columna),
+                Columna=ifelse(P_094==2,"Bicicleta",Columna),
+                Columna=ifelse(P_094==3,"Moto",Columna),
+                Columna=ifelse(P_094==4,"Bus/Buseta",Columna),
+                Columna=ifelse(P_094==5,"Transporte informal",Columna),
+                Columna=ifelse(P_094==6,"Taxi/Colectivo",Columna),
+                Columna=ifelse(P_094==7,"Transporte privado",Columna),
+                Columna=ifelse(P_094==8,"Metro/Cable",Columna),
+                Columna=ifelse(P_094==9,"Sistema Integrado Transporte",Columna),
+                Columna=ifelse(P_094==10,"Caballo",Columna),
+                Columna=ifelse(P_094==11,"Lancha",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
 
-# Indicador:
-SumWiXi/SumWi # Valor: 871.215
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Jericó: Medio de transporte al sitio laboral")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.95),
+            size=4, vjust=0.5, hjust=-0.4 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits = c(0,75))
 
-#### Calculo con FExp ####
-# Transformamos el objeto Numerador en tipo Svy:
-Numerador_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
-                                  data=Numerador)
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
 
-# Intento 3: Calculando la media directamente
-svymean(~Ingresos, Numerador_Svy)
+# eliminamos intermedios
+rm(TotalesYSubt)
 
-# Intento 4:
-# calculamos total de ingresos (numerador):
-Numerador2_Svy <- svytotal(~Ingresos, design = Numerador_Svy, na = TRUE) # estos nos da un valor de 3536163896
+#### Tema: Movilidad laboral. Cartama ####
+# Pregunta data: : P:094
 
-# veamos el total del FExp:
-TotalFExp <- sum(Numerador$FexpPer_EQ) # Esto nos da un valor de 4058.888
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_094,design=Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_094!=-98,P_094!=-99,P_094!=-88,P_094!=-77)
 
-# calculamos indicador (denominador):
-3536163896/4058.888
+TotalesYSubt$Columna <- c("Columna")
 
-# PLT:El intento2=intento3=intento4=871.215. Todos los valores son cercanos al valor brindado de 862.300. Es deci que la data se ha manejado apropiadamente
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_094==1,"Caminando",Columna),
+                Columna=ifelse(P_094==2,"Bicicleta",Columna),
+                Columna=ifelse(P_094==3,"Moto",Columna),
+                Columna=ifelse(P_094==4,"Bus/Buseta",Columna),
+                Columna=ifelse(P_094==5,"Transporte informal",Columna),
+                Columna=ifelse(P_094==6,"Taxi/Colectivo",Columna),
+                Columna=ifelse(P_094==7,"Transporte privado",Columna),
+                Columna=ifelse(P_094==8,"Metro/Cable",Columna),
+                Columna=ifelse(P_094==9,"Sistema Integrado Transporte",Columna),
+                Columna=ifelse(P_094==10,"Caballo",Columna),
+                Columna=ifelse(P_094==11,"Lancha",Columna)
+                )
+
+# Hallamos los totales por municipio:
+TotalesYSubt_v2 <- TotalesYSubt %>% 
+  dplyr::group_by(Municipios) %>% 
+  dplyr::summarise(
+      Total = sum(Subtotal,na.rm = TRUE))
+
+# Concatenamos:
+TotalesYSubt_v3 <- join_all(list(TotalesYSubt_v2,TotalesYSubt), by=c("Municipios"),type = "full")
+
+# Hacemos los cálculos:
+TotalesYSubt_v3 <- TotalesYSubt_v3 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# hacemos una prueba para validar el caso de Jericó:
+Prueba <- TotalesYSubt_v3 %>% 
+  dplyr::filter(Municipios=="Jericó")
+
+# Graficamos:
+ggplot(Prueba,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Jericó: Medio de transporte al sitio laboral")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.95),
+            size=4, vjust=0.5, hjust=-0.4 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits = c(0,75))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt_v3, "TotalesYSubt_v3.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt,TotalesYSubt_v2,TotalesYSubt_v3,Prueba)
+
+#### Tema: Movilidad Centro educativo. Jericó ####
+# Pregunta data: : P:047
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_047,design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_047!=-99,P_047!=-88,P_047!=-77)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_047==1,"Caminando",Columna),
+                Columna=ifelse(P_047==2,"Bicicleta",Columna),
+                Columna=ifelse(P_047==3,"Moto",Columna),
+                Columna=ifelse(P_047==4,"Bus/Buseta",Columna),
+                Columna=ifelse(P_047==5,"Transporte informal",Columna),
+                Columna=ifelse(P_047==6,"Taxi/Colectivo",Columna),
+                Columna=ifelse(P_047==7,"Transporte privado",Columna),
+                Columna=ifelse(P_047==8,"Metro/Cable",Columna),
+                Columna=ifelse(P_047==9,"Sistema Integrado Transporte",Columna),
+                Columna=ifelse(P_047==10,"Caballo",Columna),
+                Columna=ifelse(P_047==11,"Lancha",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Jericó: Medio de transporte al centro educativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,100))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+
+
+#### Tema: Tiempo al sitio laboral. Jericó ####
+# Pregunta data: : P:095
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_095,design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_095!=-99,P_095!=-88,P_095!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_095==1,"Entre 0-20 minutos",Columna),
+                Columna=ifelse(P_095==2,"Entre 21-40 minutos",Columna),
+                Columna=ifelse(P_095==3,"Entre 41-60 minutos",Columna),
+                Columna=ifelse(P_095==4,"Entre 61-80 minutos",Columna),
+                Columna=ifelse(P_095==5,"Más de 81 minutos",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+# Paso opcional: poner data en factores para un orden establecido:
+TotalesYSubt$Columna <- factor(TotalesYSubt$Columna, levels=c("Entre 0-20 minutos","Entre 21-40 minutos","Entre 41-60 minutos","Entre 61-80 minutos","Más de 81 minutos"))
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=Columna))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Jericó: Demora al sitio laboral")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,80))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+
+#### Tema: Tiempo al centro educativo. Jericó ####
+# Pregunta data: : P_048
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_048,design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_048!=-99,P_048!=-88,P_048!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_048==1,"Entre 0-20 minutos",Columna),
+                Columna=ifelse(P_048==2,"Entre 21-40 minutos",Columna),
+                Columna=ifelse(P_048==3,"Entre 41-60 minutos",Columna),
+                Columna=ifelse(P_048==4,"Entre 61-80 minutos",Columna),
+                Columna=ifelse(P_048==5,"Más de 81 minutos",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Jericó: Demora al centro educativo")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,100))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+#### Tema: Valoración transporte (Hogares). Jericó ####
+# Pregunta data: : P_345
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_345,design=JericoHogar_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_345!=-99,P_345!=-88,P_345!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_345==0,"No hay transporte público",Columna),
+                Columna=ifelse(P_345==1,"Muy mala",Columna),
+                Columna=ifelse(P_345==2,"Mala",Columna),
+                Columna=ifelse(P_345==3,"Aceptable",Columna),
+                Columna=ifelse(P_345==4,"Buena",Columna),
+                Columna=ifelse(P_345==5,"Muy buena",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Paso opcional: poner data en factores para un orden establecido:
+TotalesYSubt$Columna <- factor(TotalesYSubt$Columna, levels=c("No hay transporte público","Muy mala","Mala","Aceptable","Buena","Muy buena"))
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=Columna))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Jericó: Calificación transporte público")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,100))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+
+```
+
+```{r Mercado laboral}
+#### Tema: Actividad última semana. Jericó ####
+# Pregunta data: : P_077
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_077,design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_077!=-99,P_077!=-88,P_077!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_077==1,"Trabajando",Columna),
+                Columna=ifelse(P_077==2,"Buscando trabajo",Columna),
+                Columna=ifelse(P_077==3,"Estudiando",Columna),
+                Columna=ifelse(P_077==4,"Oficios del hogar",Columna),
+                Columna=ifelse(P_077==5,"Rentista",Columna),
+                Columna=ifelse(P_077==6,"Jubilado",Columna),
+                Columna=ifelse(P_077==7,"Otra actividad",Columna),
+                Columna=ifelse(P_077==8,"Incapacitado",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Jericó: Actividad última semana")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,45))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+
+#### Tema: Actividad última semana. Cartama ####
+# Pregunta data: : P_077
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_077,design=Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_077!=-99,P_077!=-88,P_077!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_077==1,"Trabajando",Columna),
+                Columna=ifelse(P_077==2,"Buscando trabajo",Columna),
+                Columna=ifelse(P_077==3,"Estudiando",Columna),
+                Columna=ifelse(P_077==4,"Oficios del hogar",Columna),
+                Columna=ifelse(P_077==5,"Rentista",Columna),
+                Columna=ifelse(P_077==6,"Jubilado",Columna),
+                Columna=ifelse(P_077==7,"Otra actividad",Columna),
+                Columna=ifelse(P_077==8,"Incapacitado",Columna)
+                )
+
+# Hallamos los totales por municipio:
+TotalesYSubt_v2 <- TotalesYSubt %>% 
+  dplyr::group_by(Municipios) %>% 
+  dplyr::summarise(
+      Total = sum(Subtotal,na.rm = TRUE))
+
+# Concatenamos:
+TotalesYSubt_v3 <- join_all(list(TotalesYSubt_v2,TotalesYSubt), by=c("Municipios"),type = "full")
+
+# Hacemos los cálculos:
+TotalesYSubt_v3 <- TotalesYSubt_v3 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# hacemos una prueba para validar el caso de Jericó:
+Prueba <- TotalesYSubt_v3 %>% 
+  dplyr::filter(Municipios=="Jericó")
+
+# Graficamos:
+ggplot(Prueba,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Jericó: Actividad última semana")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,45))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt_v3, "TotalesYSubt_v3.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt,TotalesYSubt_v2,TotalesYSubt_v3,Prueba)
+
+#### Tema: Posición ocupacional. Jericó ####
+# Pregunta data: : P_099
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_099,design=Jerico_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_099!=-99,P_099!=-88,P_099!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_099==-77,"Otro",Columna),
+                Columna=ifelse(P_099==1,"Empleado de empresa particular",Columna),
+                Columna=ifelse(P_099==2,"Empleado del gobierno",Columna),
+                Columna=ifelse(P_099==3,"Empleado doméstico",Columna),
+                Columna=ifelse(P_099==4,"Cuenta propia",Columna),
+                Columna=ifelse(P_099==5,"Empleador",Columna),
+                Columna=ifelse(P_099==6,"Trabajador fliar sin remuneración",Columna),
+                Columna=ifelse(P_099==7,"Trabajador sin remuneración",Columna),
+                Columna=ifelse(P_099==8,"Jornalero",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Jericó: Posición ocupacional")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,50))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+
+
+#### Tema: Posición ocupacional. Cartama ####
+# Pregunta data: : P_099
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_099,design=Cartama_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_099!=-99,P_099!=-88,P_099!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_099==-77,"Otro",Columna),
+                Columna=ifelse(P_099==1,"Empleado de empresa particular",Columna),
+                Columna=ifelse(P_099==2,"Empleado del gobierno",Columna),
+                Columna=ifelse(P_099==3,"Empleado doméstico",Columna),
+                Columna=ifelse(P_099==4,"Cuenta propia",Columna),
+                Columna=ifelse(P_099==5,"Empleador",Columna),
+                Columna=ifelse(P_099==6,"Trabajador fliar sin remuneración",Columna),
+                Columna=ifelse(P_099==7,"Trabajador sin remuneración",Columna),
+                Columna=ifelse(P_099==8,"Jornalero",Columna)
+                )
+
+# Hallamos los totales por municipio:
+TotalesYSubt_v2 <- TotalesYSubt %>% 
+  dplyr::group_by(Municipios) %>% 
+  dplyr::summarise(
+      Total = sum(Subtotal,na.rm = TRUE))
+
+# Concatenamos:
+TotalesYSubt_v3 <- join_all(list(TotalesYSubt_v2,TotalesYSubt), by=c("Municipios"),type = "full")
+
+# Hacemos los cálculos:
+TotalesYSubt_v3 <- TotalesYSubt_v3 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# hacemos una prueba para validar el caso de Jericó:
+Prueba <- TotalesYSubt_v3 %>% 
+  dplyr::filter(Municipios=="Jericó")
+
+# Graficamos:
+ggplot(Prueba,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="cyan4")+
+  labs(x="Porcentaje",y="Jericó: Posición ocupacional")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,50))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt_v3, "TotalesYSubt_v3.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt,TotalesYSubt_v2,TotalesYSubt_v3,Prueba)
+
+#### Tema: Sector económico empresa. Jericó ####
+# Pregunta data: : P_096
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_096,design=Jerico_Svy))%>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_096!=-99,P_096!=-88,P_096!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_096==1,"Agropecuaria, silvicultura y pesca",Columna),
+                Columna=ifelse(P_096==2,"Minería",Columna),
+                Columna=ifelse(P_096==3,"Electricidad, gas, agua",Columna),
+                Columna=ifelse(P_096==4,"Industria",Columna),
+                Columna=ifelse(P_096==5,"Construcción",Columna),
+                Columna=ifelse(P_096==6,"Comercio, hotel, restaurantes",Columna),
+                Columna=ifelse(P_096==7,"Transporte, almacenamiento y comunicaciones",Columna),
+                Columna=ifelse(P_096==8,"Estab. Financieros, inmuebles y otros",Columna),
+                Columna=ifelse(P_096==9,"Servicios sociales, comunales y personales",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="aquamarine3")+
+  labs(x="Porcentaje",y="Jericó: Sector económico laboral")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,60))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+#### Tema: Otros ingresos. Jericó ####
+# Procedimiento: Se encontrará el valor promedio por cada tipo de ingreso.
+# Se concatenará y luego graficará todo junto.
+
+# Ingresos por arriendo:
+Arriendo <- JericoPersonas %>% 
+  dplyr::filter(.,P_125>0)
+
+Arriendo_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=Arriendo)
+
+Arriendo_v2 <- as.data.frame(svymean(~P_125, Arriendo_Svy)) %>% 
+  dplyr::select(.,c("mean")) %>% 
+  dplyr::rename(Ingresos=mean)
+
+Arriendo_v2$TipoIngresos <- c("Arriendos (mes)")
+
+# Ingresos por Pensiones.
+Pensiones <- JericoPersonas %>% 
+  dplyr::filter(.,P_126>0)
+
+Pensiones_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=Pensiones)
+
+Pensiones_v2 <- as.data.frame(svymean(~P_126, Pensiones_Svy))%>% 
+  dplyr::select(.,c("mean")) %>% 
+  dplyr::rename(Ingresos=mean)
+
+Pensiones_v2$TipoIngresos <- c("Pensiones (mes)")
+
+# Ingresos por Giros Exterior
+GirosExt <- JericoPersonas %>% 
+  dplyr::filter(.,P_128>0)
+
+GirosExt_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=GirosExt)
+
+GirosExt_v2 <- as.data.frame(svymean(~P_128, GirosExt_Svy))%>% 
+  dplyr::select(.,c("mean")) %>% 
+  dplyr::rename(Ingresos=mean)
+
+GirosExt_v2$TipoIngresos <- c("Giros Exterior (anual)")
+
+# Ingresos por Subsidios
+Subsidios <- JericoPersonas %>% 
+  dplyr::filter(.,P_127>0)
+
+Subsidios_Svy <- svydesign(ids=~0,weights=~FexpPer_EQ,
+                                  data=Subsidios)
+
+Subsidios_v2 <- as.data.frame(svymean(~P_127, Subsidios_Svy))%>% 
+  dplyr::select(.,c("mean")) %>% 
+  dplyr::rename(Ingresos=mean)
+
+Subsidios_v2$TipoIngresos <- c("Subsidios (anual)")
+
+# Concatenamos
+Ingresos <- join_all(list(Arriendo_v2,Pensiones_v2,GirosExt_v2,Subsidios_v2), by=c("TipoIngresos"),type = "full")
+
+# Corregimos decimales
+Ingresos$Ingresos <- round(Ingresos$Ingresos,0)
+
+# Graficamos:
+ggplot(Ingresos, aes(x=Ingresos,y=reorder(TipoIngresos,-Ingresos)))+
+  geom_col(position="dodge",fill="coral")+
+  labs(x="Valor promedio",y="Jericó: Tipo de ingresos")+
+  geom_text(aes(label=Ingresos),position = position_dodge(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.3)),
+        legend.text=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,1500000))
+
+# Paso opcional: exportamos data:
+write_xlsx(Ingresos, "Ingresos.xlsx")
+
+# eliminamos intermedios:
+rm(Arriendo,Arriendo_Svy,Arriendo_v2,Pensiones,Pensiones_Svy,Pensiones_v2,GirosExt,GirosExt_Svy,GirosExt_v2,Subsidios,Subsidios_Svy,Subsidios_v2,Ingresos)
+
+```
+
+```{r Proyectos productivos}
+#### Tema: Tenencia negocio. Cartama ####
+# Pregunta data: P_290
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_290, design = CartamaHogar_Svy)) %>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq)
+
+# Conacatenamos
+Proporciones <- join_all(list(TotalMcipioHog_v2,TotalesYSubt), by=c("Municipios"),type = "full")
+
+Proporciones$Columna <- c("Columna")
+
+Proporciones <- Proporciones %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/PoblacionTotal)*100,2),
+                Columna=ifelse(P_290==1,"Si",Columna),
+                Columna=ifelse(P_290==2,"No",Columna),
+                )
+
+# Graficamos:
+ggplot(Proporciones, aes(x = Porcentaje, y = Municipios, fill=Columna))+
+  geom_col()+
+  labs(x="Porcentaje",y="Municipios",fill="Tiene negocio:")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.8),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.3)),
+        legend.text=element_text(size=rel(1.3)),
+        legend.position="top")+
+  scale_x_continuous(limits=c(0,100))
+
+# Paso opcional: exportamos data:
+write_xlsx(Proporciones, "Proporciones.xlsx")
+
+# Eliminamos intermedios:
+rm(TotalesYSubt,Proporciones)
+#### Tema: Sector económico Negocio. Jericó ####
+# Pregunta data: : P_291
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_291,design=JericoHogar_Svy))%>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_291!=-99,P_291!=-88,P_291!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_291==1,"Agropecuaria, silvicultura y pesca",Columna),
+                Columna=ifelse(P_291==2,"Minería",Columna),
+                Columna=ifelse(P_291==3,"Electricidad, gas, agua",Columna),
+                Columna=ifelse(P_291==4,"Industria",Columna),
+                Columna=ifelse(P_291==5,"Construcción",Columna),
+                Columna=ifelse(P_291==6,"Comercio, hotel, restaurantes",Columna),
+                Columna=ifelse(P_291==7,"Transporte, almacenamiento y comunicaciones",Columna),
+                Columna=ifelse(P_291==8,"Estab. Financieros, inmuebles y otros",Columna),
+                Columna=ifelse(P_291==9,"Servicios sociales, comunales y personales",Columna),
+                Total=sum(Subtotal),
+                Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# Graficamos:
+ggplot(TotalesYSubt,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Jericó: Sector económico Negocio")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,85))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt, "TotalesYSubt.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt)
+
+#### Tema: Sector económico Negocio. Cartama ####
+# Pregunta data: : P_291
+
+# Creamos totales y subtotales:
+TotalesYSubt <- as.data.frame(svytable(~NomMpio+P_291,design=CartamaHogar_Svy))%>% 
+  dplyr::rename(Municipios=NomMpio,Subtotal=Freq) %>% 
+  dplyr::filter(P_291!=-99,P_291!=-88,P_291!=-98)
+
+TotalesYSubt$Columna <- c("Columna")
+
+TotalesYSubt <- TotalesYSubt %>% 
+  dplyr::mutate(Columna=ifelse(P_291==1,"Agropecuaria, silvicultura y pesca",Columna),
+                Columna=ifelse(P_291==2,"Minería",Columna),
+                Columna=ifelse(P_291==3,"Electricidad, gas, agua",Columna),
+                Columna=ifelse(P_291==4,"Industria",Columna),
+                Columna=ifelse(P_291==5,"Construcción",Columna),
+                Columna=ifelse(P_291==6,"Comercio, hotel, restaurantes",Columna),
+                Columna=ifelse(P_291==7,"Transporte, almacenamiento y comunicaciones",Columna),
+                Columna=ifelse(P_291==8,"Estab. Financieros, inmuebles y otros",Columna),
+                Columna=ifelse(P_291==9,"Servicios sociales, comunales y personales",Columna)
+                )
+
+# Hallamos los totales por municipio:
+TotalesYSubt_v2 <- TotalesYSubt %>% 
+  dplyr::group_by(Municipios) %>% 
+  dplyr::summarise(
+      Total = sum(Subtotal,na.rm = TRUE))
+
+# Concatenamos:
+TotalesYSubt_v3 <- join_all(list(TotalesYSubt_v2,TotalesYSubt), by=c("Municipios"),type = "full")
+
+# Hacemos los cálculos:
+TotalesYSubt_v3 <- TotalesYSubt_v3 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2)
+                )
+
+# hacemos una prueba para validar el caso de Jericó:
+Prueba <- TotalesYSubt_v3 %>% 
+  dplyr::filter(Municipios=="Jericó")
+
+# Graficamos:
+ggplot(Prueba,aes(x=Porcentaje,y=reorder(Columna,-Porcentaje)))+
+  geom_col(fill="coral")+
+  labs(x="Porcentaje",y="Jericó: Sector económico Negocio")+
+  geom_text(aes(label = Porcentaje),position = position_stack(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)))+
+  scale_x_continuous(limits=c(0,85))
+
+# Paso opcional: exportamos data:
+write_xlsx(TotalesYSubt_v3, "TotalesYSubt_v3.xlsx")
+
+# eliminamos intermedios
+rm(TotalesYSubt,TotalesYSubt_v2,TotalesYSubt_v3,Prueba)
+
 ```
 
 ## Caracterización Piloto: sin FExp
-```{r Data}
+```{r Data Piloto}
 # Datas piloto:
 PilotoIndividuos <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/1_EntregablesLehyton/3_Piloto/3_DataPiloto_v1.xlsx",sheet="p_039")
 
@@ -2008,6 +3057,7 @@ ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
 
 ```
 
+
 ## Eliminación de intermedios
 ```{r pruebas, include=FALSE}
 rm(Vivienda,Vivienda_v2)
@@ -2019,6 +3069,7 @@ urbano <-IngresosJerico %>%
   dplyr::filter(.,Zona==1 & P_021>=12)
 rural <-  IngresosJerico %>% 
   dplyr::filter(.,Zona==2 & P_021>=10)
+
  
 ```
 
