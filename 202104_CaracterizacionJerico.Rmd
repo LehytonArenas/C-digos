@@ -3058,6 +3058,1972 @@ ggplot(Vivienda_v2, aes(y=Porcentaje,x=reorder(Columna,-Porcentaje)))+
 ```
 
 
+## Caracterización Data Primaria: sin FExp
+```{r Data Primaria}
+# Datas primarias:
+# Por un error la convención de la data aparece como "Piloto...", pero no pasa nada
+PilotoIndividuos <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/2_EntregablesOtros/9_Arbey_DataExportada/20210617_Data.xlsx",sheet="p_039")
+
+PilotoHogares <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/2_EntregablesOtros/9_Arbey_DataExportada/20210617_Data.xlsx",sheet="Encuesta definitiva Jericó -...")
+
+PilotoProyectos <- read_excel("/Volumes/Respaldo/Google Drive-Actualizado/Ecsim/2021_CaracterizaciónJericó/2_EntregablesOtros/9_Arbey_DataExportada/20210617_Data.xlsx",sheet="p_103_2")
+
+#### Algunos cálculos propios ####
+
+# Mejoramos la columna de localización en PilotoIndividuos:
+PilotoIndividuos <- PilotoIndividuos %>% 
+  dplyr::rename(Vereda="Corregimiento o vereda")
+
+PilotoIndividuos$Localizacion <- c("Localización")
+
+PilotoIndividuos <- PilotoIndividuos %>%
+  dplyr::mutate(Localizacion=ifelse(is.na(Vereda)==T,"Cabecera Urbana",Vereda))
+
+# Mejoramos la columna de localización en PilotoHogares:
+PilotoHogares <- PilotoHogares %>% 
+  dplyr::rename(Vereda="Corregimiento o vereda")
+
+PilotoHogares$Localizacion <- c("Localización")
+
+PilotoHogares <- PilotoHogares %>%
+  dplyr::mutate(Localizacion=ifelse(is.na(Vereda)==T,"Cabecera Urbana",Vereda))
+
+# Mejoramos la columna de localización en PilotoHogares:
+PilotoProyectos <- PilotoProyectos %>% 
+  dplyr::rename(Vereda="Corregimiento o vereda")
+
+PilotoProyectos$Localizacion <- c("Localización")
+
+PilotoProyectos <- PilotoProyectos %>%
+  dplyr::mutate(Localizacion=ifelse(is.na(Vereda)==T,"Cabecera Urbana",Vereda))
+
+#### Funciones ####
+# Función para: Piloto Individuos
+# Función agrupa: toma una data, la agrupa según la columna y calcula los %
+Agrupa <- function(Data,Columna){
+  
+  Data_v2 <- Data %>%
+  dplyr::group_by(Localizacion) %>%
+  dplyr::summarise(
+    TotalLocalizacion = n())
+  
+  Data_v3 <- Data %>%
+  dplyr::group_by(Localizacion,{{Columna}}) %>%
+  dplyr::summarise(
+    Subtotal = n())
+
+  Data_v4 <- join_all(list(Data_v2,Data_v3), by=c("Localizacion"),type = "full")
+
+  Data_v4 <- Data_v4 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/TotalLocalizacion)*100,2))
+
+return(Data_v4)
+}
+```
+
+```{r Modulo Características del hogar}
+#### Tema: Sexo ####
+# Pregunta data: "Sexo de ${p_040}:"
+
+Sexo <- PilotoIndividuos %>%
+  dplyr::select(.,"Vereda","Localizacion","Sexo de ${p_040}:") %>%
+  dplyr::rename(SexoCol="Sexo de ${p_040}:")
+
+Sexo_v2 <- Agrupa(Data=Sexo,Columna=SexoCol)
+  
+# Graficamos:
+ggplot(Sexo_v2, aes(x=Porcentaje,y=Localizacion,fill=SexoCol))+
+  geom_col()+
+  labs(x="Porcentaje",y="Localización",fill="Sexo:")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.5),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top")+
+  scale_x_continuous(limits=c(0,100))
+
+# Paso opcional: exportamos data:
+write_xlsx(Sexo_v5, "Sexo.xlsx")
+
+# Eliminamos intermedios:
+rm(Sexo,Sexo_v2)
+
+#### Tema: Identidad sexual ####
+# Pregunta data: "${p_040} se identifica como:"
+Identidad <- PilotoIndividuos %>%
+  dplyr::select(.,"Vereda","Localizacion","${p_040} se identifica como:") %>%
+  dplyr::rename(IdentidadCol="${p_040} se identifica como:") %>% 
+  dplyr::filter(is.na(IdentidadCol)==F)
+
+Identidad_v2 <- Agrupa(Data=Identidad,Columna=IdentidadCol)
+
+# Graficamos:
+ggplot(Identidad_v2, aes(x=Porcentaje,y=Localizacion,fill=IdentidadCol))+
+  geom_col()+
+  labs(x="Porcentaje",y="Localización",fill="Identidad sexual:")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.4),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(0.7)),
+        legend.position="top")+
+  scale_x_continuous(limits=c(0,107))
+
+# Paso opcional: exportamos data:
+write_xlsx(Identidad_v2, "Identidad.xlsx")
+
+# Eliminamos intermedios:
+rm(Identidad,Identidad_v2)
+
+#### Tema: Medios de información####
+# Preguntas data: 
+#"${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador de escritorio"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador portátil"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Tableta"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Telefono celular"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Televisor"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Reproductor de radio"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Periódico"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Revistas"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Ninguno"
+# "${p_040}. ¿Qué medios usa principalmente para estar informado?/Otro"
+
+Informacion <- PilotoIndividuos %>%
+  dplyr::select(.,c("Vereda","Localizacion","${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador de escritorio","${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador portátil", "${p_040}. ¿Qué medios usa principalmente para estar informado?/Tableta","${p_040}. ¿Qué medios usa principalmente para estar informado?/Telefono celular","${p_040}. ¿Qué medios usa principalmente para estar informado?/Televisor","${p_040}. ¿Qué medios usa principalmente para estar informado?/Reproductor de radio","${p_040}. ¿Qué medios usa principalmente para estar informado?/Periódico","${p_040}. ¿Qué medios usa principalmente para estar informado?/Revistas","${p_040}. ¿Qué medios usa principalmente para estar informado?/Ninguno","${p_040}. ¿Qué medios usa principalmente para estar informado?/Otro")) %>%
+  dplyr::rename(Computador="${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador de escritorio",Portatil="${p_040}. ¿Qué medios usa principalmente para estar informado?/Computador portátil",Tablet="${p_040}. ¿Qué medios usa principalmente para estar informado?/Tableta",Celular="${p_040}. ¿Qué medios usa principalmente para estar informado?/Telefono celular",Televisor="${p_040}. ¿Qué medios usa principalmente para estar informado?/Televisor",Radio="${p_040}. ¿Qué medios usa principalmente para estar informado?/Reproductor de radio",Periodico="${p_040}. ¿Qué medios usa principalmente para estar informado?/Periódico",Revistas="${p_040}. ¿Qué medios usa principalmente para estar informado?/Revistas",Ninguno="${p_040}. ¿Qué medios usa principalmente para estar informado?/Ninguno",Otro="${p_040}. ¿Qué medios usa principalmente para estar informado?/Otro")
+
+# Volvemos todas las columnaas en tipo numéricas:
+Informacion$Computador <- as.numeric(Informacion$Computador)
+Informacion$Portatil <- as.numeric(Informacion$Portatil)
+Informacion$Tablet <- as.numeric(Informacion$Tablet)
+Informacion$Celular <- as.numeric(Informacion$Celular)
+Informacion$Televisor <- as.numeric(Informacion$Televisor)
+Informacion$Radio <- as.numeric(Informacion$Radio)
+Informacion$Periodico <- as.numeric(Informacion$Periodico)
+Informacion$Revistas <- as.numeric(Informacion$Revistas)
+Informacion$Ninguno <- as.numeric(Informacion$Ninguno)
+Informacion$Otro <- as.numeric(Informacion$Otro)
+
+# vamos a crear subgrupos por localidad y luego se concatenan. Para esto creamos una función:
+# Funcion:
+# Esta función usa la data inicial y la localización que queremos usar:
+AgrupaInforma <- function(Data,LocalizacionStr){
+  
+  DataLocaliza <- Data %>% 
+  dplyr::filter(Localizacion==LocalizacionStr)
+
+  DataLocaliza_v2 <- data.frame("Localizacion"=c(LocalizacionStr),
+                      "Medio"=c("Computador","Portátil","Tablet","Celular","Televisor","Radio","Periódico","Revistas","Ninguno","Otro"),
+                        "Subtotal"=colSums(DataLocaliza[,3:12], na.rm=T)
+                        )
+
+  DataLocaliza_v2$Total <- sum(DataLocaliza_v2$Subtotal)
+
+  DataLocaliza_v2 <- DataLocaliza_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2))
+
+return(DataLocaliza_v2)
+}
+
+# Aplicamos la función en cada localización:
+Cabecera <- AgrupaInforma(Data=Informacion,LocalizacionStr="Cabecera Urbana")
+
+VdaVinia <- AgrupaInforma(Data=Informacion,LocalizacionStr="Vereda La Viña")
+
+VdaPalenque <- AgrupaInforma(Data=Informacion,LocalizacionStr="Vereda Palenque")
+
+VdaGuacamayal <- AgrupaInforma(Data=Informacion,LocalizacionStr="Vereda Guacamayal")
+
+# Concatenamos la data:
+Informacion_v2 <- join_all(list(Cabecera,VdaVinia,VdaPalenque,VdaGuacamayal), by=c("Localizacion"),type = "full")
+
+# Graficamos:
+# Aunque este tipo de gráfico no es recomendabe por la cantidad de categorias:
+ggplot(Informacion_v2, aes(x = Porcentaje, y = Localizacion, fill = Medio))+
+  geom_bar(stat="identity",position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Medio información:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4.4, vjust=0.4, hjust=-0.05 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.5)),
+        axis.text.x=element_text(size=rel(1.5)),
+        axis.text.y=element_text(size=rel(1.5)),
+        legend.title=element_text(size=rel(1.3)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top"
+        )+
+  scale_x_continuous(limits=c(0,55))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Informacion_v2, "MediosInfo.xlsx")
+
+# Eliminamos intermedios:
+rm(Informacion,Cabecera,VdaVinia,VdaPalenque,VdaGuacamayal,Informacion_v2)
+
+#### Tema: Frecuencia de Medios de información ####
+# Pregunta data: "${p_040}. ¿Con qué frecuencia usa este medio?"
+
+Frecuencia <- PilotoIndividuos %>%
+  dplyr::select(.,"Localizacion","${p_040}. ¿Con qué frecuencia usa este medio?") %>%
+  dplyr::rename(FrecuenciaCol="${p_040}. ¿Con qué frecuencia usa este medio?") %>%
+  dplyr::filter(is.na(FrecuenciaCol)==F)
+
+Frecuencia_v2 <- Agrupa(Data=Frecuencia,Columna=FrecuenciaCol)
+  
+# Graficamos:
+ggplot(Frecuencia_v2, aes(x=Porcentaje,y=Localizacion,fill=FrecuenciaCol))+
+  geom_col()+
+  labs(x="Porcentaje",y="Localización",fill="Frecuencia uso:")+
+  geom_text(aes(label = Porcentaje),position = position_stack(0.5),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,100))
+
+# Paso opcional: exportamos data:
+write_xlsx(Frecuencia_v2, "FrecuenciaUso.xlsx")
+
+# Eliminamos intermedios:
+rm(Frecuencia,Frecuencia_v2)
+
+
+#### Tema: Productos financieros ####
+# Preguntas data: 
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta corriente"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta de ahorros"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/CDT"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vivienda"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vehículo"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para libre inversión"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Tarjeta de crédito"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Ninguno"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Otro"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No sabe"
+# "${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No responde"
+
+Informacion <- PilotoIndividuos %>%
+  dplyr::select(.,c("Localizacion","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta corriente","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta de ahorros","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/CDT","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vivienda","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vehículo","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para libre inversión","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Tarjeta de crédito","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Ninguno","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Otro","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No sabe","${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No responde")) %>%
+  dplyr::rename(CtaCorriente="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta corriente",CtaAhorros="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Cuenta de ahorros",CDT="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/CDT",PrestamoVivienda="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vivienda",PrestamoCarro="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para compra de vehículo",PrestamoLibre="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Préstamo para libre inversión",TarjetaCredito="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Tarjeta de crédito",Ninguno="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Ninguno",Otro="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/Otro",NoSabe="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No sabe",NoResponde="${p_040}. ¿Cuáles de los siguientes productos financieros usa principalmente?/No responde")
+
+# Volvemos todas las columnaas en tipo numéricas:
+Informacion$CtaCorriente <- as.numeric(Informacion$CtaCorriente)
+Informacion$CtaAhorros <- as.numeric(Informacion$CtaAhorros)
+Informacion$CDT <- as.numeric(Informacion$CDT)
+Informacion$PrestamoVivienda <- as.numeric(Informacion$PrestamoVivienda)
+Informacion$PrestamoCarro <- as.numeric(Informacion$PrestamoCarro)
+Informacion$PrestamoLibre <- as.numeric(Informacion$PrestamoLibre)
+Informacion$TarjetaCredito <- as.numeric(Informacion$TarjetaCredito)
+Informacion$Ninguno <- as.numeric(Informacion$Ninguno)
+Informacion$Otro <- as.numeric(Informacion$Otro)
+Informacion$NoSabe <- as.numeric(Informacion$NoSabe)
+Informacion$NoResponde <- as.numeric(Informacion$NoResponde)
+
+# vamos a crear subgrupos por localidad y luego se concatenan. Para esto creamos una función:
+# Funcion:
+# Esta función usa la data inicial y la localización que queremos usar:
+AgrupaInforma_v2 <- function(Data,LocalizacionStr){
+  
+  DataLocaliza <- Data %>% 
+  dplyr::filter(Localizacion==LocalizacionStr)
+
+  DataLocaliza_v2 <- data.frame("Localizacion"=c(LocalizacionStr),
+                      "Medio"=c("Cta Corriente","Cta Ahorros","CDT","Prestamo Vivienda","Prestamo Carro","Prestamo Libre","Tarjeta Crédito","Ninguno","Otro","No Sabe",
+                                       "No Responde"),
+                        "Subtotal"=colSums(DataLocaliza[,2:12], na.rm=T)
+                        )
+
+  DataLocaliza_v2$Total <- sum(DataLocaliza_v2$Subtotal)
+
+  DataLocaliza_v2 <- DataLocaliza_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2))
+
+return(DataLocaliza_v2)
+}
+
+# Aplicamos la función en cada localización:
+Cabecera <- AgrupaInforma_v2(Data=Informacion,LocalizacionStr="Cabecera Urbana")
+
+VdaVinia <- AgrupaInforma_v2(Data=Informacion,LocalizacionStr="Vereda La Viña")
+
+VdaPalenque <- AgrupaInforma_v2(Data=Informacion,LocalizacionStr="Vereda Palenque")
+
+VdaGuacamayal <- AgrupaInforma_v2(Data=Informacion,LocalizacionStr="Vereda Guacamayal")
+
+# Concatenamos la data:
+Informacion_v2 <- join_all(list(Cabecera,VdaVinia,VdaPalenque,VdaGuacamayal), by=c("Localizacion"),type = "full")
+
+Informacion_v2 <- Informacion_v2 %>% 
+  dplyr::filter(Porcentaje!=0)
+
+# Graficamos:
+# Aunque este tipo de gráfico no es recomendabe por la cantidad de categorias:
+ggplot(Informacion_v2, aes(x = Porcentaje, y = Localizacion, fill = Medio))+
+  geom_bar(stat="identity",position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Producto Financiero:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4.4, vjust=0.4, hjust=-0.05 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.5)),
+        axis.text.x=element_text(size=rel(1.5)),
+        axis.text.y=element_text(size=rel(1.5)),
+        legend.title=element_text(size=rel(1.3)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="right"
+        )+
+  scale_x_continuous(limits=c(0,113))
+
+# Paso opcional: exportamos data:
+write_xlsx(Informacion_v2, "PdctoFinanciero.xlsx")
+
+# Eliminamos intermedios:
+rm(Informacion,Cabecera,VdaVinia,VdaPalenque,VdaGuacamayal,Informacion_v2,AgrupaInforma_v2)
+```
+
+```{r Modulo Educación}
+#### Tema: Condición educativa actual ####
+# Pregunta de data: "${p_040}. ¿Cuál es su condición educativa actualmente?"
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,"Localizacion","${p_040}. ¿Cuál es su condición educativa actualmente?") %>%
+  dplyr::rename(CondicionEduca="${p_040}. ¿Cuál es su condición educativa actualmente?") %>% 
+  dplyr::filter(.,CondicionEduca!="No responde",
+                CondicionEduca!="No sabe",
+                is.na(CondicionEduca)==F)
+
+Educacion_v2 <- Agrupa(Data=Educacion,Columna=CondicionEduca)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=Localizacion,fill=CondicionEduca))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Condición educativa:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.5, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,70))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "CondicionEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Educacion,Educacion_v2)
+
+#### Tema: Causa para no continuar estudios ####
+# Pregunta de data: "${p_040}. ¿Cuál fue la principal causa por la que no pudo continuar sus estudios?"
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿Cuál fue la principal causa por la que no pudo continuar sus estudios?") %>%
+  dplyr::rename(CausaNoEstudio="${p_040}. ¿Cuál fue la principal causa por la que no pudo continuar sus estudios?") %>% 
+  dplyr::filter(.,CausaNoEstudio!="No responde",
+                CausaNoEstudio!="No sabe",
+                is.na(CausaNoEstudio)==F) 
+
+# Recodificamos categorias: 
+Educacion$CausaCol <- c("Causa")
+
+Educacion <- Educacion %>% 
+  dplyr::mutate(CausaCol=ifelse(CausaNoEstudio=="Considera que ya terminó sus estudios","Ya terminó",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="No le gusta o no le interesa el estudio, aburrición","No le interesa",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Costos educativos elevados o falta de dinero","Costos educativos",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Necesita trabajar","Necesita trabajar",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="No existe centro educativo cercano, está muy lejano","Lejanía del centro educativo",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Por embarazo","Por embarazo",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Falta de tiempo","Falta de tiempo",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Recibe malos tratos en el colegio","Recibe malos tratos",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Considera que no está en edad escolar","No está en edad escolar",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Razones familiares","Razones familiares",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Por enfermedad o incapacidad médica","Enfermedad o incapacidad",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Porque se casó o formó pareja","Vida en pareja",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Debe encargarse de los oficios del hogar (cuidado de los niños, ancianos, personas con discapacidad, etc)","Oficios del hogar",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Necesita educación especial","Necesita educación especial",CausaCol),
+                CausaCol=ifelse(CausaNoEstudio=="Por inseguridad en el establecimiento educativo, en el entorno del establecimiento o en el lugar de residencia","Inseguridad",CausaCol)  
+                )
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=CausaCol)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=Localizacion,fill=CausaCol))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Causa para no estudiar:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="right",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,70))
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "CausasEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Educacion,Educacion_v2)
+
+#### Tema: Nivel de estudios que cursa actual ####
+# Pregunta data: ${p_040}. ¿Cuál es el nivel actual de estudio?"
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿Cuál es el nivel actual de estudio?") %>%
+  dplyr::rename(NivelEstudio="${p_040}. ¿Cuál es el nivel actual de estudio?") %>% 
+  dplyr::filter(.,is.na(NivelEstudio)==F)
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=NivelEstudio)
+
+# Data en factores con orden predeterminado
+Educacion_v2$NivelEstudio <- factor(Educacion_v2$NivelEstudio, levels=c("Primaria (1º a 5º)","Secundaria (6º a 9º)", "Media (10º a 11º)","Técnico","Tecnológico","Universidad"))
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=Localizacion,fill=NivelEstudio))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Nivel de estudio:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="right",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,90))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "NivelEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Educacion,Educacion_v2)
+
+#### Tema: Area del conocimiento que cursa actualmente ####
+# Pregunta de data: "${p_040}. Área de conocimiento de lo que está estudiando actualmente"
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. Área de conocimiento de lo que está estudiando actualmente") %>%
+  dplyr::rename(AreaEstudio="${p_040}. Área de conocimiento de lo que está estudiando actualmente") %>% 
+  dplyr::filter(.,AreaEstudio!="No responde",
+                is.na(AreaEstudio)==F)
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=AreaEstudio)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=Localizacion,fill=AreaEstudio))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Area del conocimiento:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "AreaEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Educacion,Educacion_v2)
+
+#### Tema: Ultimo título aprobado ####
+# Pregunta data: "${p_040}. Último título de estudio aprobado."
+
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. Último título de estudio aprobado.") %>%
+  dplyr::rename(Titulo="${p_040}. Último título de estudio aprobado.")%>% 
+  dplyr::filter(.,Titulo!="No sabe",
+                is.na(Titulo)==F)
+
+# Data en factores con orden predeterminado
+Educacion$Titulo <- factor(Educacion$Titulo, levels=c("Ninguno","Prescolar","Primaria (1º a 5º)","Secundaria (6º a 9º)", "Media (10º a 11º)","Técnico","Tecnológico","Pregrado","Maestría"))
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=Titulo)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=Localizacion,fill=Titulo))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Último título:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3.5, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="right",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,75))
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "Tiitulo.xlsx")
+
+# Eliminamos intermedios:
+rm(Educacion,Educacion_v2)
+
+
+#### Tema: Area del conocimiento Ultimo título ####
+# Pregunta de data: "${p_040}. Área de conocimiento en la que obtuvo el título."
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. Área de conocimiento en la que obtuvo el título.") %>%
+  dplyr::rename(AreaEstudio="${p_040}. Área de conocimiento en la que obtuvo el título.") %>% 
+  dplyr::filter(.,AreaEstudio!="No responde",
+                is.na(AreaEstudio)==F)
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=AreaEstudio)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=Localizacion,fill=AreaEstudio))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Área del conocimiento del título:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "AreaEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Educacion,Educacion_v2)
+
+
+#### Tema: Intereses académicos a futuro ####
+# Pregunta data: "${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)"
+
+# Se debe mejorar el filtro en esta data
+Educacion <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)") %>%
+  dplyr::rename(InteresEstudiar="${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)") %>% 
+  dplyr::filter(.,is.na(InteresEstudiar)==F,
+                InteresEstudiar!="No responde",
+                InteresEstudiar!="No sabe",
+                InteresEstudiar!="Retomar estudios en lo que estaba estudiando",
+                InteresEstudiar!="Terminar estudios actuales (solo para quien estudia)",
+                InteresEstudiar!="Retomar estudios diferente a lo que estaba estudiando",
+                ) 
+
+# Data en factores con orden predeterminado
+Educacion$InteresEstudiar <- factor(Educacion$InteresEstudiar, levels=c("No tiene intereses académicos","Estudiar la primaria","Estudiar la secundaria","Estudiar la media","Estudiar una técnica","Estudiar una tecnología","Estudiar un pregrado","Estudiar un posgrado"))
+
+Educacion_v2 <- Agrupa(Data=Educacion,
+                 Columna=InteresEstudiar)
+
+# Graficamos:
+ggplot(Educacion_v2, aes(x=Porcentaje,y=Localizacion,fill=InteresEstudiar))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Interés académico:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="right",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,80))
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "InteresEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Educacion,Educacion_v2)
+
+
+```
+
+```{r Modulo Seguridad Social}
+#### Tema: Afiliación al SSS ####
+
+#"${p_040}. Afiliación al Sistema de Seguridad Social en Salud."
+AfiliacionSSS <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. Afiliación al Sistema de Seguridad Social en Salud.") %>%
+  dplyr::rename(AfiliacionCol="${p_040}. Afiliación al Sistema de Seguridad Social en Salud.")  %>% 
+  dplyr::filter(.,AfiliacionCol!="No responde",
+                is.na(AfiliacionCol)==F)
+
+Afiliacion_v2 <- Agrupa(Data=AfiliacionSSS,
+                 Columna=AfiliacionCol)
+
+# Graficamos:
+ggplot(Afiliacion_v2, aes(x=Porcentaje,y=Localizacion,fill=AfiliacionCol))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Afiliación al sistema de salud:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3.5, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,100))
+
+# Paso opcional: exportamos data:
+write_xlsx(Afiliacion_v2, "AfiliacionSalud.xlsx")
+
+# Eliminamos intermedios:
+rm(AfiliacionSSS,Afiliacion_v2)
+
+#### Tema: Calificación: Servicios Salud  ####
+# Pregunta data: "${p_040}. Según su opinión, ¿cómo califica la calidad de los servicios de salud?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. Según su opinión, ¿cómo califica la calidad de los servicios de salud?")) %>%
+  dplyr::rename(Calificacion="${p_040}. Según su opinión, ¿cómo califica la calidad de los servicios de salud?") %>% 
+  dplyr::filter(Calificacion!="No se encuentra en casa",
+                Calificacion!="No responde",
+                is.na(Calificacion)==F)
+
+# Data en factores con orden predeterminado
+Salud$Calificacion <- factor(Salud$Calificacion, levels=c("Malo","Regular","Bueno"))
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Calificacion)
+
+# Graficamos:
+
+ggplot(Salud_v2, aes(x=Porcentaje,y=Localizacion,fill=Calificacion))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Calificación de servicios de salud:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,100))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Salud_v2, "CalificaSalud.xlsx")
+
+# Eliminamos intermedios:
+rm(Salud,Salud_v2)
+
+#### Tema: Cotiza para pensión  ####
+# Pregunta data: "${p_040}. ¿Cotiza para pensión?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Cotiza para pensión?")) %>%
+  dplyr::rename(Cotiza="${p_040}. ¿Cotiza para pensión?") %>% 
+  dplyr::filter(Cotiza!="No sabe",
+                is.na(Cotiza)==F)
+
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Cotiza)
+
+# Graficamos:
+
+ggplot(Salud_v2, aes(x=Porcentaje,y=Localizacion,fill=Cotiza))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Cotización al sistema de pensión:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Salud_v2, "CotizaPensión.xlsx")
+
+# Eliminamos intermedios:
+rm(Salud,Salud_v2)
+
+#### Tema: Está afiliado a ARL  ####
+# Pregunta data: "${p_040}. ¿Tiene Afiliación a una Administradora de Riesgos Laborales (ARL)?"
+
+Salud <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Tiene Afiliación a una Administradora de Riesgos Laborales (ARL)?")) %>%
+  dplyr::rename(Cotiza="${p_040}. ¿Tiene Afiliación a una Administradora de Riesgos Laborales (ARL)?") %>% 
+  dplyr::filter(Cotiza!="No sabe",
+                is.na(Cotiza)==F)
+          
+Salud_v2 <- Agrupa(Data=Salud,
+                 Columna=Cotiza)
+
+# Graficamos:
+
+ggplot(Salud_v2, aes(x=Porcentaje,y=Localizacion,fill=Cotiza))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Afiliación a ARL:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="right",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Salud_v2, "AfiliaciónARL.xlsx")
+
+# Eliminamos intermedios:
+rm(Salud,Salud_v2)
+
+
+```
+
+```{r Modulo Recreación}
+#### Tema: Participación política ####
+# Pregunta data: "${p_040}. ¿Usted participa en alguna de las siguientes organizaciones o instancias de participación?"
+
+Recreacion <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿Usted participa en alguna de las siguientes organizaciones o instancias de participación?") %>%
+  dplyr::rename(RecreacionCol="${p_040}. ¿Usted participa en alguna de las siguientes organizaciones o instancias de participación?") %>%
+  dplyr::filter(RecreacionCol!="Ninguno",
+                RecreacionCol!="No responde",
+                is.na(RecreacionCol)==F)
+
+# Recodificamos categorias: 
+Recreacion$RecreacionCol2 <- c("Recreación")
+
+Recreacion <- Recreacion %>% 
+  dplyr::mutate(RecreacionCol2=ifelse(RecreacionCol=="Juntas administradoras locales - JAL","Juntas administradoras locales",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Junta de acción comunal - JAC","Junta de acción comunal",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Veedurías ciudadanas","Veedurías ciudadanas",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Clubes del adulto mayor","Clubes del adulto mayor",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Asociaciones de mujeres","Asociaciones de mujeres",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="sindicatos","Sindicatos",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="COPACOS - Comités de participación comunitaria en salud","COPACOS",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Grupos juveniles","Grupos juveniles",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Asociación de usuarios","Asociación de usuarios",RecreacionCol2)
+                )
+
+
+Recreacion_v2 <- Agrupa(Data=Recreacion,
+                 Columna=RecreacionCol2)
+
+# Graficamos:
+
+ggplot(Recreacion_v2, aes(x=Porcentaje,y=Localizacion,fill=RecreacionCol2))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Instancias de participación:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Recreacion_v2, "Participación.xlsx")
+
+# Eliminamos intermedios:
+rm(Recreacion,Recreacion_v2)
+
+
+#### Tema: Hobbies ####
+# Preguntas data: 
+# "${p_040}. ¿Cuáles son sus hobbies?/Bailar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Cantar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Cocina"
+# "${p_040}. ¿Cuáles son sus hobbies?/Contactar y conversar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Coser"
+# "${p_040}. ¿Cuáles son sus hobbies?/Escribir"
+# "${p_040}. ¿Cuáles son sus hobbies?/Escuchar música"
+# "${p_040}. ¿Cuáles son sus hobbies?/Fotografía"
+# "${p_040}. ¿Cuáles son sus hobbies?/Hacer deporte"
+# "${p_040}. ¿Cuáles son sus hobbies?/Informarse"
+# "${p_040}. ¿Cuáles son sus hobbies?/Jardinería"
+# "${p_040}. ¿Cuáles son sus hobbies?/Juegos de mesa o azar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Leer"
+# "${p_040}. ¿Cuáles son sus hobbies?/Manualidades"
+# "${p_040}. ¿Cuáles son sus hobbies?/Pintar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Series o cine"
+# "${p_040}. ¿Cuáles son sus hobbies?/Tocar un instrumento"
+# "${p_040}. ¿Cuáles son sus hobbies?/Viajar"
+# "${p_040}. ¿Cuáles son sus hobbies?/Montar a caballo"
+# "${p_040}. ¿Cuáles son sus hobbies?/Juegos infantiles"
+# "${p_040}. ¿Cuáles son sus hobbies?/Reparación de motos"
+
+Hobbies <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Cuáles son sus hobbies?/Bailar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Cantar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Cocina",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Contactar y conversar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Coser",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Escribir",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Escuchar música",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Fotografía",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Hacer deporte",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Informarse",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Jardinería",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Juegos de mesa o azar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Leer",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Manualidades",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Pintar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Series o cine",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Tocar un instrumento",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Viajar",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Montar a caballo",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Juegos infantiles",
+                    "${p_040}. ¿Cuáles son sus hobbies?/Reparación de motos"
+                    )
+                ) %>%
+  dplyr::rename(Bailar="${p_040}. ¿Cuáles son sus hobbies?/Bailar",
+                Cantar="${p_040}. ¿Cuáles son sus hobbies?/Cantar",
+                Cocina="${p_040}. ¿Cuáles son sus hobbies?/Cocina",
+                Conversar="${p_040}. ¿Cuáles son sus hobbies?/Contactar y conversar",
+                Coser="${p_040}. ¿Cuáles son sus hobbies?/Coser",
+                Escribir="${p_040}. ¿Cuáles son sus hobbies?/Escribir",
+                "Escuchar Musica"="${p_040}. ¿Cuáles son sus hobbies?/Escuchar música",
+                Fotografía="${p_040}. ¿Cuáles son sus hobbies?/Fotografía",
+                "Practicar deporte"="${p_040}. ¿Cuáles son sus hobbies?/Hacer deporte",
+                Informarse="${p_040}. ¿Cuáles son sus hobbies?/Informarse",
+                Jardinería="${p_040}. ¿Cuáles son sus hobbies?/Jardinería",
+                "Juegos de azar"="${p_040}. ¿Cuáles son sus hobbies?/Juegos de mesa o azar",
+                Leer="${p_040}. ¿Cuáles son sus hobbies?/Leer",
+                Manualidades="${p_040}. ¿Cuáles son sus hobbies?/Manualidades",
+                Pintar="${p_040}. ¿Cuáles son sus hobbies?/Pintar",
+                Series="${p_040}. ¿Cuáles son sus hobbies?/Series o cine",
+                "Tocar instrumento"="${p_040}. ¿Cuáles son sus hobbies?/Tocar un instrumento",
+                Viajar="${p_040}. ¿Cuáles son sus hobbies?/Viajar",
+                "Montar caballo"="${p_040}. ¿Cuáles son sus hobbies?/Montar a caballo",
+                "Juegos infantiles"="${p_040}. ¿Cuáles son sus hobbies?/Juegos infantiles",
+                "Reparación de motos"="${p_040}. ¿Cuáles son sus hobbies?/Reparación de motos"
+                )
+
+# Volvemos todas las columnaas en tipo numéricas:
+Hobbies$Bailar <- as.numeric(Hobbies$Bailar)
+Hobbies$Cantar <- as.numeric(Hobbies$Cantar)
+Hobbies$Cocina <- as.numeric(Hobbies$Cocina)
+Hobbies$Conversar <- as.numeric(Hobbies$Conversar)
+Hobbies$Coser <- as.numeric(Hobbies$Coser)
+Hobbies$Escribir <- as.numeric(Hobbies$Escribir)
+Hobbies$`Escuchar Musica`<- as.numeric(Hobbies$`Escuchar Musica`)
+Hobbies$Fotografía <- as.numeric(Hobbies$Fotografía)
+Hobbies$`Practicar deporte` <- as.numeric(Hobbies$`Practicar deporte`)
+Hobbies$Informarse <- as.numeric(Hobbies$Informarse)
+Hobbies$Jardinería <- as.numeric(Hobbies$Jardinería)
+Hobbies$`Juegos de azar` <- as.numeric(Hobbies$`Juegos de azar`)
+Hobbies$Leer <- as.numeric(Hobbies$Leer)
+Hobbies$Manualidades <- as.numeric(Hobbies$Manualidades)
+Hobbies$Pintar <- as.numeric(Hobbies$Pintar)
+Hobbies$Series <- as.numeric(Hobbies$Series)
+Hobbies$`Tocar instrumento` <- as.numeric(Hobbies$`Tocar instrumento`)
+Hobbies$Viajar <- as.numeric(Hobbies$Viajar)
+Hobbies$`Montar caballo` <- as.numeric(Hobbies$`Montar caballo`)
+Hobbies$`Juegos infantiles` <- as.numeric(Hobbies$`Juegos infantiles`)
+Hobbies$`Reparación de motos` <- as.numeric(Hobbies$`Reparación de motos`)
+
+
+# vamos a crear subgrupos por localidad y luego se concatenan. Para esto creamos una función:
+# Funcion:
+# Esta función usa la data inicial y la localización que queremos usar:
+AgrupaInforma <- function(Data,LocalizacionStr){
+  
+  DataLocaliza <- Data %>% 
+  dplyr::filter(Localizacion==LocalizacionStr)
+
+  DataLocaliza_v2 <- data.frame("Localizacion"=c(LocalizacionStr),
+                      "Hobbie"=c("Bailar","Cantar","Cocina","Conversar","Coser","Escribir","Escuchar Musica","Fotografía","Practicar deporte","Informarse","Jardinería","Juegos de azar","Leer","Manualidades","Pintar","Series","Tocar instrumento","Viajar","Montar caballo","Juegos infantiles","Reparación de motos"),
+                      "Subtotal"=colSums(DataLocaliza[,2:22], na.rm=T)
+                        )
+
+  DataLocaliza_v2$Total <- sum(DataLocaliza_v2$Subtotal)
+
+  DataLocaliza_v2 <- DataLocaliza_v2 %>% 
+  dplyr::mutate(Porcentaje=round((Subtotal/Total)*100,2))
+
+return(DataLocaliza_v2)
+}
+
+# Aplicamos la función en cada localización:
+Cabecera <- AgrupaInforma(Data=Hobbies,LocalizacionStr="Cabecera Urbana")
+
+VdaVinia <- AgrupaInforma(Data=Hobbies,LocalizacionStr="Vereda La Viña")
+
+VdaPalenque <- AgrupaInforma(Data=Hobbies,LocalizacionStr="Vereda Palenque")
+
+VdaGuacamayal <- AgrupaInforma(Data=Hobbies,LocalizacionStr="Vereda Guacamayal")
+
+# Concatenamos la data:
+Hobbies_v2 <- join_all(list(Cabecera,VdaVinia,VdaPalenque,VdaGuacamayal), by=c("Localizacion"),type = "full")
+
+Hobbies_v2 <- Hobbies_v2 %>% 
+  dplyr::filter(Porcentaje!=0)
+
+# Graficamos:
+# Aunque este tipo de gráfico no es recomendabe por la cantidad de categorias:
+ggplot(Hobbies_v2, aes(x = Porcentaje, y = Localizacion, fill = Hobbie))+
+  geom_bar(stat="identity",position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Hobbie:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3, vjust=0.4, hjust=-0.05 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.5)),
+        axis.text.x=element_text(size=rel(1.5)),
+        axis.text.y=element_text(size=rel(1.5)),
+        legend.title=element_text(size=rel(1.3)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="right",
+        legend.direction = "vertical"
+        )+
+  scale_x_continuous(limits=c(0,45))
+
+# Paso opcional: exportamos data:
+write_xlsx(Hobbies_v2, "Hobbies.xlsx")
+
+# Eliminamos intermedios:
+rm(Hobbies,AgrupaInforma,Cabecera,VdaVinia,VdaPalenque,VdaGuacamayal,Hobbies_v2)
+
+```
+
+```{r Modulo Movilidad}
+#### Tema: Medio de transporte al centro educativo ####
+# Pregunta data: "${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro educativo?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro educativo?") %>%
+  dplyr::rename(MovilEduca="${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro educativo?") %>%
+  dplyr::filter(is.na(MovilEduca)==F) 
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilEduca)
+
+# Graficamos:
+
+ggplot(Movilidad_v2, aes(x=Porcentaje,y=Localizacion,fill=MovilEduca))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Medio de transporte al centro educativo:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Movilidad_v2, "MovilEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Movilidad,Movilidad_v2)
+
+#### Tema: Medio de transporte a Recreación ####
+# Pregunta data: ${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro de recreación (para realizar hobbies)?
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro de recreación (para realizar hobbies)?") %>%
+  dplyr::rename(Movil="${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse a su centro de recreación (para realizar hobbies)?")%>%
+  dplyr::filter(Movil!="No responde",
+                Movil!="No sabe",
+                is.na(Movil)==F)
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=Movil)
+
+# Graficamos:
+
+ggplot(Movilidad_v2, aes(x=Porcentaje,y=Localizacion,fill=Movil))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Medio de transporte al centro recreativo:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Movilidad_v2, "MovilRecrea.xlsx")
+
+# Eliminamos intermedios:
+rm(Movilidad,Movilidad_v2)
+
+#### Tema: Medio de transporte al trabajo ####
+# Pregunta data: "${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse al sitio de su empleo principal?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse al sitio de su empleo principal?") %>%
+  dplyr::rename(Movil="${p_040}. ¿Qué medio de transporte utiliza predominantemente para dirigirse al sitio de su empleo principal?")%>%
+  dplyr::filter(Movil!="No responde",
+                Movil!="No sabe",
+                is.na(Movil)==F)
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=Movil)
+
+# Graficamos:
+
+ggplot(Movilidad_v2, aes(x=Porcentaje,y=Localizacion,fill=Movil))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Medio de transporte al sitio laboral:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Movilidad_v2, "MovilTrabajo.xlsx")
+
+# Eliminamos intermedios:
+rm(Movilidad,Movilidad_v2)
+
+#### Tema: Tiempo en transportarse ####
+# Pregunta data: "${p_040}. ¿Cuánto tiempo tarda en llegar a su centro educativo? (minutos)"
+# Pregunta data: "${p_040}. ¿Cuánto tiempo tarda en llegar a su centro de recreación (para realizar hobbies)? (minutos)"
+# Pregunta data: "${p_040}. ¿Cuánto tiempo tarda en llegar al sitio de su empleo principal? (minutos)"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Cuánto tiempo tarda en llegar a su centro educativo? (minutos)","${p_040}. ¿Cuánto tiempo tarda en llegar a su centro de recreación (para realizar hobbies)? (minutos)","${p_040}. ¿Cuánto tiempo tarda en llegar al sitio de su empleo principal? (minutos)")) %>%
+  dplyr::rename(MovilEduca="${p_040}. ¿Cuánto tiempo tarda en llegar a su centro educativo? (minutos)",MovilRecrea="${p_040}. ¿Cuánto tiempo tarda en llegar a su centro de recreación (para realizar hobbies)? (minutos)",MovilTrabajo="${p_040}. ¿Cuánto tiempo tarda en llegar al sitio de su empleo principal? (minutos)") 
+
+# Transformamos data a tipo numérico
+Movilidad$MovilEduca <- as.numeric(Movilidad$MovilEduca)
+Movilidad$MovilRecrea <- as.numeric(Movilidad$MovilRecrea)
+Movilidad$MovilTrabajo <- as.numeric(Movilidad$MovilTrabajo)
+
+# Creamos DFs: con promedios de tiempo por localización:
+
+TiempoEduca <- Movilidad %>% 
+  dplyr::group_by(Localizacion)%>%
+    dplyr::summarise(
+      Tiempo = round(mean(MovilEduca,na.rm = TRUE),2)
+      )
+
+TiempoEduca$Destino <- c("Centro educativo")
+
+
+TiempoRecrea <- Movilidad %>% 
+  dplyr::group_by(Localizacion)%>%
+    dplyr::summarise(
+      Tiempo = round(mean(MovilRecrea,na.rm = TRUE),2)
+      )
+
+TiempoRecrea$Destino <- c("Centro recreativo")
+
+TiempoLabora <- Movilidad %>% 
+  dplyr::group_by(Localizacion)%>%
+    dplyr::summarise(
+      Tiempo = round(mean(MovilTrabajo,na.rm = TRUE),2)
+      )
+
+TiempoLabora$Destino <- c("Sitio laboral")
+
+# Concatenamos la data:
+Tiempos <- join_all(list(TiempoEduca,TiempoRecrea,TiempoLabora), by=c("Destino"),type = "full")
+
+# Graficamos:
+ggplot(Tiempos, aes(x=Tiempo,y=Localizacion,fill=Destino))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Tiempo promedio",y="Localización",fill="Destino:")+
+  geom_text(aes(label = Tiempo),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,100))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Tiempos, "TiemposMovilidad.xlsx")
+
+# Eliminamos intermedios:
+rm(Movilidad,TiempoEduca,TiempoRecrea,TiempoLabora,Tiempos)
+
+#### Tema: Calificación vías: Educación  ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro educativo?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro educativo?")) %>%
+  dplyr::rename(MovilEduca="${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro educativo?") %>%
+  dplyr::filter(MovilEduca!="No se encuentra en casa",
+                is.na(MovilEduca)==F)
+
+# Data en factores con orden predeterminado
+Movilidad$MovilEduca <- factor(Movilidad$MovilEduca, levels=c("Malo","Regular","Bueno"))
+
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilEduca)
+
+# Graficamos:
+
+ggplot(Movilidad_v2, aes(x=Porcentaje,y=Localizacion,fill=MovilEduca))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Calificación vías al centro educativo:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Movilidad_v2, "CalifiMovilEduca.xlsx")
+
+# Eliminamos intermedios:
+rm(Movilidad,Movilidad_v2)
+
+
+#### Tema: Calificación vías: Recreación ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro de recreación"
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro de recreación (para realizar hobbies)?")) %>%
+  dplyr::rename(MovilRecrea="${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse a su centro de recreación (para realizar hobbies)?") %>%
+  dplyr::filter(MovilRecrea!="No se encuentra en casa",
+                is.na(MovilRecrea)==F)
+
+# Data en factores con orden predeterminado
+Movilidad$MovilRecrea <- factor(Movilidad$MovilRecrea, levels=c("Malo","Regular","Bueno"))
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilRecrea)
+
+# Graficamos:
+
+ggplot(Movilidad_v2, aes(x=Porcentaje,y=Localizacion,fill=MovilRecrea))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Calificación vías al centro recreativo:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Movilidad_v2, "CalifiMovilRecrea.xlsx")
+
+# Eliminamos intermedios:
+rm(Movilidad,Movilidad_v2)
+
+#### Tema: Calificación vías: Trabajo ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse al sitio de su empleo principal?"
+
+Movilidad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse al sitio de su empleo principal?")) %>%
+  dplyr::rename(MovilTrabajo="${p_040}. En su opinión: ¿cuál es el estado de las vías que utiliza para dirigirse al sitio de su empleo principal?") %>%  dplyr::filter(MovilTrabajo!="No se encuentra en casa",
+                is.na(MovilTrabajo)==F)
+
+# Data en factores con orden predeterminado
+Movilidad$MovilTrabajo <- factor(Movilidad$MovilTrabajo, levels=c("Malo","Regular","Bueno"))
+
+Movilidad_v2 <- Agrupa(Data=Movilidad,
+                 Columna=MovilTrabajo)
+
+# Graficamos:
+
+ggplot(Movilidad_v2, aes(x=Porcentaje,y=Localizacion,fill=MovilTrabajo))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Calificación vías al sitio laboral:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Movilidad_v2, "CalifiMovilLaboral.xlsx")
+
+# Eliminamos intermedios:
+rm(Movilidad,Movilidad_v2)
+```
+
+```{r Modulo Laboral e ingresos}
+#### Tema: Actividad semana pasada ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,Localizacion,"${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]") %>%
+  dplyr::rename(ActividadCol="${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]") %>%  dplyr::filter(ActividadCol!="No responde",
+                is.na(ActividadCol)==F) 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=ActividadCol)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=ActividadCol))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Actividad última semana:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "Actividad.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+
+#### Tema: Localización empleo ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Municipio donde está ubicado su empleo principal?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Municipio donde está ubicado su empleo principal?")) %>%
+  dplyr::rename(LocalizaTrabajo="${p_040}. ¿Municipio donde está ubicado su empleo principal?") %>% 
+  dplyr::filter(is.na(LocalizaTrabajo)==F) 
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=LocalizaTrabajo)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=LocalizaTrabajo))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Localización del empleo:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "LocalizaEmpleo.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+#### Tema: Sector económico empresa ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?")) %>%
+  dplyr::rename(Sector="${p_040}. ¿A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?") %>% 
+  dplyr::filter(is.na(Sector)==F) 
+
+# Recodificamos variables:
+Actividad$SectorShort <- c("Sector")
+
+Actividad <- Actividad %>% 
+  dplyr::mutate(SectorShort=ifelse(Sector=="A-Agricultura, Ganadería, Caza, Silvicultura y Pesca","A-Agricultura",SectorShort),
+                SectorShort=ifelse(Sector=="C-Industrias manufactureras","C-Industrias manufactureras",SectorShort),
+                SectorShort=ifelse(Sector=="H-Transporte y almacenamiento","H-Transporte y almacenamiento",SectorShort),
+                SectorShort=ifelse(Sector=="G-Comercio al por mayor y por menor; reparación de vehículos y motos","G-Comercio",SectorShort),
+                SectorShort=ifelse(Sector=="T-Actividades de hogares individuales.","T-Actividades de hogares",SectorShort),
+                SectorShort=ifelse(Sector=="F-Construcción","F-Construcción",SectorShort),
+                SectorShort=ifelse(Sector=="P-Educación","P-Educación",SectorShort),
+                SectorShort=ifelse(Sector=="Q-Actividades de atención de la salud humana y asistencia social","Q-Salud humana y asistencia social",SectorShort),
+                SectorShort=ifelse(Sector=="S-Otras actividades de servicios","S-Otros servicios",SectorShort),
+                SectorShort=ifelse(Sector=="J-Información y comunicaciones","J-Información y comunicaciones",SectorShort),
+                SectorShort=ifelse(Sector=="N-Actividades de servicio administrativo y de apoyo","N-Actividades administrativas y de apoyo",SectorShort),
+                SectorShort=ifelse(Sector=="I-Alojamiento y servicios de comida","I-Alojamiento y comida",SectorShort),
+                )
+# Agrupamos como corresponde:
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=SectorShort)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=SectorShort))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Sector económico del empleo:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "SectorEmpleo.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+
+#### Tema: Posición ocupacional ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. En este trabajo es:"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. En este trabajo es:")) %>%
+  dplyr::rename(Posicion="${p_040}. En este trabajo es:")%>% 
+  dplyr::filter(is.na(Posicion)==F)  
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Posicion)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=Posicion))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Posición ocupacional:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3.5, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,90))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "PosicionOcupacional.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+#### Tema: Horas en su empleo ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Cuántas horas a la semana trabaja normalmente en ese trabajo principal?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Cuántas horas a la semana trabaja normalmente en ese trabajo principal?")) %>%
+  dplyr::rename(Horas="${p_040}. ¿Cuántas horas a la semana trabaja normalmente en ese trabajo principal?")%>% 
+  dplyr::filter(is.na(Horas)==F,
+                Horas>0) # eliminamos valores negativos
+
+# Transformamos data a tipo numérico
+Actividad$Horas <- as.numeric(Actividad$Horas)
+
+# Creamos DF: con promedios de tiempo por localización:
+
+Tiempos <- Actividad %>% 
+  dplyr::group_by(Localizacion)%>%
+    dplyr::summarise(
+      Tiempo = round(mean(Horas,na.rm = TRUE),2)
+      )
+
+# Graficamos:
+ggplot(Tiempos, aes(x=Tiempo,y=Localizacion))+
+  geom_bar(stat="identity", position="dodge",fill="cyan4")+
+  labs(x="Horas (promedio) por semana",y="Localización")+
+  geom_text(aes(label = Tiempo),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,50))+
+  scale_fill_brewer(palette=1)
+
+# Paso opcional: exportamos data:
+write_xlsx(Tiempos, "HorasTrabajo.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Tiempos)
+
+#### Tema: Tiene Contrato ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Para realizar este trabajo tiene algún contrato?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Para realizar este trabajo tiene algún contrato?")) %>%
+  dplyr::rename(Contrato="${p_040}. ¿Para realizar este trabajo tiene algún contrato?")%>% 
+  dplyr::filter(Contrato!="No sabe",
+                is.na(Contrato)==F)  
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Contrato)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=Contrato))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Tiene contrato laboral:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,90))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "Contrato.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+#### Tema: Duración Contrato ####
+# Pregunta data: "${p_040}. ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]"
+# Pregunta data: "${p_040}. ¿Para realizar este trabajo tiene algún contrato?"
+# Pregunta data: "${p_040}. ¿Qué término tiene el contrato?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Qué término tiene el contrato?")) %>%
+  dplyr::rename(Duracion="${p_040}. ¿Qué término tiene el contrato?")%>% 
+  dplyr::filter(is.na(Duracion)==F)   
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Duracion)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=Duracion))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Duración contrato laboral:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "DuracionContrato.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+
+#### Tema: Ingresos laborales ####
+# Pregunta data: "${p_040}. ¿Cuánto ganó el mes pasado en este empleo? o ¿Cuánto recibio el mes pasado por concepto de trabajo?"
+# Atención a esta variable: es suceptible a errores de tipeo
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. ¿Cuánto ganó el mes pasado en este empleo? o ¿Cuánto recibio el mes pasado por concepto de trabajo?")) %>%
+  dplyr::rename(Ingresos="${p_040}. ¿Cuánto ganó el mes pasado en este empleo? o ¿Cuánto recibio el mes pasado por concepto de trabajo?")%>% 
+  dplyr::filter(is.na(Ingresos)==F,
+                Ingresos>0) # eliminamos valores negativos 
+
+# Transformamos data a tipo numérico
+Actividad$Ingresos <- as.numeric(Actividad$Ingresos)
+
+# Creamos DF: con promedios de tiempo por localización:
+
+Ingresos <- Actividad %>% 
+  dplyr::group_by(Localizacion)%>%
+    dplyr::summarise(
+      "ingreso salarial" = round(mean(Ingresos,na.rm = TRUE),0)
+      )
+
+# Graficamos:
+ggplot(Ingresos, aes(x=`ingreso salarial`,y=Localizacion))+
+  geom_bar(stat="identity", position="dodge",fill="cyan4")+
+  labs(x="Ingreso laboral (promedio) ",y="Localización")+
+  geom_text(aes(label = `ingreso salarial`),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_fill_brewer(palette=1)+
+  scale_x_continuous(limits=c(0,1300000))
+
+
+# Paso opcional: exportamos data:
+write_xlsx(Ingresos, "IngresoLaboral.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Ingresos)
+
+#### Tema: Cuantia de Otros ingresos ####
+# Atención a estas variables: suceptibles a errores de tipeo
+# Preguntas data: 
+# "${p_040}. ¿Cuánto recibió el mes pasado por concepto de ARRIENDOS?"
+# "${p_040}. ¿Cuánto recibió el mes pasado por concepto de PENSIONES O JUBILACIONES?"
+# "${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Giros de personas del exterior?"
+# "${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Intereses o dividendos?"
+# "${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Subsidios del estado?"
+
+Ingresos <- PilotoIndividuos %>%
+  dplyr::select(Localizacion,"${p_040}. ¿Cuánto recibió el mes pasado por concepto de ARRIENDOS?","${p_040}. ¿Cuánto recibió el mes pasado por concepto de PENSIONES O JUBILACIONES?","${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Giros de personas del exterior?","${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Intereses o dividendos?","${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Subsidios del estado?") %>%
+  dplyr::rename("Arriendos (mes)"="${p_040}. ¿Cuánto recibió el mes pasado por concepto de ARRIENDOS?","Pensiones (mes)"="${p_040}. ¿Cuánto recibió el mes pasado por concepto de PENSIONES O JUBILACIONES?","Giros Exterior (anual)"="${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Giros de personas del exterior?", "Intereses (anual)"="${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Intereses o dividendos?","Subsidios (anual)"="${p_040}. ¿Cuánto EN TOTAL recibió durante los últimos 12 meses por Subsidios del estado?") 
+
+# Transformamos data a tipo numérico
+Ingresos$`Arriendos (mes)` <- as.numeric(Ingresos$`Arriendos (mes)`)
+Ingresos$`Pensiones (mes)` <- as.numeric(Ingresos$`Pensiones (mes)`)
+Ingresos$`Giros Exterior (anual)` <- as.numeric(Ingresos$`Giros Exterior (anual)`)
+Ingresos$`Intereses (anual)` <- as.numeric(Ingresos$`Intereses (anual)`)
+Ingresos$`Subsidios (anual)` <- as.numeric(Ingresos$`Subsidios (anual)`)
+
+
+# Creamos DFs: con promedios de tiempo por localización:
+# Creamos una función para simplifcar el proceso:
+# La variable es el tipo de ingresos, y VariableStr es como quiero llamar esos ingresos
+
+TipoIngresos <- function(Variable,VariableStr){
+  Data <- Ingresos %>% 
+    dplyr::filter({{Variable}}>0,
+                  is.na({{Variable}})==F) %>%
+    dplyr::group_by(Localizacion)%>%
+    dplyr::summarise(
+      "Promedio Ingreso" = round(mean({{Variable}},na.rm = TRUE),0)
+      )
+  Data$`Tipo Ingreso` <- c(VariableStr)
+
+  return(Data)
+}
+
+Arriendos <- TipoIngresos(Variable=`Arriendos (mes)`,
+                               VariableStr="Arriendos (mes)")
+
+Pensiones <- TipoIngresos(Variable=`Pensiones (mes)`,
+                               VariableStr="Pensión (mes)")
+
+Giros <- TipoIngresos(Variable=`Giros Exterior (anual)`,
+                      VariableStr="Giros Exterior (anual)")
+
+Intereses <- TipoIngresos(Variable=`Intereses (anual)`,
+                      VariableStr="Intereses (anual)")
+
+Subsidios <- TipoIngresos(Variable=`Subsidios (anual)`,
+                      VariableStr="Subsidios (anual)")
+
+# Concatenamos la data:
+Ingresos_v2 <- join_all(list(Arriendos,Pensiones,Giros,Intereses,Subsidios), by=c("Tipo Ingreso"),type = "full")
+
+# Graficamos:
+ggplot(Ingresos_v2, aes(x=`Promedio Ingreso`,y=Localizacion,fill=`Tipo Ingreso`))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Tiempo promedio",y="Localización",fill="Tipo de ingresos:")+
+  geom_text(aes(label = `Promedio Ingreso`),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_fill_brewer(palette=1)#+
+  #scale_x_continuous(limits=c(0,100))
+
+
+# Paso opcional: exportamos data:
+write_xlsx(Ingresos_v2, "OtrosIngresos.xlsx")
+
+# Eliminamos intermedios:
+rm(Ingresos,TipoIngresos,Arriendos,Pensiones,Giros,Intereses,Subsidios,Ingresos_v2)
+
+
+
+#### Tema: Sector económico Empleo anterior ####
+# Pregunta data: "${p_040}. Anteriormente, ¿tuvo un empleo?"
+# Pregunta data: "${p_040}. En su anterior empleo, ¿a qué actividad específica se dedicaba la empresa o negocio?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(.,c(Localizacion,"${p_040}. En su anterior empleo, ¿a qué actividad específica se dedicaba la empresa o negocio?")) %>%
+  dplyr::rename(Sector="${p_040}. En su anterior empleo, ¿a qué actividad específica se dedicaba la empresa o negocio?")%>% 
+  dplyr::filter(is.na(Sector)==F) 
+
+# Recodificamos variables:
+Actividad$SectorShort <- c("Sector")
+
+Actividad <- Actividad %>% 
+  dplyr::mutate(SectorShort=ifelse(Sector=="A-Agricultura, Ganadería, Caza, Silvicultura y Pesca","A-Agricultura",SectorShort),
+                SectorShort=ifelse(Sector=="B-Explotación de Minas y canteras","B-Explotación de Minas",SectorShort),
+                SectorShort=ifelse(Sector=="C-Industrias manufactureras","C-Industrias manufactureras",SectorShort),
+                SectorShort=ifelse(Sector=="H-Transporte y almacenamiento","H-Transporte y almacenamiento",SectorShort),
+                SectorShort=ifelse(Sector=="G-Comercio al por mayor y por menor; reparación de vehículos y motos","G-Comercio",SectorShort),
+                SectorShort=ifelse(Sector=="T-Actividades de hogares individuales.","T-Actividades de hogares",SectorShort),
+                SectorShort=ifelse(Sector=="F-Construcción","F-Construcción",SectorShort),
+                SectorShort=ifelse(Sector=="P-Educación","P-Educación",SectorShort),
+                SectorShort=ifelse(Sector=="Q-Actividades de atención de la salud humana y asistencia social","Q-Salud humana y asistencia social",SectorShort),
+                SectorShort=ifelse(Sector=="S-Otras actividades de servicios","S-Otros servicios",SectorShort),
+                SectorShort=ifelse(Sector=="J-Información y comunicaciones","J-Información y comunicaciones",SectorShort),
+                SectorShort=ifelse(Sector=="N-Actividades de servicio administrativo y de apoyo","N-Actividades administrativas y de apoyo",SectorShort),
+                SectorShort=ifelse(Sector=="I-Alojamiento y servicios de comida","I-Alojamiento y comida",SectorShort),
+                SectorShort=ifelse(Sector=="M-Actividades profesionales, científicas y técnicas","M-Actividades profesionales",SectorShort),
+                SectorShort=ifelse(Sector=="R-Actividades Artisticas, de entretenimiento y recreación.","R-Actividades Artisticas",SectorShort)
+                )
+# Agrupamos como corresponde:
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=SectorShort)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=SectorShort))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Sector económico del empleo anterior:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1)),
+        legend.text=element_text(size=rel(0.8)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "SectorEmpleoAntes.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+
+#### Tema: Intereses laborales a futuro ####
+# Pregunta data: "${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(Localizacion,"${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)") %>%
+  dplyr::rename(InteresLaboral="${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)")%>% 
+  dplyr::filter(is.na(InteresLaboral)==F,
+                InteresLaboral!="No responde",
+                InteresLaboral!="No sabe",
+                InteresLaboral!="Otro")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=InteresLaboral)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=InteresLaboral))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Intereses laborales a futuro:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3.5, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,90))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "InteresLaboral.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+#### Tema: Prioridad de inversión ####
+# Pregunta data: "${p_040}. En su opinión: ¿cuál debería ser la prioridad de inversión en el municipio?"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(Localizacion,"${p_040}. En su opinión: ¿cuál debería ser la prioridad de inversión en el municipio?") %>%
+  dplyr::rename(Inversion="${p_040}. En su opinión: ¿cuál debería ser la prioridad de inversión en el municipio?") %>% 
+  dplyr::filter(Inversion!="No responde",
+                Inversion!="No sabe",
+                Inversion!="No se encuentra en casa",
+                Inversion!="Otro",
+                is.na(Inversion)==F)
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Inversion)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=Inversion))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Prioridad de inversión:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=3.5, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,60))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "PrioridadInversion.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+```
+
+```{r Modulo Proyectos productivos}
+#### Tema: Tiene proyecto productivo ####
+# Pregunta data: "¿Tiene este hogar algún tipo de negocio?"
+
+Proyecto <- PilotoHogares %>%
+  dplyr::select(Localizacion,"¿Tiene este hogar algún tipo de negocio?") %>%
+  dplyr::rename(ProyectoCol="¿Tiene este hogar algún tipo de negocio?")%>%  dplyr::filter(is.na(ProyectoCol)==F) 
+
+Proyecto_v2 <- Agrupa(Data=Proyecto,
+                 Columna=ProyectoCol)
+
+# Graficamos:
+
+ggplot(Proyecto_v2, aes(x=Porcentaje,y=Localizacion,fill=ProyectoCol))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Proyectos productivos en el hogar:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Proyecto_v2, "Negocio.xlsx")
+
+# Eliminamos intermedios:
+rm(Proyecto,Proyecto_v2)
+
+
+#### Tema: Sector económico del proyecto ####
+# Pregunta data: "¿Cuál es la actividad económica del negocio?"
+
+Actividad <- PilotoProyectos %>%
+  dplyr::select(Localizacion,"¿Cuál es la actividad económica del negocio?") %>%
+  dplyr::rename(Sector="¿Cuál es la actividad económica del negocio?")
+
+# Recodificamos variables:
+Actividad$SectorShort <- c("Sector")
+
+Actividad <- Actividad %>% 
+  dplyr::mutate(SectorShort=ifelse(Sector=="A-Agricultura, Ganadería, Caza, Silvicultura y Pesca","A-Agricultura",SectorShort),
+                SectorShort=ifelse(Sector=="B-Explotación de Minas y canteras","B-Explotación de Minas",SectorShort),
+                SectorShort=ifelse(Sector=="C-Industrias manufactureras","C-Industrias manufactureras",SectorShort),
+                SectorShort=ifelse(Sector=="H-Transporte y almacenamiento","H-Transporte y almacenamiento",SectorShort),
+                SectorShort=ifelse(Sector=="G-Comercio al por mayor y por menor; reparación de vehículos y motos","G-Comercio",SectorShort),
+                SectorShort=ifelse(Sector=="T-Actividades de hogares individuales.","T-Actividades de hogares",SectorShort),
+                SectorShort=ifelse(Sector=="F-Construcción","F-Construcción",SectorShort),
+                SectorShort=ifelse(Sector=="P-Educación","P-Educación",SectorShort),
+                SectorShort=ifelse(Sector=="Q-Actividades de atención de la salud humana y asistencia social","Q-Salud humana y asistencia social",SectorShort),
+                SectorShort=ifelse(Sector=="S-Otras actividades de servicios","S-Otros servicios",SectorShort),
+                SectorShort=ifelse(Sector=="J-Información y comunicaciones","J-Información y comunicaciones",SectorShort),
+                SectorShort=ifelse(Sector=="N-Actividades de servicio administrativo y de apoyo","N-Actividades administrativas y de apoyo",SectorShort),
+                SectorShort=ifelse(Sector=="I-Alojamiento y servicios de comida","I-Alojamiento y comida",SectorShort),
+                SectorShort=ifelse(Sector=="M-Actividades profesionales, científicas y técnicas","M-Actividades profesionales",SectorShort),
+                SectorShort=ifelse(Sector=="R-Actividades Artisticas, de entretenimiento y recreación.","R-Actividades Artisticas",SectorShort)
+                )
+
+# Agrupamos como corresponde:
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=SectorShort)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=SectorShort))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Sector económico del negocio:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "SectorNegocio.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+#### Tema: Inscrito en CC ####
+# Pregunta data: "¿Está inscrito en Cámara de Comercio?"
+
+Actividad <- PilotoProyectos %>%
+  dplyr::select(Localizacion,"¿Está inscrito en Cámara de Comercio?") %>%
+  dplyr::rename(Inscripcion="¿Está inscrito en Cámara de Comercio?")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Inscripcion)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=Inscripcion))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Inscripción en Cámara de Comercio:")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "CCNegocio.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+#### Tema: Tiene RUT ####
+# Pregunta data: "¿Tiene Rut?"
+
+Actividad <- PilotoProyectos %>%
+  dplyr::select(Localizacion,"¿Tiene Rut?") %>%
+  dplyr::rename(Inscripcion="¿Tiene Rut?")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=Inscripcion)
+
+# Graficamos:
+
+ggplot(Actividad_v2, aes(x=Porcentaje,y=Localizacion,fill=Inscripcion))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(x="Porcentaje",y="Localización",fill="Inscripción en Registro Único Tributario (RUT):")+
+  geom_text(aes(label = Porcentaje),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_x_continuous(limits=c(0,105))
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "RUTNegocio.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
+
+#### Tema: Promedio de ingresos ####
+# Pregunta data: "¿Cuál fue la ganancia neta en esta actividad el mes pasado?"
+
+Proyectos <- PilotoProyectos %>%
+  dplyr::select(Localizacion,"¿Cuál fue la ganancia neta en esta actividad el mes pasado?") %>%
+  dplyr::rename(Ingresos="¿Cuál fue la ganancia neta en esta actividad el mes pasado?") %>% 
+  dplyr::filter(Ingresos>0)
+
+# Transformamos data a tipo numérico
+Proyectos$Ingresos <- as.numeric(Proyectos$Ingresos)
+
+# Creamos DF: con promedios de ganancia por localización:
+
+Ganancia <- Proyectos %>% 
+  dplyr::group_by(Localizacion)%>%
+    dplyr::summarise(
+      "Ganancia del negocio" = round(mean(Ingresos,na.rm = TRUE),0)
+      )
+
+# Graficamos:
+ggplot(Ganancia, aes(x=`Ganancia del negocio`,y=Localizacion))+
+  geom_bar(stat="identity", position="dodge",fill="cyan4")+
+  labs(x="Ganancia del negocio (promedio) ",y="Localización")+
+  geom_text(aes(label = `Ganancia del negocio`),position = position_dodge(1),
+            size=4, vjust=0.6, hjust=0 ,col="black")+
+  theme(axis.title=element_text(size=rel(1.3)),
+        axis.text.x=element_text(size=rel(1.3)),
+        axis.text.y=element_text(size=rel(1.3)),
+        legend.title=element_text(size=rel(1.1)),
+        legend.text=element_text(size=rel(1)),
+        legend.position="top",
+        legend.direction = "vertical")+
+  scale_fill_brewer(palette=1)+
+  scale_x_continuous(limits=c(0,1300000))
+
+
+# Paso opcional: exportamos data:
+write_xlsx(Ganancia, "GananciaNegocio.xlsx")
+
+# Eliminamos intermedios:
+rm(Proyectos,Ganancia)
+
+```
+
+
 ## Eliminación de intermedios
 ```{r pruebas, include=FALSE}
 rm(Vivienda,Vivienda_v2)
