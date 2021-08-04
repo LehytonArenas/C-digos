@@ -69,19 +69,19 @@ PersAMVA <- PersAntioquia %>%
 #### Data Tipo Svy #### 
 
 # Creamos objeto tipo Svy para AMVA: Individuos
-Svy_AMVA <- svydesign(ids=~0,weights=~FexpHog,
+Svy_AMVA <- svydesign(ids=~0,weights=~FexpPer_EQ,
                                   data=PersAMVA)
 
 # Creamos objeto tipo Svy para Antioquia: Individuos
-Svy_Antioquia <- svydesign(ids=~0,weights=~FexpHog,
+Svy_Antioquia <- svydesign(ids=~0,weights=~FexpPer_EQ,
                                   data=PersAntioquia)
 
 # Creamos objeto tipo Svy para Cartama: Individuos
-Svy_Cartama <- svydesign(ids=~0,weights=~FexpHog,
+Svy_Cartama <- svydesign(ids=~0,weights=~FexpPer_EQ,
                                   data=PersCartama)
 
 # Creamos objeto tipo Svy para Medellin: Individuos
-Svy_Medellin <- svydesign(ids=~0,weights=~FexpHog,
+Svy_Medellin <- svydesign(ids=~0,weights=~FexpPer_EQ,
                                   data=PersMedellin)
 
 
@@ -142,6 +142,74 @@ rm(TotalAMVA_v3)
 TotalPersonas <- join_all(list(TotalMcipio_v2,TotalCartama_v2,TotalAntioquia_v3,TotalAMVA_v5,TotalMedellin), by=c("Municipios"),type = "full")
 
 rm(TotalAMVA_v5,TotalAntioquia_v3,TotalCartama_v2,TotalMcipio_v2,TotalMcipio_v2,TotalMedellin)
+```
+
+```{r Demografía}
+#### Tema: Jefes de hogar por sexo #### 
+
+# Jefes de hogar totales. Por cada localidad:
+Jefes_AMVA <- as.data.frame(svytable(~Eje+P_020, design = Svy_AMVA)) %>%
+  dplyr::rename(Municipios=Eje,TotalJefes=Freq) %>% 
+  dplyr::filter(P_020==1)
+
+Jefes_Antioquia <- as.data.frame(svytable(~Departamento+P_020, design = Svy_Antioquia)) %>%
+  dplyr::rename(Municipios=Departamento,TotalJefes=Freq) %>% 
+  dplyr::filter(P_020==1)
+
+Jefes_Cartama <- as.data.frame(svytable(~Eje+P_020, design = Svy_Cartama)) %>%
+  dplyr::rename(Municipios=Eje,TotalJefes=Freq) %>% 
+  dplyr::filter(P_020==1)
+
+Jefes_CartMpios <- as.data.frame(svytable(~NomMpio+P_020, design = Svy_Cartama)) %>%
+  dplyr::rename(Municipios=NomMpio,TotalJefes=Freq) %>% 
+  dplyr::filter(P_020==1)
+
+Jefes_Medellin <- as.data.frame(svytable(~NomMpio+P_020, design = Svy_Medellin)) %>%
+  dplyr::rename(Municipios=NomMpio,TotalJefes=Freq) %>% 
+  dplyr::filter(P_020==1)
+
+# Jefes de hogar por sexo. Por cada localidad:
+JefesSexo_AMVA <- as.data.frame(svytable(~Eje+P_020+P_018, design = Svy_AMVA)) %>%
+  dplyr::filter(P_020==1) %>% 
+  dplyr::rename(Municipios=Eje,JefesSexo=Freq)
+
+JefesSexo_Antioquia <- as.data.frame(svytable(~Departamento+P_020+P_018, design = Svy_Antioquia)) %>%
+  dplyr::filter(P_020==1) %>% 
+  dplyr::rename(Municipios=Departamento,JefesSexo=Freq) 
+
+JefesSexo_Cartama <- as.data.frame(svytable(~Eje+P_020+P_018, design = Svy_Cartama)) %>%
+  dplyr::filter(P_020==1) %>% 
+  dplyr::rename(Municipios=Eje,JefesSexo=Freq) 
+
+JefesSexo_CartMpios <- as.data.frame(svytable(~NomMpio+P_020+P_018, design = Svy_Cartama)) %>%
+  dplyr::filter(P_020==1) %>% 
+  dplyr::rename(Municipios=NomMpio,JefesSexo=Freq) 
+
+JefesSexo_Medellín <- as.data.frame(svytable(~NomMpio+P_020+P_018, design = Svy_Medellin)) %>%
+  dplyr::filter(P_020==1) %>% 
+  dplyr::rename(Municipios=NomMpio,JefesSexo=Freq) 
+
+# Conacatenamos: hacemos varias concatenaciones por manejo dde data
+TotalJefes <- join_all(list(Jefes_AMVA,Jefes_Antioquia,Jefes_Cartama,Jefes_CartMpios,Jefes_Medellin),by=c("Municipios"),type = "full") %>%plyr::select(-c(P_020))
+
+TotalJefesSexo <- join_all(list(JefesSexo_AMVA,JefesSexo_Antioquia,JefesSexo_Cartama,JefesSexo_CartMpios,JefesSexo_Medellín),by=c("Municipios"),type = "full")%>% 
+  dplyr::select(-c(P_020))
+
+Totales <- join_all(list(TotalJefes,TotalJefesSexo),by=c("Municipios"),type = "full")
+
+# Creamos variable fictica y calculamos:
+Totales$Sexo <- c("SexoF")
+Totales <- Totales %>% 
+  dplyr::mutate(Sexo=ifelse(P_018==1,"Hombre",Sexo),
+                Sexo=ifelse(P_018==2,"Mujer",Sexo),
+                Porcentaje=round((JefesSexo/TotalJefes)*100,2)
+                )
+
+# Paso opcional: exportamos data:
+write_xlsx(Totales, "JefesHogar.xlsx")
+
+# Eliminamos intermedios
+rm(JefesSexo_AMVA,JefesSexo_Antioquia,JefesSexo_Cartama,JefesSexo_CartMpios,JefesSexo_Medellín,Jefes_AMVA,Jefes_Antioquia,Jefes_Cartama,Jefes_CartMpios,Jefes_Medellin,TotalJefes,TotalJefesSexo,Totales)
 ```
 
 ```{r Educación}
@@ -1028,6 +1096,21 @@ return(Data_v4)
 ```
 
 ```{r Modulo Características del hogar}
+#### Tema: Jefe por sexo ####
+Jefe <- PilotoIndividuos %>%
+  dplyr::select("Localizacion","${p_040}. Parentesco con el jefe del hogar:","Sexo de ${p_040}:") %>%
+  dplyr::rename(Parentesco="${p_040}. Parentesco con el jefe del hogar:",
+                SexoCol="Sexo de ${p_040}:") %>% 
+  dplyr::filter(Parentesco=="Jefe(a) del hogar")
+
+JefeSexo <- Agrupa(Data=Jefe,Columna=SexoCol)
+
+# Paso opcional: exportamos data:
+write_xlsx(JefeSexo, "JefeSexoTerreno.xlsx")
+
+# Eliminamos intermedios:
+rm(Jefe,JefeSexo)
+
 #### Tema: Edad ####
 # Pregunta data: "Edad de ${p_040}:"
 
@@ -1582,7 +1665,7 @@ write_xlsx(Educacion_v2, "Ilu32_AreaEduca.xlsx")
 rm(Educacion,Educacion_v2)
 
 
-#### Tema: Intereses académicos a futuro ####
+#### Tema: Intereses académicos a futuro V1 ####
 # Se deben hacer unas modificaciones en la data:
 
 # Traemos las columnas de interés, renombramos y filtramos:
@@ -1663,6 +1746,75 @@ write_xlsx(Educacion_v2, "Ilu13_InteresEduca.xlsx")
 
 # Eliminamos intermedios:
 rm(DataFiltrada,Educacion_v2)
+#### Tema: Intereses académicos a futuro V2 ####
+# Aquí no consideraremos a quienes NO tienen intereses.
+# Se deben hacer unas modificaciones en la data:
+
+# Traemos las columnas de interés, renombramos y filtramos:
+DataFiltrada <- PilotoIndividuos %>% 
+  dplyr::select(Localizacion,
+                "${p_040}. ¿Cuál es su condición educativa actualmente?",
+                "${p_040}. ¿Cuál es el nivel actual de estudio?",
+                "${p_040}. Último NIVEL de estudio que estudió.",
+                "${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)") %>% 
+  dplyr::rename(CondicionEduca="${p_040}. ¿Cuál es su condición educativa actualmente?",
+                NivelActual="${p_040}. ¿Cuál es el nivel actual de estudio?",
+                NivelUltimo="${p_040}. Último NIVEL de estudio que estudió.",
+                InteresEducativo="${p_040}. ¿Cuáles son sus intereses académicos a futuro? (¿Qué le gustaría aprender?)") %>% 
+  dplyr::filter(is.na(InteresEducativo)==F,
+                InteresEducativo!="No responde",
+                InteresEducativo!="No sabe",
+                InteresEducativo!="Retomar estudios diferente a lo que estaba estudiando",
+                InteresEducativo!="No tiene intereses académicos")
+
+# Creamos dos variables ficticias:
+DataFiltrada$InteresEducativoV2 <- c("InterésV2") # La vincularemos con retomar estudios pasados
+DataFiltrada$InteresEducativoV3 <- c("InterésV3") # La vincularemos con terminar estudios actuales.
+
+# Recodificamos variables ficticias:
+DataFiltrada <- DataFiltrada %>% 
+  dplyr::mutate(InteresEducativoV2=ifelse(InteresEducativo=="Retomar estudios en lo que estaba estudiando",NivelUltimo,InteresEducativoV2),
+                InteresEducativoV2=ifelse(is.na(InteresEducativoV2)==T,NivelActual,InteresEducativoV2),
+                InteresEducativoV3=ifelse(InteresEducativo=="Terminar estudios actuales (solo para quien estudia)",NivelActual,InteresEducativoV3)
+                )
+
+# Creamos ultima variable ficticia
+# Será la vble más importante, pues retomará todas las variables previas:
+DataFiltrada$InteresEducativoV4 <- c("InterésV4")
+
+# Recodificamos última variable ficticia: recogiendo todos los valores de interés
+# Renombramos o recodificamos valores para unificar criterios.
+# Filtrmos
+DataFiltrada <- DataFiltrada %>% 
+  dplyr::mutate(InteresEducativoV4=ifelse(InteresEducativoV2!="InterésV2",InteresEducativoV2,InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV3!="InterésV3",InteresEducativoV3,InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="InterésV4",InteresEducativo,InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Primaria (1º a 5º)","Estudiar la primaria",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Técnico","Estudiar una técnica",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Secundaria (6º a 9º)","Estudiar la secundaria",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Universidad","Estudiar un pregrado",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Tecnológico","Estudiar una tecnología",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Media (10º a 11º)","Estudiar la media",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Especialización","Estudiar un posgrado",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Doctorado","Estudiar un posgrado",InteresEducativoV4),
+                InteresEducativoV4=ifelse(InteresEducativoV4=="Maestría","Estudiar un posgrado",InteresEducativoV4)
+  ) %>% 
+  dplyr::filter(is.na(InteresEducativoV4)==F,
+                InteresEducativoV4!="No sabe")
+
+# Data en factores con orden predeterminado
+DataFiltrada$InteresEducativoV4 <- factor(DataFiltrada$InteresEducativoV4, levels=c("Estudiar la primaria","Estudiar la secundaria","Estudiar la media","Estudiar una técnica","Estudiar una tecnología","Estudiar un pregrado","Estudiar un posgrado"))
+
+# Aplicamos agrupación por localidad:
+Educacion_v2 <- Agrupa(Data=DataFiltrada,
+                 Columna=InteresEducativoV4)
+
+# Paso opcional: exportamos data:
+write_xlsx(Educacion_v2, "Ilu13_InteresEducaV2.xlsx")
+
+# Eliminamos intermedios:
+rm(DataFiltrada,Educacion_v2)
+
 ```
 
 ```{r Modulo Seguridad Social}
@@ -1819,6 +1971,7 @@ Recreacion <- PilotoIndividuos %>%
   dplyr::filter(RecreacionCol!="No sabe",
                 RecreacionCol!="Ninguno",
                 RecreacionCol!="No responde",
+                RecreacionCol!="Juntas administradoras locales - JAL",
                 is.na(RecreacionCol)==F)
 
 # Recodificamos categorias: 
@@ -1837,8 +1990,8 @@ Recreacion <- Recreacion %>%
                 RecreacionCol2=ifelse(RecreacionCol=="Otro","Otro",RecreacionCol2),
                 RecreacionCol2=ifelse(RecreacionCol=="Asociaciones u organizaciones de carácter ambiental","Asociaciones ambientales",RecreacionCol2),
                 RecreacionCol2=ifelse(RecreacionCol=="Asociación de padres de familia","Asociación de padres de familia",RecreacionCol2),
-                RecreacionCol2=ifelse(RecreacionCol=="Consejos comunales de presupuesto participativo","Concejos de presupuesto participativo",RecreacionCol2),
-                RecreacionCol2=ifelse(RecreacionCol=="Organización de base o concejos comunitarios","Concejos comunitarios",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Consejos comunales de presupuesto participativo","Consejos de presupuesto participativo",RecreacionCol2),
+                RecreacionCol2=ifelse(RecreacionCol=="Organización de base o concejos comunitarios","Consejos comunitarios",RecreacionCol2),
                 RecreacionCol2=ifelse(RecreacionCol=="Organización de victimas","Organización de victimas",RecreacionCol2),
                 RecreacionCol2=ifelse(RecreacionCol=="Corporaciones","Corporaciones",RecreacionCol2)
                 )
@@ -1864,7 +2017,7 @@ ggplot(Recreacion_v2, aes(x=Porcentaje,y=Localizacion,fill=RecreacionCol2))+
   scale_x_continuous(limits=c(0,105))
 
 # Paso opcional: exportamos data:
-write_xlsx(Recreacion_v2, "Ilu46_Participación.xlsx")
+write_xlsx(Recreacion_v2, "Ilu18_ParticipaciónV2.xlsx")
 
 # Eliminamos intermedios:
 rm(Recreacion,Recreacion_v2)
@@ -2707,7 +2860,7 @@ rm(Ingresos,TipoIngresos,Arriendos,Pensiones,Giros,Intereses,Subsidios,Ingresos_
 
 
 
-#### Tema: Intereses laborales a futuro ####
+#### Tema: Intereses laborales a futuro V1 ####
 
 # Pregunta data: "${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)"
 
@@ -2743,6 +2896,30 @@ write_xlsx(Actividad_v2, "Ilu68_InteresLaboral.xlsx")
 
 # Eliminamos intermedios:
 rm(Actividad,Actividad_v2)
+
+#### Tema: Intereses laborales a futuro V2 ####
+# Aquí se omitirán aquellos que NO tienen intereses
+# Pregunta data: "${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)"
+
+Actividad <- PilotoIndividuos %>%
+  dplyr::select(Localizacion,"${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)") %>%
+  dplyr::rename(InteresLaboral="${p_040}. ¿Cuáles son sus intereses laborales a futuro? (¿Qué le gustaría hacer?)")%>% 
+  dplyr::filter(is.na(InteresLaboral)==F,
+                InteresLaboral!="No responde",
+                InteresLaboral!="No sabe",
+                InteresLaboral!="Otro",
+                InteresLaboral!="No tiene intereses laborales a futuro")
+
+Actividad_v2 <- Agrupa(Data=Actividad,
+                 Columna=InteresLaboral)
+
+
+# Paso opcional: exportamos data:
+write_xlsx(Actividad_v2, "Ilu68_InteresLaboralV2.xlsx")
+
+# Eliminamos intermedios:
+rm(Actividad,Actividad_v2)
+
 
 #### Tema: Prioridad de inversión ####
 # Pregunta data: "${p_040}. En su opinión: ¿cuál debería ser la prioridad de inversión en el municipio?"
